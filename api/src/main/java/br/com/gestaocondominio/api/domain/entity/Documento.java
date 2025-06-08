@@ -1,0 +1,51 @@
+package br.com.gestaocondominio.api.domain.entity;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = "GC_DOCUMENTO", schema = "dbo")
+public class Documento {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "DOC_COD")
+    private Integer docCod;
+
+    @ManyToOne
+    @JoinColumn(name = "CON_COD", nullable = false)
+    private Condominio condominio;
+
+    
+    @ManyToOne
+    @JoinColumn(name = "ASS_COD") 
+    private Assembleia assembleia;
+
+    @ManyToOne
+    @JoinColumn(name = "PES_COD_UPLOAD", nullable = false)
+    private Pessoa uploader; 
+
+    @Column(name = "DOC_NOME", nullable = false, length = 150)
+    private String nome;
+
+    @Column(name = "DOC_TIPO", nullable = false, length = 50)
+    private String tipo;
+
+    @Column(name = "DOC_CAMINHO_ARQUIVO", nullable = false, length = 500)
+    private String caminhoArquivo;
+
+    @Column(name = "DOC_PERMISSAO_VISUALIZAR", nullable = false, length = 1)
+    private Character permissaoVisualizar;
+
+    @Column(name = "DOC_DT_UPLOAD")
+    private LocalDateTime dtUpload;
+
+    @Column(name = "DOC_DT_ATUALIZACAO")
+    private LocalDateTime dtAtualizacao;
+}

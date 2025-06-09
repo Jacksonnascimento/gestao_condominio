@@ -1,13 +1,15 @@
 package br.com.gestaocondominio.api.domain.service;
 
+import br.com.gestaocondominio.api.domain.entity.Condominio; 
 import br.com.gestaocondominio.api.domain.entity.FinanceiroCobranca;
 import br.com.gestaocondominio.api.domain.entity.Unidade;
 import br.com.gestaocondominio.api.domain.entity.TipoCobranca;
 import br.com.gestaocondominio.api.domain.repository.FinanceiroCobrancaRepository;
 import br.com.gestaocondominio.api.domain.repository.UnidadeRepository;
 import br.com.gestaocondominio.api.domain.repository.TipoCobrancaRepository;
+import br.com.gestaocondominio.api.domain.repository.CondominioRepository; 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // Import para @Transactional
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,13 +23,16 @@ public class FinanceiroCobrancaService {
     private final FinanceiroCobrancaRepository financeiroCobrancaRepository;
     private final UnidadeRepository unidadeRepository;
     private final TipoCobrancaRepository tipoCobrancaRepository;
+    private final CondominioRepository condominioRepository; 
 
     public FinanceiroCobrancaService(FinanceiroCobrancaRepository financeiroCobrancaRepository,
                                      UnidadeRepository unidadeRepository,
-                                     TipoCobrancaRepository tipoCobrancaRepository) {
+                                     TipoCobrancaRepository tipoCobrancaRepository,
+                                     CondominioRepository condominioRepository) { 
         this.financeiroCobrancaRepository = financeiroCobrancaRepository;
         this.unidadeRepository = unidadeRepository;
         this.tipoCobrancaRepository = tipoCobrancaRepository;
+        this.condominioRepository = condominioRepository; 
     }
 
     public FinanceiroCobranca cadastrarCobranca(FinanceiroCobranca cobranca) {
@@ -51,7 +56,7 @@ public class FinanceiroCobrancaService {
         }
 
         if (cobranca.getFicStatusPagamento() == null || cobranca.getFicStatusPagamento().trim().isEmpty()) {
-            cobranca.setFicStatusPagamento("A_VENCER"); // Default status
+            cobranca.setFicStatusPagamento("A_VENCER");
         }
 
         cobranca.setFicDtCadastro(LocalDateTime.now());
@@ -68,12 +73,11 @@ public class FinanceiroCobrancaService {
         return financeiroCobrancaRepository.findAll();
     }
 
-    @Transactional // Garante que a operação de atualização é atômica
+    @Transactional
     public FinanceiroCobranca atualizarCobranca(Integer id, FinanceiroCobranca cobrancaAtualizada) {
         FinanceiroCobranca cobrancaExistente = financeiroCobrancaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Cobrança não encontrada com o ID: " + id));
 
-        // Não é permitido alterar a Unidade ou o Tipo de Cobrança de uma cobrança existente.
         if (cobrancaAtualizada.getUnidade() != null && !cobrancaAtualizada.getUnidade().getUniCod().equals(cobrancaExistente.getUnidade().getUniCod())) {
              throw new IllegalArgumentException("Não é permitido alterar a Unidade de uma cobrança existente.");
         }
@@ -91,40 +95,30 @@ public class FinanceiroCobrancaService {
         return financeiroCobrancaRepository.save(cobrancaExistente);
     }
 
-    /**
-     * MÉTODO CHAVE: Gerar Cobranças em Lote para todas as unidades de um condomínio.
-     * Esta é uma função crucial para a administração de condomínios.
-     * @param condominioId O ID do condomínio para o qual gerar as cobranças.
-     * @param dataVencimento A data de vencimento para as novas cobranças.
-     * @param tipoCobrancaId O ID do tipo de cobrança (ex: "Condomínio Mensal").
-     * @return Uma lista das cobranças recém-geradas.
-     */
-    @Transactional // Garante que todas as operações dentro deste método são parte de uma única transação
+    @Transactional
     public List<FinanceiroCobranca> gerarCobrancasEmLote(Integer condominioId, LocalDate dataVencimento, Integer tipoCobrancaId) {
-        // 1. Validar e buscar o condomínio
-        Unidade condominioReferencia = unidadeRepository.getCondominioRepository().findById(condominioId)
+      
+        Condominio condominioReferencia = condominioRepository.findById(condominioId)
                 .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado com o ID: " + condominioId));
 
-        // 2. Validar e buscar o tipo de cobrança
+       
         TipoCobranca tipoCobranca = tipoCobrancaRepository.findById(tipoCobrancaId)
                 .orElseThrow(() -> new IllegalArgumentException("Tipo de cobrança não encontrado com o ID: " + tipoCobrancaId));
 
-        // 3. Buscar todas as unidades pertencentes a este condomínio
-        // Para isso, precisamos de um método no UnidadeRepository: findByCondominio(Condominio condominio);
-        // Vamos adicionar essa linha ao UnidadeRepository depois.
+        
         List<Unidade> unidadesDoCondominio = unidadeRepository.findByCondominio(condominioReferencia);
 
         if (unidadesDoCondominio.isEmpty()) {
             throw new IllegalArgumentException("Nenhuma unidade encontrada para o condomínio especificado.");
         }
 
-        // 4. Criar e salvar uma nova cobrança para cada unidade
+     
         List<FinanceiroCobranca> novasCobrancas = new java.util.ArrayList<>();
         for (Unidade unidade : unidadesDoCondominio) {
             FinanceiroCobranca novaCobranca = new FinanceiroCobranca();
             novaCobranca.setUnidade(unidade);
             novaCobranca.setTipoCobranca(tipoCobranca);
-            novaCobranca.setFicValorTaxa(unidade.getUniValorTaxaCondominio()); // Assumindo que a taxa da unidade é o valor da cobrança
+            novaCobranca.setFicValorTaxa(unidade.getUniValorTaxaCondominio());
             novaCobranca.setFicDtVencimento(dataVencimento);
             novaCobranca.setFicStatusPagamento("A_VENCER");
             novaCobranca.setFicDtCadastro(LocalDateTime.now());

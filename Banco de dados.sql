@@ -314,3 +314,9 @@ ADD USC_DT_ATUALIZACAO DATETIME;
 -- Adicionar coluna ADM_ATIVO à tabela GC_ADMINISTRADORA
 ALTER TABLE GC_ADMINISTRADORA
 ADD ADM_ATIVO BIT DEFAULT 1; -- 1 para True (ativo), 0 para False (inativo)
+
+
+-- Adicionar coluna ASS_ATIVA à tabela GC_ASSEMBLEIA
+ALTER TABLE GC_ASSEMBLEIA
+ADD ASS_ATIVA BIT DEFAULT 1; -- 1 para True (ativa), 0 para False (inativa)
+

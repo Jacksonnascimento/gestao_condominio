@@ -8,16 +8,22 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
 @Repository
 public interface ReservaAreaComumRepository extends JpaRepository<ReservaAreaComum, Integer> {
     List<ReservaAreaComum> findByAreaComumAndDataHoraFimAfterAndDataHoraInicioBefore(
-            AreaComum areaComum,
-            LocalDateTime fim,
-            LocalDateTime inicio);
+        AreaComum areaComum,
+        LocalDateTime fim,
+        LocalDateTime inicio
+    );
 
     List<ReservaAreaComum> findByAreaComumAndDataHoraFimAfterAndDataHoraInicioBeforeAndRacCodIsNot(
-            AreaComum areaComum,
-            LocalDateTime fim,
-            LocalDateTime inicio,
-            Integer idReservaExcluir);
+        AreaComum areaComum,
+        LocalDateTime fim,
+        LocalDateTime inicio,
+        Integer idReservaExcluir
+    );
+
+    
+    List<ReservaAreaComum> findByAreaComum(AreaComum areaComum); 
 }

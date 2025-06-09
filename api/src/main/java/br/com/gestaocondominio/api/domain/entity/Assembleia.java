@@ -36,4 +36,7 @@ public class Assembleia {
 
     @Column(name = "ASS_DT_ATUALIZACAO")
     private LocalDateTime assDtAtualizacao;
+
+    @Column(name = "ASS_ATIVA") 
+    private Boolean assAtiva;
 }

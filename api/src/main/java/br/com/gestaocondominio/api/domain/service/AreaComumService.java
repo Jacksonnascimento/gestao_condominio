@@ -2,7 +2,8 @@ package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.domain.entity.AreaComum;
 import br.com.gestaocondominio.api.domain.repository.AreaComumRepository;
-import br.com.gestaocondominio.api.domain.repository.CondominioRepository; // Necessário para validar o Condomínio
+import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
+import br.com.gestaocondominio.api.domain.repository.ReservaAreaComumRepository; // Novo Import
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -13,15 +14,18 @@ import java.util.Optional;
 public class AreaComumService {
 
     private final AreaComumRepository areaComumRepository;
-    private final CondominioRepository condominioRepository; 
+    private final CondominioRepository condominioRepository;
+    private final ReservaAreaComumRepository reservaAreaComumRepository; // Nova Injeção
 
-    public AreaComumService(AreaComumRepository areaComumRepository, CondominioRepository condominioRepository) {
+    public AreaComumService(AreaComumRepository areaComumRepository,
+                            CondominioRepository condominioRepository,
+                            ReservaAreaComumRepository reservaAreaComumRepository) { // Adicionar ao construtor
         this.areaComumRepository = areaComumRepository;
         this.condominioRepository = condominioRepository;
+        this.reservaAreaComumRepository = reservaAreaComumRepository; // Atribuir
     }
 
     public AreaComum cadastrarAreaComum(AreaComum areaComum) {
-        
         if (areaComum.getCondominio() == null || areaComum.getCondominio().getConCod() == null) {
             throw new IllegalArgumentException("Condomínio deve ser informado para a área comum.");
         }
@@ -31,7 +35,6 @@ public class AreaComumService {
         areaComum.setArcDtCadastro(LocalDateTime.now());
         areaComum.setArcDtAtualizacao(LocalDateTime.now());
 
-        
         if (areaComum.getArcPermiteReserva() == null) {
             areaComum.setArcPermiteReserva(true);
         }
@@ -51,10 +54,8 @@ public class AreaComumService {
         AreaComum areaComumExistente = areaComumRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Área comum não encontrada com o ID: " + id));
 
-        
         if (areaComumAtualizada.getCondominio() != null && !areaComumAtualizada.getCondominio().getConCod().equals(areaComumExistente.getCondominio().getConCod())) {
              throw new IllegalArgumentException("Não é permitido alterar o condomínio de uma área comum existente.");
-            
         }
 
         areaComumExistente.setArcNome(areaComumAtualizada.getArcNome());
@@ -65,5 +66,19 @@ public class AreaComumService {
 
         areaComumExistente.setArcDtAtualizacao(LocalDateTime.now());
         return areaComumRepository.save(areaComumExistente);
+    }
+
+    
+    public void deletarAreaComum(Integer id) {
+        AreaComum areaComum = areaComumRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Área comum não encontrada com o ID: " + id));
+
+        
+        if (!reservaAreaComumRepository.findByAreaComum(areaComum).isEmpty()) {
+            throw new IllegalArgumentException("Não é possível excluir a área comum pois existem reservas associadas a ela.");
+        }
+
+        
+        areaComumRepository.deleteById(id);
     }
 }

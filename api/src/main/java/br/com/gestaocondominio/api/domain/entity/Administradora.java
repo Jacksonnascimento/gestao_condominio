@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
 @Entity
 @Table(name = "GC_ADMINISTRADORA", schema = "dbo")
 public class Administradora {
@@ -27,12 +26,10 @@ public class Administradora {
     @Column(name = "ADM_COD")
     private Integer admCod;
 
-   
     @ManyToOne
     @JoinColumn(name = "PES_COD", nullable = false)
     private Pessoa dadosEmpresa;
 
-    
     @ManyToOne
     @JoinColumn(name = "ADM_RESPONSAVEL", nullable = false)
     private Pessoa responsavel;
@@ -42,4 +39,7 @@ public class Administradora {
 
     @Column(name = "ADM_DT_ATUALIZACAO")
     private LocalDateTime admDtAtualizacao;
+
+    @Column(name = "ADM_ATIVO") 
+    private Boolean admAtivo;
 }

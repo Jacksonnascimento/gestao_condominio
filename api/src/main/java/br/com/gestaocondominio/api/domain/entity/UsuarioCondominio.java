@@ -30,4 +30,9 @@ public class UsuarioCondominio {
 
     @Column(name = "USC_ATIVO_ASSOCIACAO", nullable = false)
     private Boolean uscAtivoAssociacao;
+
+    @Column(name = "USC_DT_ATUALIZACAO") 
+    private LocalDateTime uscDtAtualizacao;
+
+
 }

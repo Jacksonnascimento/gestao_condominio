@@ -1,6 +1,6 @@
 package br.com.gestaocondominio.api.domain.repository;
 
-import br.com.gestaocondominio.api.domain.entity.AreaComum;
+import br.com.gestaocondominio.api.domain.entity.AreaComum; // Importe esta entidade
 import br.com.gestaocondominio.api.domain.entity.ReservaAreaComum;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -24,6 +24,5 @@ public interface ReservaAreaComumRepository extends JpaRepository<ReservaAreaCom
         Integer idReservaExcluir
     );
 
-    
     List<ReservaAreaComum> findByAreaComum(AreaComum areaComum); 
 }

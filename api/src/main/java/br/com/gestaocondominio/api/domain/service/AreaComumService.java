@@ -3,7 +3,7 @@ package br.com.gestaocondominio.api.domain.service;
 import br.com.gestaocondominio.api.domain.entity.AreaComum;
 import br.com.gestaocondominio.api.domain.repository.AreaComumRepository;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
-import br.com.gestaocondominio.api.domain.repository.ReservaAreaComumRepository; // Novo Import
+import br.com.gestaocondominio.api.domain.repository.ReservaAreaComumRepository; // IMPORT ATIVO AGORA
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,14 +15,14 @@ public class AreaComumService {
 
     private final AreaComumRepository areaComumRepository;
     private final CondominioRepository condominioRepository;
-    private final ReservaAreaComumRepository reservaAreaComumRepository; // Nova Injeção
+    private final ReservaAreaComumRepository reservaAreaComumRepository;
 
     public AreaComumService(AreaComumRepository areaComumRepository,
                             CondominioRepository condominioRepository,
-                            ReservaAreaComumRepository reservaAreaComumRepository) { // Adicionar ao construtor
+                            ReservaAreaComumRepository reservaAreaComumRepository) {
         this.areaComumRepository = areaComumRepository;
         this.condominioRepository = condominioRepository;
-        this.reservaAreaComumRepository = reservaAreaComumRepository; // Atribuir
+        this.reservaAreaComumRepository = reservaAreaComumRepository;
     }
 
     public AreaComum cadastrarAreaComum(AreaComum areaComum) {
@@ -68,17 +68,14 @@ public class AreaComumService {
         return areaComumRepository.save(areaComumExistente);
     }
 
-    
     public void deletarAreaComum(Integer id) {
         AreaComum areaComum = areaComumRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Área comum não encontrada com o ID: " + id));
 
-        
         if (!reservaAreaComumRepository.findByAreaComum(areaComum).isEmpty()) {
             throw new IllegalArgumentException("Não é possível excluir a área comum pois existem reservas associadas a ela.");
         }
 
-        
         areaComumRepository.deleteById(id);
     }
 }

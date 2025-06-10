@@ -38,14 +38,12 @@ public class DocumentoPermissaoVisualizarService {
         pessoaRepository.findById(permissao.getPessoa().getPesCod())
                 .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + permissao.getPessoa().getPesCod()));
 
-      
         DocumentoPermissaoId id = new DocumentoPermissaoId(
             permissao.getDocumento().getDocCod(),
             permissao.getPessoa().getPesCod()
         );
-        permissao.setId(id); 
+        permissao.setId(id);
 
-        
         if (documentoPermissaoVisualizarRepository.findById(id).isPresent()) {
             throw new IllegalArgumentException("Esta permissão de visualização já existe para este documento e pessoa.");
         }
@@ -65,12 +63,20 @@ public class DocumentoPermissaoVisualizarService {
         DocumentoPermissaoVisualizar permissaoExistente = documentoPermissaoVisualizarRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Permissão de visualização de documento não encontrada com o ID: " + id));
 
-        
         if (!permissaoAtualizada.getDocumento().getDocCod().equals(permissaoExistente.getDocumento().getDocCod()) ||
             !permissaoAtualizada.getPessoa().getPesCod().equals(permissaoExistente.getPessoa().getPesCod())) {
              throw new IllegalArgumentException("Não é permitido alterar o Documento ou a Pessoa de uma permissão de visualização existente.");
         }
+        
 
         return documentoPermissaoVisualizarRepository.save(permissaoExistente);
+    }
+
+    
+    public void deletarPermissao(DocumentoPermissaoId id) {
+        documentoPermissaoVisualizarRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Permissão de visualização de documento não encontrada para exclusão com o ID: " + id));
+
+        documentoPermissaoVisualizarRepository.deleteById(id);
     }
 }

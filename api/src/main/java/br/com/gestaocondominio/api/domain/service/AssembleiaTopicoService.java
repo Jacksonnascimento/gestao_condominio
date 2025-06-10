@@ -3,6 +3,8 @@ package br.com.gestaocondominio.api.domain.service;
 import br.com.gestaocondominio.api.domain.entity.AssembleiaTopico;
 import br.com.gestaocondominio.api.domain.repository.AssembleiaTopicoRepository;
 import br.com.gestaocondominio.api.domain.repository.AssembleiaRepository;
+import br.com.gestaocondominio.api.domain.repository.AssembleiaVotoRepository;
+
 import org.springframework.stereotype.Service;
 
 
@@ -14,11 +16,14 @@ public class AssembleiaTopicoService {
 
     private final AssembleiaTopicoRepository assembleiaTopicoRepository;
     private final AssembleiaRepository assembleiaRepository;
+    private final AssembleiaVotoRepository assembleiaVotoRepository;
 
     public AssembleiaTopicoService(AssembleiaTopicoRepository assembleiaTopicoRepository,
-                                   AssembleiaRepository assembleiaRepository) {
+                                   AssembleiaRepository assembleiaRepository,
+                                   AssembleiaVotoRepository assembleiaVotoRepository) {
         this.assembleiaTopicoRepository = assembleiaTopicoRepository;
         this.assembleiaRepository = assembleiaRepository;
+        this.assembleiaVotoRepository = assembleiaVotoRepository;
     }
 
     public AssembleiaTopico cadastrarAssembleiaTopico(AssembleiaTopico topico) {
@@ -39,17 +44,31 @@ public class AssembleiaTopicoService {
         return assembleiaTopicoRepository.findAll();
     }
 
-    public AssembleiaTopico atualizarAssembleiaTopico(Integer id, AssembleiaTopico topicoAtualizado) {
+  
+    public AssembleiaTopico atualizarTopico(Integer id, AssembleiaTopico topicoAtualizado) {
         AssembleiaTopico topicoExistente = assembleiaTopicoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Tópico de assembleia não encontrado com o ID: " + id));
 
+        
         if (topicoAtualizado.getAssembleia() != null && !topicoAtualizado.getAssembleia().getAssCod().equals(topicoExistente.getAssembleia().getAssCod())) {
              throw new IllegalArgumentException("Não é permitido alterar a Assembleia de um tópico existente.");
         }
 
+      
         topicoExistente.setAspDescricao(topicoAtualizado.getAspDescricao());
-        // Se houver outros campos que possam ser atualizados no futuro, adicione-os aqui
+
 
         return assembleiaTopicoRepository.save(topicoExistente);
+    }
+
+    public void deletarTopico(Integer id) {
+        AssembleiaTopico topico = assembleiaTopicoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Tópico de assembleia não encontrado com o ID: " + id));
+
+        if (!assembleiaVotoRepository.findByTopico(topico).isEmpty()) {
+            throw new IllegalArgumentException("Não é possível excluir o tópico pois existem votos associados a ele.");
+        }
+
+        assembleiaTopicoRepository.deleteById(id);
     }
 }

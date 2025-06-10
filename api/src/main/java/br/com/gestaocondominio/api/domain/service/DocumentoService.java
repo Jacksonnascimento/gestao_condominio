@@ -5,7 +5,10 @@ import br.com.gestaocondominio.api.domain.repository.DocumentoRepository;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.AssembleiaRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
+import br.com.gestaocondominio.api.domain.repository.DocumentoPermissaoVisualizarRepository;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,15 +21,18 @@ public class DocumentoService {
     private final CondominioRepository condominioRepository;
     private final AssembleiaRepository assembleiaRepository;
     private final PessoaRepository pessoaRepository;
+    private final DocumentoPermissaoVisualizarRepository documentoPermissaoVisualizarRepository;
 
     public DocumentoService(DocumentoRepository documentoRepository,
                             CondominioRepository condominioRepository,
                             AssembleiaRepository assembleiaRepository,
-                            PessoaRepository pessoaRepository) {
+                            PessoaRepository pessoaRepository,
+                            DocumentoPermissaoVisualizarRepository documentoPermissaoVisualizarRepository) {
         this.documentoRepository = documentoRepository;
         this.condominioRepository = condominioRepository;
         this.assembleiaRepository = assembleiaRepository;
         this.pessoaRepository = pessoaRepository;
+        this.documentoPermissaoVisualizarRepository = documentoPermissaoVisualizarRepository;
     }
 
     public Documento cadastrarDocumento(Documento documento) {
@@ -48,7 +54,7 @@ public class DocumentoService {
                 .orElseThrow(() -> new IllegalArgumentException("Pessoa responsável pelo upload não encontrada com o ID: " + documento.getUploader().getPesCod()));
 
         if (documento.getPermissaoVisualizar() == null) {
-            documento.setPermissaoVisualizar('T'); // Default 'T' - Todos
+            documento.setPermissaoVisualizar('T');
         }
 
         documento.setDtUpload(LocalDateTime.now());
@@ -65,34 +71,53 @@ public class DocumentoService {
         return documentoRepository.findAll();
     }
 
-    public Documento atualizarDocumento(Integer id, Documento documentoAtualizado) {
+    public Documento atualizarDocumento(Integer id, Documento documentoAtualizado) { 
         Documento documentoExistente = documentoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Documento não encontrado com o ID: " + id));
 
-        // Validação de alteração de chaves estrangeiras
         if (documentoAtualizado.getCondominio() != null && !documentoAtualizado.getCondominio().getConCod().equals(documentoExistente.getCondominio().getConCod())) {
-            throw new IllegalArgumentException("Não é permitido alterar o Condomínio de um documento existente.");
+             throw new IllegalArgumentException("Não é permitido alterar o Condomínio de um documento existente.");
         }
-        // Para Assembleia, pode ser permitido mudar, mas deve ser validado se o novo ID existe
         if (documentoAtualizado.getAssembleia() != null &&
             (documentoExistente.getAssembleia() == null || !documentoAtualizado.getAssembleia().getAssCod().equals(documentoExistente.getAssembleia().getAssCod()))) {
-            assembleiaRepository.findById(documentoAtualizado.getAssembleia().getAssCod())
+            assembleiaRepository.findById(documentoAtualizado.getAssembleia().getAssCod()) // <-- Uso da variável corrigida
                     .orElseThrow(() -> new IllegalArgumentException("Nova Assembleia para o documento não encontrada com o ID: " + documentoAtualizado.getAssembleia().getAssCod()));
             documentoExistente.setAssembleia(documentoAtualizado.getAssembleia());
         } else if (documentoAtualizado.getAssembleia() == null && documentoExistente.getAssembleia() != null) {
-            documentoExistente.setAssembleia(null); // Permite remover a associação
+            documentoExistente.setAssembleia(null);
         }
 
         if (documentoAtualizado.getUploader() != null && !documentoAtualizado.getUploader().getPesCod().equals(documentoExistente.getUploader().getPesCod())) {
             throw new IllegalArgumentException("Não é permitido alterar a Pessoa Uploader de um documento existente.");
         }
 
-        documentoExistente.setNome(documentoAtualizado.getNome());
-        documentoExistente.setTipo(documentoAtualizado.getTipo());
-        documentoExistente.setCaminhoArquivo(documentoAtualizado.getCaminhoArquivo());
-        documentoExistente.setPermissaoVisualizar(documentoAtualizado.getPermissaoVisualizar());
+        if (documentoAtualizado.getNome() != null) {
+            documentoExistente.setNome(documentoAtualizado.getNome());
+        }
+        if (documentoAtualizado.getTipo() != null) {
+            documentoExistente.setTipo(documentoAtualizado.getTipo());
+        }
+        if (documentoAtualizado.getCaminhoArquivo() != null) {
+            documentoExistente.setCaminhoArquivo(documentoAtualizado.getCaminhoArquivo());
+        }
+        if (documentoAtualizado.getPermissaoVisualizar() != null) {
+            documentoExistente.setPermissaoVisualizar(documentoAtualizado.getPermissaoVisualizar());
+        }
 
         documentoExistente.setDtAtualizacao(LocalDateTime.now());
         return documentoRepository.save(documentoExistente);
+    }
+
+    @Transactional
+    public void deletarDocumento(Integer id) {
+        Documento documento = documentoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Documento não encontrado com o ID: " + id));
+
+        List<br.com.gestaocondominio.api.domain.entity.DocumentoPermissaoVisualizar> permissoes = documentoPermissaoVisualizarRepository.findByDocumento(documento);
+        if (!permissoes.isEmpty()) {
+            documentoPermissaoVisualizarRepository.deleteAll(permissoes);
+        }
+
+        documentoRepository.deleteById(id);
     }
 }

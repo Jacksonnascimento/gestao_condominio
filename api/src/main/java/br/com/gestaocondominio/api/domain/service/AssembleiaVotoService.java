@@ -33,7 +33,7 @@ public class AssembleiaVotoService {
                 .orElseThrow(() -> new IllegalArgumentException("Tópico da assembleia não encontrado com o ID: " + voto.getTopico().getAspCod()));
 
         if (voto.getPessoa() == null || voto.getPessoa().getPesCod() == null) {
-            throw new IllegalArgumentException("Pessoa deve ser informada para o voto.");
+            throw new  IllegalArgumentException("Pessoa deve ser informada para o voto.");
         }
         pessoaRepository.findById(voto.getPessoa().getPesCod())
                 .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + voto.getPessoa().getPesCod()));
@@ -89,5 +89,13 @@ public class AssembleiaVotoService {
         }
 
         return assembleiaVotoRepository.save(votoExistente);
+    }
+
+   
+    public void deletarVoto(AssembleiaVotoId id) {
+        assembleiaVotoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Voto de assembleia não encontrado para exclusão com o ID: " + id));
+
+        assembleiaVotoRepository.deleteById(id);
     }
 }

@@ -49,7 +49,7 @@ public class AssembleiaParticipanteService {
         }
         
         if (participante.getParticipacao() == null) {
-            participante.setParticipacao(false);
+            participante.setParticipacao(false); 
         }
 
         return assembleiaParticipanteRepository.save(participante);
@@ -72,8 +72,17 @@ public class AssembleiaParticipanteService {
              throw new IllegalArgumentException("Não é permitido alterar a Assembleia ou Pessoa de um participante existente.");
         }
         
-        participanteExistente.setParticipacao(participanteAtualizado.getParticipacao());
+        if (participanteAtualizado.getParticipacao() != null) {
+            participanteExistente.setParticipacao(participanteAtualizado.getParticipacao());
+        }
 
         return assembleiaParticipanteRepository.save(participanteExistente);
+    }
+
+    public void deletarParticipante(AssembleiaParticipanteId id) {
+        assembleiaParticipanteRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Participante da assembleia não encontrado para exclusão com o ID: " + id));
+
+        assembleiaParticipanteRepository.deleteById(id);
     }
 }

@@ -83,7 +83,7 @@ public class AssembleiaService {
         assembleiaExistente.setAssDataHora(assembleiaAtualizada.getAssDataHora());
         assembleiaExistente.setAssStatus(assembleiaAtualizada.getAssStatus());
 
-        // CORREÇÃO AQUI: Apenas atualiza assAtiva se um valor for explicitamente fornecido no JSON de atualização
+        
         if (assembleiaAtualizada.getAssAtiva() != null) {
             assembleiaExistente.setAssAtiva(assembleiaAtualizada.getAssAtiva());
         }

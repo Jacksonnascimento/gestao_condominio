@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
 @Entity
 @Table(name = "GC_CONDOMINIO", schema = "dbo")
 public class Condominio {
@@ -73,6 +72,9 @@ public class Condominio {
     private LocalDateTime conDtAtualizacao;
 
     @ManyToOne
-    @JoinColumn(name = "ADM_COD") 
+    @JoinColumn(name = "ADM_COD")
     private Administradora administradora;
+
+    @Column(name = "CON_ATIVO") // <-- NOVA COLUNA para soft delete
+    private Boolean conAtivo;
 }

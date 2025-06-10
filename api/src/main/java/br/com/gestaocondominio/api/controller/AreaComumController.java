@@ -22,31 +22,31 @@ public class AreaComumController {
     @PostMapping
     public ResponseEntity<AreaComum> cadastrarAreaComum(@RequestBody AreaComum areaComum) {
         AreaComum novaAreaComum = areaComumService.cadastrarAreaComum(areaComum);
-        return new ResponseEntity<>(novaAreaComum, HttpStatus.CREATED); // 201 Created
+        return new ResponseEntity<>(novaAreaComum, HttpStatus.CREATED); 
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<AreaComum> buscarAreaComumPorId(@PathVariable Integer id) {
         Optional<AreaComum> areaComum = areaComumService.buscarAreaComumPorId(id);
-        return areaComum.map(ac -> new ResponseEntity<>(ac, HttpStatus.OK)) // 200 OK
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND)); // 404 Not Found
+        return areaComum.map(ac -> new ResponseEntity<>(ac, HttpStatus.OK)) 
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND)); 
     }
 
     @GetMapping
     public ResponseEntity<List<AreaComum>> listarTodasAreasComuns() {
         List<AreaComum> areasComuns = areaComumService.listarTodasAreasComuns();
-        return new ResponseEntity<>(areasComuns, HttpStatus.OK); // 200 OK
+        return new ResponseEntity<>(areasComuns, HttpStatus.OK); 
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<AreaComum> atualizarAreaComum(@PathVariable Integer id, @RequestBody AreaComum areaComumAtualizada) {
         AreaComum areaComumSalva = areaComumService.atualizarAreaComum(id, areaComumAtualizada);
-        return new ResponseEntity<>(areaComumSalva, HttpStatus.OK); // 200 OK
+        return new ResponseEntity<>(areaComumSalva, HttpStatus.OK); 
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarAreaComum(@PathVariable Integer id) {
         areaComumService.deletarAreaComum(id); 
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT); // 204 No Content
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT); 
     }
 }

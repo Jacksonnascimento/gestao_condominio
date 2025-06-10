@@ -68,8 +68,8 @@ public class ComunicadoEntregaService {
         ComunicadoEntrega comunicadoEntregaExistente = comunicadoEntregaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Registro de entrega de comunicado não encontrado com o ID: " + id));
 
-        if (!comunicadoEntregaAtualizada.getComunicado().getComCod().equals(comunicadoEntregaExistente.getComunicado().getComCod()) ||
-            !comunicadoEntregaAtualizada.getDestinatario().getPesCod().equals(comunicadoEntregaExistente.getDestinatario().getPesCod())) {
+        if (comunicadoEntregaAtualizada.getComunicado() != null && !comunicadoEntregaAtualizada.getComunicado().getComCod().equals(comunicadoEntregaExistente.getComunicado().getComCod()) ||
+            comunicadoEntregaAtualizada.getDestinatario() != null && !comunicadoEntregaAtualizada.getDestinatario().getPesCod().equals(comunicadoEntregaExistente.getDestinatario().getPesCod())) {
              throw new IllegalArgumentException("Não é permitido alterar o Comunicado ou a Pessoa Destinatária de um registro de entrega existente.");
         }
 
@@ -79,5 +79,13 @@ public class ComunicadoEntregaService {
         comunicadoEntregaExistente.setDtEnvioIndividual(comunicadoEntregaAtualizada.getDtEnvioIndividual());
 
         return comunicadoEntregaRepository.save(comunicadoEntregaExistente);
+    }
+
+    
+    public void deletarComunicadoEntrega(Integer id) {
+        comunicadoEntregaRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Registro de entrega de comunicado não encontrado para exclusão com o ID: " + id));
+
+        comunicadoEntregaRepository.deleteById(id);
     }
 }

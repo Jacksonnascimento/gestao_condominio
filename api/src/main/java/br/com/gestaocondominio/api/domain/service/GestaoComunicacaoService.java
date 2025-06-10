@@ -4,7 +4,10 @@ import br.com.gestaocondominio.api.domain.entity.GestaoComunicacao;
 import br.com.gestaocondominio.api.domain.repository.GestaoComunicacaoRepository;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
+import br.com.gestaocondominio.api.domain.repository.ComunicadoEntregaRepository; 
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional; 
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,13 +19,16 @@ public class GestaoComunicacaoService {
     private final GestaoComunicacaoRepository gestaoComunicacaoRepository;
     private final CondominioRepository condominioRepository;
     private final PessoaRepository pessoaRepository;
+    private final ComunicadoEntregaRepository comunicadoEntregaRepository; 
 
     public GestaoComunicacaoService(GestaoComunicacaoRepository gestaoComunicacaoRepository,
                                     CondominioRepository condominioRepository,
-                                    PessoaRepository pessoaRepository) {
+                                    PessoaRepository pessoaRepository,
+                                    ComunicadoEntregaRepository comunicadoEntregaRepository) { 
         this.gestaoComunicacaoRepository = gestaoComunicacaoRepository;
         this.condominioRepository = condominioRepository;
         this.pessoaRepository = pessoaRepository;
+        this.comunicadoEntregaRepository = comunicadoEntregaRepository; 
     }
 
     public GestaoComunicacao cadastrarComunicacao(GestaoComunicacao comunicacao) {
@@ -46,8 +52,15 @@ public class GestaoComunicacaoService {
         }
 
         if (comunicacao.getComDesTodos() == null) {
-            comunicacao.setComDesTodos('N');
+            comunicacao.setComDesTodos('N'); 
         }
+     
+        char desTodos = Character.toUpperCase(comunicacao.getComDesTodos());
+        if (desTodos != 'S' && desTodos != 'N') {
+            throw new IllegalArgumentException("Valor inválido para COM_DES_TODOS. Use 'S' para todos ou 'N' para específico.");
+        }
+        comunicacao.setComDesTodos(desTodos);
+
 
         comunicacao.setComDtCadastro(LocalDateTime.now());
         comunicacao.setComDtAtualizacao(LocalDateTime.now());
@@ -74,13 +87,42 @@ public class GestaoComunicacaoService {
              throw new IllegalArgumentException("Não é permitido alterar o Remetente de um comunicado existente.");
         }
 
-        comunicacaoExistente.setComAssunto(comunicacaoAtualizada.getComAssunto());
-        comunicacaoExistente.setComMensagem(comunicacaoAtualizada.getComMensagem());
-        comunicacaoExistente.setComDesTodos(comunicacaoAtualizada.getComDesTodos());
-        comunicacaoExistente.setComTipoNotificacao(comunicacaoAtualizada.getComTipoNotificacao());
-        comunicacaoExistente.setComDtEnvio(comunicacaoAtualizada.getComDtEnvio());
+        if (comunicacaoAtualizada.getComAssunto() != null) {
+            comunicacaoExistente.setComAssunto(comunicacaoAtualizada.getComAssunto());
+        }
+        if (comunicacaoAtualizada.getComMensagem() != null) {
+            comunicacaoExistente.setComMensagem(comunicacaoAtualizada.getComMensagem());
+        }
+        if (comunicacaoAtualizada.getComDesTodos() != null) {
+            char desTodos = Character.toUpperCase(comunicacaoAtualizada.getComDesTodos());
+            if (desTodos != 'S' && desTodos != 'N') {
+                throw new IllegalArgumentException("Valor inválido para COM_DES_TODOS na atualização. Use 'S' para todos ou 'N' para específico.");
+            }
+            comunicacaoExistente.setComDesTodos(desTodos);
+        }
+        if (comunicacaoAtualizada.getComTipoNotificacao() != null) {
+            comunicacaoExistente.setComTipoNotificacao(comunicacaoAtualizada.getComTipoNotificacao());
+        }
+        if (comunicacaoAtualizada.getComDtEnvio() != null) {
+            comunicacaoExistente.setComDtEnvio(comunicacaoAtualizada.getComDtEnvio());
+        }
 
         comunicacaoExistente.setComDtAtualizacao(LocalDateTime.now());
         return gestaoComunicacaoRepository.save(comunicacaoExistente);
+    }
+
+    
+    @Transactional 
+    public void deletarComunicacao(Integer id) {
+        GestaoComunicacao comunicacao = gestaoComunicacaoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Comunicado não encontrado com o ID: " + id));
+
+        List<br.com.gestaocondominio.api.domain.entity.ComunicadoEntrega> entregas = comunicadoEntregaRepository.findByComunicado(comunicacao);
+        if (!entregas.isEmpty()) {
+            comunicadoEntregaRepository.deleteAll(entregas); 
+        }
+
+       
+        gestaoComunicacaoRepository.deleteById(id);
     }
 }

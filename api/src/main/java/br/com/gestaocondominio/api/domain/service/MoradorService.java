@@ -19,8 +19,8 @@ public class MoradorService {
     private final UnidadeRepository unidadeRepository;
 
     public MoradorService(MoradorRepository moradorRepository,
-            PessoaRepository pessoaRepository,
-            UnidadeRepository unidadeRepository) {
+                          PessoaRepository pessoaRepository,
+                          UnidadeRepository unidadeRepository) {
         this.moradorRepository = moradorRepository;
         this.pessoaRepository = pessoaRepository;
         this.unidadeRepository = unidadeRepository;
@@ -102,5 +102,12 @@ public class MoradorService {
 
         moradorExistente.setMorDtAtualizacao(LocalDateTime.now());
         return moradorRepository.save(moradorExistente);
+    }
+
+    
+    public void deletarMorador(Integer id) {
+        moradorRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Morador não encontrado para exclusão com o ID: " + id));
+        moradorRepository.deleteById(id);
     }
 }

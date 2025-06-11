@@ -47,6 +47,6 @@ public class SolicitacaoManutencaoController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarSolicitacaoManutencao(@PathVariable Integer id) {
         solicitacaoManutencaoService.deletarSolicitacaoManutencao(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT); 
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

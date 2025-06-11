@@ -22,16 +22,14 @@ public class SolicitacaoManutencao {
     @JoinColumn(name = "CON_COD", nullable = false)
     private Condominio condominio;
 
-   
     @ManyToOne
-    @JoinColumn(name = "UNI_COD") 
+    @JoinColumn(name = "UNI_COD")
     private Unidade unidade;
 
     @ManyToOne
     @JoinColumn(name = "PES_COD_SOLICITANTE", nullable = false)
     private Pessoa solicitante;
 
-    
     @ManyToOne
     @JoinColumn(name = "PES_COD_RESPONSAVEL")
     private Pessoa responsavel;
@@ -39,8 +37,9 @@ public class SolicitacaoManutencao {
     @Column(name = "SMA_LOCAL_DESCRICAO", length = 255)
     private String localDescricao;
 
-    @Column(name = "SMA_CATEGORIA", nullable = false, length = 50)
-    private String categoria;
+    @ManyToOne
+    @JoinColumn(name = "TSM_COD", nullable = false) // <-- FK para a nova tabela
+    private TipoSolicitacaoManutencao tipoSolicitacao; // <-- NOVO CAMPO
 
     @Lob
     @Column(name = "SMA_DESCRICAO_PROBLEMA", nullable = false)

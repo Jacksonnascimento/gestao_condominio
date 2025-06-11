@@ -5,6 +5,8 @@ import br.com.gestaocondominio.api.domain.repository.SolicitacaoManutencaoReposi
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.UnidadeRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
+import br.com.gestaocondominio.api.domain.repository.TipoSolicitacaoManutencaoRepository; 
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -18,15 +20,18 @@ public class SolicitacaoManutencaoService {
     private final CondominioRepository condominioRepository;
     private final UnidadeRepository unidadeRepository;
     private final PessoaRepository pessoaRepository;
+    private final TipoSolicitacaoManutencaoRepository tipoSolicitacaoManutencaoRepository; 
 
     public SolicitacaoManutencaoService(SolicitacaoManutencaoRepository solicitacaoManutencaoRepository,
                                         CondominioRepository condominioRepository,
                                         UnidadeRepository unidadeRepository,
-                                        PessoaRepository pessoaRepository) {
+                                        PessoaRepository pessoaRepository,
+                                        TipoSolicitacaoManutencaoRepository tipoSolicitacaoManutencaoRepository) { 
         this.solicitacaoManutencaoRepository = solicitacaoManutencaoRepository;
         this.condominioRepository = condominioRepository;
         this.unidadeRepository = unidadeRepository;
         this.pessoaRepository = pessoaRepository;
+        this.tipoSolicitacaoManutencaoRepository = tipoSolicitacaoManutencaoRepository; 
     }
 
     public SolicitacaoManutencao cadastrarSolicitacaoManutencao(SolicitacaoManutencao solicitacao) {
@@ -52,15 +57,20 @@ public class SolicitacaoManutencaoService {
                     .orElseThrow(() -> new IllegalArgumentException("Pessoa responsável não encontrada com o ID: " + solicitacao.getResponsavel().getPesCod()));
         }
 
-        if (solicitacao.getCategoria() == null || solicitacao.getCategoria().trim().isEmpty()) {
-            throw new IllegalArgumentException("Categoria da solicitação de manutenção não pode ser vazia.");
+        
+        if (solicitacao.getTipoSolicitacao() == null || solicitacao.getTipoSolicitacao().getTsmCod() == null) {
+            throw new IllegalArgumentException("Tipo de solicitação de manutenção deve ser informado.");
         }
+        tipoSolicitacaoManutencaoRepository.findById(solicitacao.getTipoSolicitacao().getTsmCod())
+                .orElseThrow(() -> new IllegalArgumentException("Tipo de solicitação de manutenção não encontrado com o ID: " + solicitacao.getTipoSolicitacao().getTsmCod()));
+
+
         if (solicitacao.getDescricaoProblema() == null || solicitacao.getDescricaoProblema().trim().isEmpty()) {
             throw new IllegalArgumentException("Descrição do problema da solicitação de manutenção não pode ser vazia.");
         }
 
         if (solicitacao.getStatus() == null || solicitacao.getStatus().trim().isEmpty()) {
-            solicitacao.setStatus("ABERTA"); // Default status
+            solicitacao.setStatus("ABERTA");
         }
 
         solicitacao.setDtAbertura(LocalDateTime.now());
@@ -104,11 +114,19 @@ public class SolicitacaoManutencaoService {
             solicitacaoExistente.setResponsavel(null);
         }
 
+    
+        if (solicitacaoAtualizada.getTipoSolicitacao() != null &&
+            (solicitacaoExistente.getTipoSolicitacao() == null || !solicitacaoAtualizada.getTipoSolicitacao().getTsmCod().equals(solicitacaoExistente.getTipoSolicitacao().getTsmCod()))) {
+            tipoSolicitacaoManutencaoRepository.findById(solicitacaoAtualizada.getTipoSolicitacao().getTsmCod())
+                    .orElseThrow(() -> new IllegalArgumentException("Novo Tipo de Solicitação de Manutenção não encontrado com o ID: " + solicitacaoAtualizada.getTipoSolicitacao().getTsmCod()));
+            solicitacaoExistente.setTipoSolicitacao(solicitacaoAtualizada.getTipoSolicitacao());
+        } else if (solicitacaoAtualizada.getTipoSolicitacao() == null && solicitacaoExistente.getTipoSolicitacao() != null) {
+             throw new IllegalArgumentException("Tipo de Solicitação de Manutenção não pode ser removido."); // Ou defina como null se permitido
+        }
+
+
         if (solicitacaoAtualizada.getLocalDescricao() != null) {
             solicitacaoExistente.setLocalDescricao(solicitacaoAtualizada.getLocalDescricao());
-        }
-        if (solicitacaoAtualizada.getCategoria() != null) {
-            solicitacaoExistente.setCategoria(solicitacaoAtualizada.getCategoria());
         }
         if (solicitacaoAtualizada.getDescricaoProblema() != null) {
             solicitacaoExistente.setDescricaoProblema(solicitacaoAtualizada.getDescricaoProblema());
@@ -124,10 +142,12 @@ public class SolicitacaoManutencaoService {
         return solicitacaoManutencaoRepository.save(solicitacaoExistente);
     }
 
-  
     public void deletarSolicitacaoManutencao(Integer id) {
         solicitacaoManutencaoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Solicitação de manutenção não encontrada para exclusão com o ID: " + id));
+
+        
+
         solicitacaoManutencaoRepository.deleteById(id);
     }
 }

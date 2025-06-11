@@ -12,15 +12,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal; // Import para o BigDecimal
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
 @Entity
-@Table(name = "GC_UNIDADE", schema = "dbo") 
+@Table(name = "GC_UNIDADE", schema = "dbo")
 public class Unidade {
 
     @Id
@@ -31,11 +30,9 @@ public class Unidade {
     @Column(name = "UNI_NUMERO", nullable = false, length = 10)
     private String uniNumero;
 
-  
     @Column(name = "UNI_STATUS_OCUPACAO", length = 1)
     private Character uniStatusOcupacao;
 
-  
     @Column(name = "UNI_VALOR_TAXA_CONDOMINIO", nullable = false, precision = 10, scale = 2)
     private BigDecimal uniValorTaxaCondominio;
 
@@ -48,4 +45,7 @@ public class Unidade {
     @ManyToOne
     @JoinColumn(name = "CON_COD", nullable = false)
     private Condominio condominio;
+
+    @Column(name = "UNI_ATIVA") 
+    private Boolean uniAtiva;
 }

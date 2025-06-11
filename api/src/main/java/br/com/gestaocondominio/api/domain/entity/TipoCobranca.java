@@ -1,6 +1,11 @@
 package br.com.gestaocondominio.api.domain.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,4 +32,7 @@ public class TipoCobranca {
 
     @Column(name = "TIC_DT_ATUALIZACAO")
     private LocalDateTime ticDtAtualizacao;
+
+    @Column(name = "TIC_ATIVA") // <-- NOVA COLUNA para soft delete
+    private Boolean ticAtiva;
 }

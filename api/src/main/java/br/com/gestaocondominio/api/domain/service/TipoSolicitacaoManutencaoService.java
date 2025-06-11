@@ -2,6 +2,7 @@ package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.domain.entity.TipoSolicitacaoManutencao;
 import br.com.gestaocondominio.api.domain.repository.TipoSolicitacaoManutencaoRepository;
+import br.com.gestaocondominio.api.domain.repository.SolicitacaoManutencaoRepository; 
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -12,9 +13,12 @@ import java.util.Optional;
 public class TipoSolicitacaoManutencaoService {
 
     private final TipoSolicitacaoManutencaoRepository tipoSolicitacaoManutencaoRepository;
+    private final SolicitacaoManutencaoRepository solicitacaoManutencaoRepository; // Nova Injeção
 
-    public TipoSolicitacaoManutencaoService(TipoSolicitacaoManutencaoRepository tipoSolicitacaoManutencaoRepository) {
+    public TipoSolicitacaoManutencaoService(TipoSolicitacaoManutencaoRepository tipoSolicitacaoManutencaoRepository,
+                                            SolicitacaoManutencaoRepository solicitacaoManutencaoRepository) { // Adicionar ao construtor
         this.tipoSolicitacaoManutencaoRepository = tipoSolicitacaoManutencaoRepository;
+        this.solicitacaoManutencaoRepository = solicitacaoManutencaoRepository; // Atribuir
     }
 
     public TipoSolicitacaoManutencao cadastrarTipoSolicitacaoManutencao(TipoSolicitacaoManutencao tipoSolicitacao) {
@@ -31,7 +35,7 @@ public class TipoSolicitacaoManutencaoService {
         tipoSolicitacao.setTsmDtAtualizacao(LocalDateTime.now());
 
         if (tipoSolicitacao.getTsmAtiva() == null) {
-            tipoSolicitacao.setTsmAtiva(true); 
+            tipoSolicitacao.setTsmAtiva(true);
         }
 
         return tipoSolicitacaoManutencaoRepository.save(tipoSolicitacao);
@@ -68,7 +72,7 @@ public class TipoSolicitacaoManutencaoService {
         }
 
         tipoExistente.setTsmDescricao(tipoSolicitacaoAtualizada.getTsmDescricao());
-
+        
         if (tipoSolicitacaoAtualizada.getTsmAtiva() != null) {
             tipoExistente.setTsmAtiva(tipoSolicitacaoAtualizada.getTsmAtiva());
         }
@@ -80,6 +84,14 @@ public class TipoSolicitacaoManutencaoService {
     public TipoSolicitacaoManutencao inativarTipoSolicitacaoManutencao(Integer id) {
         TipoSolicitacaoManutencao tipo = tipoSolicitacaoManutencaoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Tipo de solicitação não encontrado com o ID: " + id));
+            
+        
+        List<br.com.gestaocondominio.api.domain.entity.SolicitacaoManutencao> solicitacoesAtivas = 
+            solicitacaoManutencaoRepository.findByTipoSolicitacao(tipo);
+                                                                        
+        if (!solicitacoesAtivas.isEmpty()) {
+            throw new IllegalArgumentException("Não é possível inativar o tipo de solicitação, pois existem solicitações de manutenção vinculadas a ele.");
+        }
 
         tipo.setTsmAtiva(false);
         tipo.setTsmDtAtualizacao(LocalDateTime.now());

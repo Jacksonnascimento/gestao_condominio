@@ -44,16 +44,17 @@ public class PessoaController {
         return new ResponseEntity<>(pessoaSalva, HttpStatus.OK); 
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> desativarPessoa(@PathVariable Integer id) {
     
+    
+    @PutMapping("/{id}/inativar") 
+    public ResponseEntity<Pessoa> inativarPessoa(@PathVariable Integer id) {
+        Pessoa pessoaInativada = pessoaService.inativarPessoa(id);
+        return new ResponseEntity<>(pessoaInativada, HttpStatus.OK); 
+    }
 
-        Pessoa pessoaParaDesativar = pessoaService.buscarPessoaPorId(id)
-                .orElseThrow(() -> new IllegalArgumentException("Pessoa com ID " + id + " não encontrada para desativação."));
-
-        pessoaParaDesativar.setPesAtivo(false); 
-        pessoaService.atualizarPessoa(id, pessoaParaDesativar); 
-
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT); 
+    @PutMapping("/{id}/ativar") 
+    public ResponseEntity<Pessoa> ativarPessoa(@PathVariable Integer id) {
+        Pessoa pessoaAtivada = pessoaService.ativarPessoa(id);
+        return new ResponseEntity<>(pessoaAtivada, HttpStatus.OK); 
     }
 }

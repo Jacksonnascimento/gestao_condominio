@@ -23,7 +23,7 @@ public class AssembleiaController {
     public ResponseEntity<Assembleia> cadastrarAssembleia(@RequestBody Assembleia assembleia) {
         Assembleia novaAssembleia = assembleiaService.cadastrarAssembleia(assembleia);
         return new ResponseEntity<>(novaAssembleia, HttpStatus.CREATED); 
-    }
+    } 
 
     @GetMapping("/{id}")
     public ResponseEntity<Assembleia> buscarAssembleiaPorId(@PathVariable Integer id) {
@@ -34,7 +34,6 @@ public class AssembleiaController {
 
     @GetMapping
     public ResponseEntity<List<Assembleia>> listarTodasAssembleias(@RequestParam(required = false, defaultValue = "true") boolean ativas) {
-        // Por padrão, lista apenas ativas. Se o parâmetro 'ativas=false' for enviado, lista todas.
         List<Assembleia> assembleias = assembleiaService.listarTodasAssembleias(ativas);
         return new ResponseEntity<>(assembleias, HttpStatus.OK); 
     }
@@ -45,15 +44,15 @@ public class AssembleiaController {
         return new ResponseEntity<>(assembleiaSalva, HttpStatus.OK); 
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> inativarAssembleia(@PathVariable Integer id) {
-        assembleiaService.inativarAssembleia(id); 
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT); 
+    @PutMapping("/{id}/inativar") 
+    public ResponseEntity<Assembleia> inativarAssembleia(@PathVariable Integer id) {
+        Assembleia assembleiaInativada = assembleiaService.inativarAssembleia(id);
+        return new ResponseEntity<>(assembleiaInativada, HttpStatus.OK); 
     }
 
-    @PutMapping("/{id}/ativar")
+    @PutMapping("/{id}/ativar") 
     public ResponseEntity<Assembleia> ativarAssembleia(@PathVariable Integer id) {
         Assembleia assembleiaAtivada = assembleiaService.ativarAssembleia(id);
         return new ResponseEntity<>(assembleiaAtivada, HttpStatus.OK); 
     }
-}
+} 

@@ -5,6 +5,7 @@ import br.com.gestaocondominio.api.domain.entity.UsuarioCondominioId;
 import br.com.gestaocondominio.api.domain.repository.UsuarioCondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -60,11 +61,11 @@ public class UsuarioCondominioService {
         }
 
         if (usuarioCondominio.getUscAtivoAssociacao() == null) {
-            usuarioCondominio.setUscAtivoAssociacao(true);
+            usuarioCondominio.setUscAtivoAssociacao(true); // Ativo por padrão
         }
 
         usuarioCondominio.setUscDtAssociacao(LocalDateTime.now());
-        usuarioCondominio.setUscDtAtualizacao(LocalDateTime.now()); // <-- NOVA LINHA
+        usuarioCondominio.setUscDtAtualizacao(LocalDateTime.now());
 
         return usuarioCondominioRepository.save(usuarioCondominio);
     }
@@ -73,8 +74,17 @@ public class UsuarioCondominioService {
         return usuarioCondominioRepository.findById(id);
     }
 
-    public List<UsuarioCondominio> listarTodosUsuariosCondominio() {
-        return usuarioCondominioRepository.findAll();
+   
+    public List<UsuarioCondominio> listarTodosUsuariosCondominioAtivos() {
+        return usuarioCondominioRepository.findByUscAtivoAssociacao(true);
+    }
+
+    
+    public List<UsuarioCondominio> listarTodosUsuariosCondominio(boolean incluirInativas) {
+        if (incluirInativas) {
+            return usuarioCondominioRepository.findAll();
+        }
+        return usuarioCondominioRepository.findByUscAtivoAssociacao(true);
     }
 
     public UsuarioCondominio atualizarUsuarioCondominio(UsuarioCondominioId id, UsuarioCondominio usuarioCondominioAtualizado) {
@@ -87,9 +97,32 @@ public class UsuarioCondominioService {
              throw new IllegalArgumentException("Não é permitido alterar Pessoa, Condomínio ou Papel de uma associação existente.");
         }
         
-        usuarioCondominioExistente.setUscAtivoAssociacao(usuarioCondominioAtualizado.getUscAtivoAssociacao());
-        usuarioCondominioExistente.setUscDtAtualizacao(LocalDateTime.now()); // <-- NOVA LINHA
+        if (usuarioCondominioAtualizado.getUscAtivoAssociacao() != null) { 
+            usuarioCondominioExistente.setUscAtivoAssociacao(usuarioCondominioAtualizado.getUscAtivoAssociacao());
+        }
 
+        usuarioCondominioExistente.setUscDtAtualizacao(LocalDateTime.now());
         return usuarioCondominioRepository.save(usuarioCondominioExistente);
+    }
+
+  
+    public UsuarioCondominio inativarUsuarioCondominio(UsuarioCondominioId id) {
+        UsuarioCondominio usuarioCondominio = usuarioCondominioRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Associação de usuário a condomínio não encontrada com o ID: " + id));
+        
+  
+
+        usuarioCondominio.setUscAtivoAssociacao(false); 
+        usuarioCondominio.setUscDtAtualizacao(LocalDateTime.now());
+        return usuarioCondominioRepository.save(usuarioCondominio);
+    }
+
+    
+    public UsuarioCondominio ativarUsuarioCondominio(UsuarioCondominioId id) {
+        UsuarioCondominio usuarioCondominio = usuarioCondominioRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Associação de usuário a condomínio não encontrada com o ID: " + id));
+        usuarioCondominio.setUscAtivoAssociacao(true); 
+        usuarioCondominio.setUscDtAtualizacao(LocalDateTime.now());
+        return usuarioCondominioRepository.save(usuarioCondominio);
     }
 }

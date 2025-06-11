@@ -22,38 +22,36 @@ public class AdministradoraController {
     @PostMapping
     public ResponseEntity<Administradora> cadastrarAdministradora(@RequestBody Administradora administradora) {
         Administradora novaAdministradora = administradoraService.cadastrarAdministradora(administradora);
-        return new ResponseEntity<>(novaAdministradora, HttpStatus.CREATED); 
+        return new ResponseEntity<>(novaAdministradora, HttpStatus.CREATED); // 201 Created
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Administradora> buscarAdministradoraPorId(@PathVariable Integer id) {
         Optional<Administradora> administradora = administradoraService.buscarAdministradoraPorId(id);
-        return administradora.map(a -> new ResponseEntity<>(a, HttpStatus.OK)) 
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND)); 
+        return administradora.map(a -> new ResponseEntity<>(a, HttpStatus.OK)) // 200 OK
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND)); // 404 Not Found
     }
 
     @GetMapping
     public ResponseEntity<List<Administradora>> listarTodasAdministradoras(@RequestParam(required = false, defaultValue = "true") boolean ativas) {
-        
         List<Administradora> administradoras = administradoraService.listarTodasAdministradoras(ativas);
-        return new ResponseEntity<>(administradoras, HttpStatus.OK); 
+        return new ResponseEntity<>(administradoras, HttpStatus.OK); // 200 OK
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Administradora> atualizarAdministradora(@PathVariable Integer id, @RequestBody Administradora administradoraAtualizada) {
         Administradora administradoraSalva = administradoraService.atualizarAdministradora(id, administradoraAtualizada);
-        return new ResponseEntity<>(administradoraSalva, HttpStatus.OK); 
-    }
-
-  
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> inativarAdministradora(@PathVariable Integer id) {
-        administradoraService.inativarAdministradora(id); 
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT); 
+        return new ResponseEntity<>(administradoraSalva, HttpStatus.OK); // 200 OK
     }
 
     
-    @PutMapping("/{id}/ativar")
+    @PutMapping("/{id}/inativar") 
+    public ResponseEntity<Administradora> inativarAdministradora(@PathVariable Integer id) {
+        Administradora administradoraInativada = administradoraService.inativarAdministradora(id);
+        return new ResponseEntity<>(administradoraInativada, HttpStatus.OK); 
+    }
+
+    @PutMapping("/{id}/ativar") 
     public ResponseEntity<Administradora> ativarAdministradora(@PathVariable Integer id) {
         Administradora administradoraAtivada = administradoraService.ativarAdministradora(id);
         return new ResponseEntity<>(administradoraAtivada, HttpStatus.OK); 

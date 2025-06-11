@@ -66,15 +66,47 @@ public class PessoaService {
             pessoaExistente.setPesEmail(pessoaAtualizada.getPesEmail());
         }
 
-        pessoaExistente.setPesNome(pessoaAtualizada.getPesNome());
-        pessoaExistente.setPesTipo(pessoaAtualizada.getPesTipo());
-        pessoaExistente.setPesTelefone(pessoaAtualizada.getPesTelefone());
-        pessoaExistente.setPesTelefone2(pessoaAtualizada.getPesTelefone2());
-        pessoaExistente.setPesAtivo(pessoaAtualizada.getPesAtivo());
-        pessoaExistente.setPesSenhaLogin(pessoaAtualizada.getPesSenhaLogin());
+        if (pessoaAtualizada.getPesNome() != null) {
+            pessoaExistente.setPesNome(pessoaAtualizada.getPesNome());
+        }
+        if (pessoaAtualizada.getPesTipo() != null) {
+            pessoaExistente.setPesTipo(pessoaAtualizada.getPesTipo());
+        }
+        if (pessoaAtualizada.getPesTelefone() != null) {
+            pessoaExistente.setPesTelefone(pessoaAtualizada.getPesTelefone());
+        }
+        if (pessoaAtualizada.getPesTelefone2() != null) {
+            pessoaExistente.setPesTelefone2(pessoaAtualizada.getPesTelefone2());
+        }
+        if (pessoaAtualizada.getPesAtivo() != null) { // Permite atualizar o status ativo/inativo
+            pessoaExistente.setPesAtivo(pessoaAtualizada.getPesAtivo());
+        }
+        if (pessoaAtualizada.getPesSenhaLogin() != null) { // Cuidado: Senha deve ser tratada com hash! (Veremos segurança depois)
+            pessoaExistente.setPesSenhaLogin(pessoaAtualizada.getPesSenhaLogin());
+        }
 
         pessoaExistente.setPesDtAtualizacao(LocalDateTime.now());
-
         return pessoaRepository.save(pessoaExistente);
+    }
+
+    
+    public Pessoa inativarPessoa(Integer id) {
+        Pessoa pessoa = pessoaRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + id));
+        
+    
+
+        pessoa.setPesAtivo(false); 
+        pessoa.setPesDtAtualizacao(LocalDateTime.now());
+        return pessoaRepository.save(pessoa);
+    }
+
+  
+    public Pessoa ativarPessoa(Integer id) {
+        Pessoa pessoa = pessoaRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + id));
+        pessoa.setPesAtivo(true); 
+        pessoa.setPesDtAtualizacao(LocalDateTime.now());
+        return pessoaRepository.save(pessoa);
     }
 }

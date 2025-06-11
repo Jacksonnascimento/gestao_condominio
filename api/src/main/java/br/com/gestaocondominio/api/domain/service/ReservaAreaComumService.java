@@ -116,12 +116,27 @@ public class ReservaAreaComumService {
             throw new IllegalArgumentException("A atualização da reserva causa conflito de horário com outra reserva. Conflito com a reserva ID: " + conflitosNaAtualizacao.get(0).getRacCod());
         }
 
-        reservaExistente.setDataHoraInicio(reservaAtualizada.getDataHoraInicio());
-        reservaExistente.setDataHoraFim(reservaAtualizada.getDataHoraFim());
-        reservaExistente.setStatus(reservaAtualizada.getStatus());
-        reservaExistente.setObservacoes(reservaAtualizada.getObservacoes());
+        if (reservaAtualizada.getDataHoraInicio() != null) {
+            reservaExistente.setDataHoraInicio(reservaAtualizada.getDataHoraInicio());
+        }
+        if (reservaAtualizada.getDataHoraFim() != null) {
+            reservaExistente.setDataHoraFim(reservaAtualizada.getDataHoraFim());
+        }
+        if (reservaAtualizada.getStatus() != null) {
+            reservaExistente.setStatus(reservaAtualizada.getStatus());
+        }
+        if (reservaAtualizada.getObservacoes() != null) {
+            reservaExistente.setObservacoes(reservaAtualizada.getObservacoes());
+        }
         
         reservaExistente.setDtAtualizacao(LocalDateTime.now());
         return reservaAreaComumRepository.save(reservaExistente);
+    }
+
+    
+    public void deletarReservaAreaComum(Integer id) {
+        reservaAreaComumRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Reserva de área comum não encontrada para exclusão com o ID: " + id));
+        reservaAreaComumRepository.deleteById(id);
     }
 }

@@ -60,7 +60,7 @@ public class SolicitacaoManutencaoService {
         }
 
         if (solicitacao.getStatus() == null || solicitacao.getStatus().trim().isEmpty()) {
-            solicitacao.setStatus("ABERTA"); 
+            solicitacao.setStatus("ABERTA"); // Default status
         }
 
         solicitacao.setDtAbertura(LocalDateTime.now());
@@ -81,39 +81,53 @@ public class SolicitacaoManutencaoService {
         SolicitacaoManutencao solicitacaoExistente = solicitacaoManutencaoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Solicitação de manutenção não encontrada com o ID: " + id));
 
-        
         if (solicitacaoAtualizada.getCondominio() != null && !solicitacaoAtualizada.getCondominio().getConCod().equals(solicitacaoExistente.getCondominio().getConCod())) {
              throw new IllegalArgumentException("Não é permitido alterar o Condomínio de uma solicitação de manutenção existente.");
         }
         if (solicitacaoAtualizada.getSolicitante() != null && !solicitacaoAtualizada.getSolicitante().getPesCod().equals(solicitacaoExistente.getSolicitante().getPesCod())) {
              throw new IllegalArgumentException("Não é permitido alterar o Solicitante de uma solicitação de manutenção existente.");
         }
-        
         if (solicitacaoAtualizada.getUnidade() != null && (solicitacaoExistente.getUnidade() == null || !solicitacaoAtualizada.getUnidade().getUniCod().equals(solicitacaoExistente.getUnidade().getUniCod()))) {
             unidadeRepository.findById(solicitacaoAtualizada.getUnidade().getUniCod())
                     .orElseThrow(() -> new IllegalArgumentException("Nova Unidade para a solicitação não encontrada com o ID: " + solicitacaoAtualizada.getUnidade().getUniCod()));
             solicitacaoExistente.setUnidade(solicitacaoAtualizada.getUnidade());
         } else if (solicitacaoAtualizada.getUnidade() == null && solicitacaoExistente.getUnidade() != null) {
-            solicitacaoExistente.setUnidade(null); // Permite remover a associação com a unidade
+            solicitacaoExistente.setUnidade(null);
         }
 
-        
         if (solicitacaoAtualizada.getResponsavel() != null &&
             (solicitacaoExistente.getResponsavel() == null || !solicitacaoAtualizada.getResponsavel().getPesCod().equals(solicitacaoExistente.getResponsavel().getPesCod()))) {
             pessoaRepository.findById(solicitacaoAtualizada.getResponsavel().getPesCod())
                     .orElseThrow(() -> new IllegalArgumentException("Novo Responsável para a solicitação não encontrado com o ID: " + solicitacaoAtualizada.getResponsavel().getPesCod()));
             solicitacaoExistente.setResponsavel(solicitacaoAtualizada.getResponsavel());
         } else if (solicitacaoAtualizada.getResponsavel() == null && solicitacaoExistente.getResponsavel() != null) {
-            solicitacaoExistente.setResponsavel(null); // Permite remover o responsável
+            solicitacaoExistente.setResponsavel(null);
         }
 
-        solicitacaoExistente.setLocalDescricao(solicitacaoAtualizada.getLocalDescricao());
-        solicitacaoExistente.setCategoria(solicitacaoAtualizada.getCategoria());
-        solicitacaoExistente.setDescricaoProblema(solicitacaoAtualizada.getDescricaoProblema());
-        solicitacaoExistente.setStatus(solicitacaoAtualizada.getStatus());
-        solicitacaoExistente.setDtConclusao(solicitacaoAtualizada.getDtConclusao());
+        if (solicitacaoAtualizada.getLocalDescricao() != null) {
+            solicitacaoExistente.setLocalDescricao(solicitacaoAtualizada.getLocalDescricao());
+        }
+        if (solicitacaoAtualizada.getCategoria() != null) {
+            solicitacaoExistente.setCategoria(solicitacaoAtualizada.getCategoria());
+        }
+        if (solicitacaoAtualizada.getDescricaoProblema() != null) {
+            solicitacaoExistente.setDescricaoProblema(solicitacaoAtualizada.getDescricaoProblema());
+        }
+        if (solicitacaoAtualizada.getStatus() != null) {
+            solicitacaoExistente.setStatus(solicitacaoAtualizada.getStatus());
+        }
+        if (solicitacaoAtualizada.getDtConclusao() != null) {
+            solicitacaoExistente.setDtConclusao(solicitacaoAtualizada.getDtConclusao());
+        }
 
         solicitacaoExistente.setDtAtualizacao(LocalDateTime.now());
         return solicitacaoManutencaoRepository.save(solicitacaoExistente);
+    }
+
+  
+    public void deletarSolicitacaoManutencao(Integer id) {
+        solicitacaoManutencaoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Solicitação de manutenção não encontrada para exclusão com o ID: " + id));
+        solicitacaoManutencaoRepository.deleteById(id);
     }
 }

@@ -1,7 +1,6 @@
 package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.domain.entity.Morador;
-
 import br.com.gestaocondominio.api.domain.repository.MoradorRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
 import br.com.gestaocondominio.api.domain.repository.UnidadeRepository;
@@ -10,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
 
 @Service
 public class MoradorService {
@@ -47,17 +47,11 @@ public class MoradorService {
             throw new IllegalArgumentException("Esta pessoa já está associada a esta unidade.");
         }
 
-        if (morador.getMorTipoRelacionamento() == null
-                || String.valueOf(morador.getMorTipoRelacionamento()).trim().isEmpty()) {
+        
+        if (morador.getMorTipoRelacionamento() == null) {
             throw new IllegalArgumentException("Tipo de relacionamento do morador deve ser informado.");
         }
-        char tipoRelacionamento = Character.toUpperCase(morador.getMorTipoRelacionamento());
-        if (tipoRelacionamento != 'P' && tipoRelacionamento != 'I' && tipoRelacionamento != 'C'
-                && tipoRelacionamento != 'D') {
-            throw new IllegalArgumentException(
-                    "Tipo de relacionamento inválido. Use 'P' (Proprietário), 'I' (Inquilino), 'C' (Cônjuge) ou 'D' (Dependente).");
-        }
-        morador.setMorTipoRelacionamento(tipoRelacionamento);
+       
 
         morador.setMorDtCadastro(LocalDateTime.now());
         morador.setMorDtAtualizacao(LocalDateTime.now());
@@ -88,23 +82,18 @@ public class MoradorService {
                     "Não é permitido alterar a Unidade de uma associação de morador existente.");
         }
 
-        if (moradorAtualizado.getMorTipoRelacionamento() == null
-                || String.valueOf(moradorAtualizado.getMorTipoRelacionamento()).trim().isEmpty()) {
+       
+        if (moradorAtualizado.getMorTipoRelacionamento() == null) {
             throw new IllegalArgumentException("Tipo de relacionamento do morador deve ser informado na atualização.");
         }
-        char tipoRelacionamento = Character.toUpperCase(moradorAtualizado.getMorTipoRelacionamento());
-        if (tipoRelacionamento != 'P' && tipoRelacionamento != 'I' && tipoRelacionamento != 'C'
-                && tipoRelacionamento != 'D') {
-            throw new IllegalArgumentException(
-                    "Tipo de relacionamento inválido. Use 'P' (Proprietário), 'I' (Inquilino), 'C' (Cônjuge) ou 'D' (Dependente).");
-        }
-        moradorExistente.setMorTipoRelacionamento(tipoRelacionamento);
+       
+
+        moradorExistente.setMorTipoRelacionamento(moradorAtualizado.getMorTipoRelacionamento());
 
         moradorExistente.setMorDtAtualizacao(LocalDateTime.now());
         return moradorRepository.save(moradorExistente);
     }
 
-    
     public void deletarMorador(Integer id) {
         moradorRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Morador não encontrado para exclusão com o ID: " + id));

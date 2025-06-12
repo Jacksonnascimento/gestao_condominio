@@ -68,6 +68,13 @@ public class CondominioService {
             condominio.setConAtivo(true);
         }
 
+        
+        if (condominio.getConTipologia() == null) { 
+            throw new IllegalArgumentException("Tipologia do condomínio deve ser informada.");
+        }
+      
+
+
         return condominioRepository.save(condominio);
     }
 
@@ -86,19 +93,17 @@ public class CondominioService {
         return condominioRepository.findByConAtivo(true);
     }
 
-    public Condominio atualizarCondominio(Integer id, Condominio condominioAtualizado) { 
+    public Condominio atualizarCondominio(Integer id, Condominio condominioAtualizado) {
         Condominio condominioExistente = condominioRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado com o ID: " + id));
 
-        
         if (condominioAtualizado.getAdministradora() != null &&
             (condominioExistente.getAdministradora() == null || !condominioAtualizado.getAdministradora().getAdmCod().equals(condominioExistente.getAdministradora().getAdmCod()))) {
             administradoraRepository.findById(condominioAtualizado.getAdministradora().getAdmCod())
                 .orElseThrow(() -> new IllegalArgumentException("Nova Administradora não encontrada com o ID: " + condominioAtualizado.getAdministradora().getAdmCod()));
             condominioExistente.setAdministradora(condominioAtualizado.getAdministradora());
         }
-        
-        
+
         if (condominioAtualizado.getConNome() != null) {
             condominioExistente.setConNome(condominioAtualizado.getConNome());
         }
@@ -132,14 +137,16 @@ public class CondominioService {
         if (condominioAtualizado.getConNumeroUnidades() != null) {
             condominioExistente.setConNumeroUnidades(condominioAtualizado.getConNumeroUnidades());
         }
-        if (condominioAtualizado.getConTipologia() != null) {
+
+     
+        if (condominioAtualizado.getConTipologia() != null) { 
             condominioExistente.setConTipologia(condominioAtualizado.getConTipologia());
         }
+
         if (condominioAtualizado.getConDtVencimentoTaxa() != null) {
             condominioExistente.setConDtVencimentoTaxa(condominioAtualizado.getConDtVencimentoTaxa());
         }
-        
-       
+
         if (condominioAtualizado.getConAtivo() != null) {
             condominioExistente.setConAtivo(condominioAtualizado.getConAtivo());
         }
@@ -151,8 +158,7 @@ public class CondominioService {
     public Condominio inativarCondominio(Integer id) {
         Condominio condominio = condominioRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado com o ID: " + id));
-        
-        
+
         if (!unidadeRepository.findByCondominio(condominio).isEmpty()) {
             throw new IllegalArgumentException("Não é possível inativar o condomínio, pois existem unidades vinculadas a ele.");
         }

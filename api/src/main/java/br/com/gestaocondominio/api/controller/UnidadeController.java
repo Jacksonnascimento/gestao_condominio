@@ -34,7 +34,6 @@ public class UnidadeController {
 
     @GetMapping
     public ResponseEntity<List<Unidade>> listarTodasUnidades(@RequestParam(required = false, defaultValue = "true") boolean ativas) {
-       
         List<Unidade> unidades = unidadeService.listarTodasUnidades(ativas);
         return new ResponseEntity<>(unidades, HttpStatus.OK); 
     }
@@ -45,13 +44,13 @@ public class UnidadeController {
         return new ResponseEntity<>(unidadeSalva, HttpStatus.OK); 
     }
 
-    @PutMapping("/{id}/inativar") // 
+    @PutMapping("/{id}/inativar")
     public ResponseEntity<Unidade> inativarUnidade(@PathVariable Integer id) {
         Unidade unidadeInativada = unidadeService.inativarUnidade(id);
         return new ResponseEntity<>(unidadeInativada, HttpStatus.OK); 
     }
 
-    @PutMapping("/{id}/ativar") 
+    @PutMapping("/{id}/ativar")
     public ResponseEntity<Unidade> ativarUnidade(@PathVariable Integer id) {
         Unidade unidadeAtivada = unidadeService.ativarUnidade(id);
         return new ResponseEntity<>(unidadeAtivada, HttpStatus.OK); 

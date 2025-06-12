@@ -12,7 +12,5 @@ import java.util.Optional;
 public interface CondominioRepository extends JpaRepository<Condominio, Integer> {
     Optional<Condominio> findByConNome(String conNome);
     List<Condominio> findByAdministradora(Administradora administradora);
-
-  
-    List<Condominio> findByConAtivo(Boolean conAtivo); 
+    List<Condominio> findByConAtivo(Boolean conAtivo);
 }

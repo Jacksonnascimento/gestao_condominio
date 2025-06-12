@@ -1,5 +1,6 @@
 package br.com.gestaocondominio.api.domain.entity;
 
+import br.com.gestaocondominio.api.domain.enums.UnidadeStatusOcupacao; 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,6 +9,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.EnumType;   
+import jakarta.persistence.Enumerated; 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,8 +33,9 @@ public class Unidade {
     @Column(name = "UNI_NUMERO", nullable = false, length = 10)
     private String uniNumero;
 
-    @Column(name = "UNI_STATUS_OCUPACAO", length = 1)
-    private Character uniStatusOcupacao;
+    @Enumerated(EnumType.STRING) 
+    @Column(name = "UNI_STATUS_OCUPACAO", length = 50) 
+    private UnidadeStatusOcupacao uniStatusOcupacao; 
 
     @Column(name = "UNI_VALOR_TAXA_CONDOMINIO", nullable = false, precision = 10, scale = 2)
     private BigDecimal uniValorTaxaCondominio;
@@ -46,6 +50,6 @@ public class Unidade {
     @JoinColumn(name = "CON_COD", nullable = false)
     private Condominio condominio;
 
-    @Column(name = "UNI_ATIVA") 
+    @Column(name = "UNI_ATIVA")
     private Boolean uniAtiva;
 }

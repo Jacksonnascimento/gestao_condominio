@@ -46,8 +46,7 @@ public class MoradorController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarMorador(@PathVariable Integer id) {
-        
-        moradorService.deletarMorador(id);
+        moradorService.deletarMorador(id); 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT); 
     }
 }

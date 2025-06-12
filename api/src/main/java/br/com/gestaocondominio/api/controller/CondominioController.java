@@ -33,26 +33,26 @@ public class CondominioController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Condominio>> listarTodosCondominios(@RequestParam(required = false, defaultValue = "true") boolean ativas) {
-        List<Condominio> condominios = condominioService.listarTodosCondominios(ativas);
+    public ResponseEntity<List<Condominio>> listarTodosCondominios(@RequestParam(required = false, defaultValue = "true") boolean ativos) {
+        List<Condominio> condominios = condominioService.listarTodosCondominios(ativos);
         return new ResponseEntity<>(condominios, HttpStatus.OK); 
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Condominio> atualizarCondominio(@PathVariable Integer id, @RequestBody Condominio condominioAtualizado) { 
-        Condominio condominioSalva = condominioService.atualizarCondominio(id, condominioAtualizado); 
+    public ResponseEntity<Condominio> atualizarCondominio(@PathVariable Integer id, @RequestBody Condominio condominioAtualizado) {
+        Condominio condominioSalva = condominioService.atualizarCondominio(id, condominioAtualizado);
         return new ResponseEntity<>(condominioSalva, HttpStatus.OK); 
     }
 
-    @PutMapping("/{id}/inativar") 
+    @PutMapping("/{id}/inativar")
     public ResponseEntity<Condominio> inativarCondominio(@PathVariable Integer id) {
         Condominio condominioInativado = condominioService.inativarCondominio(id);
-        return new ResponseEntity<>(condominioInativado, HttpStatus.OK); 
+        return new ResponseEntity<>(condominioInativado, HttpStatus.OK);  
     }
 
-    @PutMapping("/{id}/ativar") 
+    @PutMapping("/{id}/ativar")
     public ResponseEntity<Condominio> ativarCondominio(@PathVariable Integer id) {
         Condominio condominioAtivado = condominioService.ativarCondominio(id);
-        return new ResponseEntity<>(condominioAtivado, HttpStatus.OK); 
+        return new ResponseEntity<>(condominioAtivado, HttpStatus.OK);  
     }
 }

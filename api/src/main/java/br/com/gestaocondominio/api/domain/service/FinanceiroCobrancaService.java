@@ -4,6 +4,7 @@ import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.entity.FinanceiroCobranca;
 import br.com.gestaocondominio.api.domain.entity.Unidade;
 import br.com.gestaocondominio.api.domain.entity.TipoCobranca;
+import br.com.gestaocondominio.api.domain.enums.CobrancaStatus; // Importar o ENUM
 import br.com.gestaocondominio.api.domain.repository.FinanceiroCobrancaRepository;
 import br.com.gestaocondominio.api.domain.repository.UnidadeRepository;
 import br.com.gestaocondominio.api.domain.repository.TipoCobrancaRepository;
@@ -14,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.YearMonth; 
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,9 +28,9 @@ public class FinanceiroCobrancaService {
     private final CondominioRepository condominioRepository;
 
     public FinanceiroCobrancaService(FinanceiroCobrancaRepository financeiroCobrancaRepository,
-                                     UnidadeRepository unidadeRepository,
-                                     TipoCobrancaRepository tipoCobrancaRepository,
-                                     CondominioRepository condominioRepository) {
+            UnidadeRepository unidadeRepository,
+            TipoCobrancaRepository tipoCobrancaRepository,
+            CondominioRepository condominioRepository) {
         this.financeiroCobrancaRepository = financeiroCobrancaRepository;
         this.unidadeRepository = unidadeRepository;
         this.tipoCobrancaRepository = tipoCobrancaRepository;
@@ -41,27 +42,30 @@ public class FinanceiroCobrancaService {
             throw new IllegalArgumentException("Unidade deve ser informada para a cobrança.");
         }
         unidadeRepository.findById(cobranca.getUnidade().getUniCod())
-                .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + cobranca.getUnidade().getUniCod()));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Unidade não encontrada com o ID: " + cobranca.getUnidade().getUniCod()));
 
         if (cobranca.getTipoCobranca() == null || cobranca.getTipoCobranca().getTicCod() == null) {
             throw new IllegalArgumentException("Tipo de cobrança deve ser informado.");
         }
         tipoCobrancaRepository.findById(cobranca.getTipoCobranca().getTicCod())
-                .orElseThrow(() -> new IllegalArgumentException("Tipo de cobrança não encontrado com o ID: " + cobranca.getTipoCobranca().getTicCod()));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Tipo de cobrança não encontrado com o ID: " + cobranca.getTipoCobranca().getTicCod()));
 
         if (cobranca.getFicValorTaxa() == null || cobranca.getFicValorTaxa().compareTo(BigDecimal.ZERO) < 0) {
-             throw new IllegalArgumentException("Valor da taxa não pode ser nulo ou negativo.");
+            throw new IllegalArgumentException("Valor da taxa não pode ser nulo ou negativo.");
         }
         if (cobranca.getFicDtVencimento() == null) {
             throw new IllegalArgumentException("Data de vencimento da cobrança deve ser informada.");
         }
 
-        if (cobranca.getFicStatusPagamento() == null || cobranca.getFicStatusPagamento().trim().isEmpty()) {
-            cobranca.setFicStatusPagamento("A_VENCER");
+        if (cobranca.getFicStatusPagamento() == null) {
+            cobranca.setFicStatusPagamento(CobrancaStatus.A_VENCER);
         }
-        String statusInicial = cobranca.getFicStatusPagamento().toUpperCase();
-        if ("PAGA".equals(statusInicial) || "CANCELADA".equals(statusInicial)) {
-            throw new IllegalArgumentException("Não é permitido cadastrar uma cobrança com status inicial '" + statusInicial + "'.");
+        if (CobrancaStatus.PAGA.equals(cobranca.getFicStatusPagamento())
+                || CobrancaStatus.CANCELADA.equals(cobranca.getFicStatusPagamento())) {
+            throw new IllegalArgumentException("Não é permitido cadastrar uma cobrança com status inicial '"
+                    + cobranca.getFicStatusPagamento() + "'.");
         }
 
         cobranca.setFicDtCadastro(LocalDateTime.now());
@@ -83,18 +87,23 @@ public class FinanceiroCobrancaService {
         FinanceiroCobranca cobrancaExistente = financeiroCobrancaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Cobrança não encontrada com o ID: " + id));
 
-        if ("PAGA".equalsIgnoreCase(cobrancaExistente.getFicStatusPagamento()) || "CANCELADA".equalsIgnoreCase(cobrancaExistente.getFicStatusPagamento())) {
-            throw new IllegalArgumentException("Não é possível atualizar uma cobrança com status '" + cobrancaExistente.getFicStatusPagamento() + "'.");
+        if (CobrancaStatus.PAGA.equals(cobrancaExistente.getFicStatusPagamento())
+                || CobrancaStatus.CANCELADA.equals(cobrancaExistente.getFicStatusPagamento())) {
+            throw new IllegalArgumentException("Não é possível atualizar uma cobrança com status '"
+                    + cobrancaExistente.getFicStatusPagamento() + "'.");
         }
 
-        if (cobrancaAtualizada.getUnidade() != null && !cobrancaAtualizada.getUnidade().getUniCod().equals(cobrancaExistente.getUnidade().getUniCod())) {
-             throw new IllegalArgumentException("Não é permitido alterar a Unidade de uma cobrança existente.");
+        if (cobrancaAtualizada.getUnidade() != null
+                && !cobrancaAtualizada.getUnidade().getUniCod().equals(cobrancaExistente.getUnidade().getUniCod())) {
+            throw new IllegalArgumentException("Não é permitido alterar a Unidade de uma cobrança existente.");
         }
-        if (cobrancaAtualizada.getTipoCobranca() != null && !cobrancaAtualizada.getTipoCobranca().getTicCod().equals(cobrancaExistente.getTipoCobranca().getTicCod())) {
-             throw new IllegalArgumentException("Não é permitido alterar o Tipo de Cobrança de uma cobrança existente.");
+        if (cobrancaAtualizada.getTipoCobranca() != null && !cobrancaAtualizada.getTipoCobranca().getTicCod()
+                .equals(cobrancaExistente.getTipoCobranca().getTicCod())) {
+            throw new IllegalArgumentException("Não é permitido alterar o Tipo de Cobrança de uma cobrança existente.");
         }
-        
-        if (cobrancaAtualizada.getFicValorTaxa() != null && cobrancaAtualizada.getFicValorTaxa().compareTo(BigDecimal.ZERO) < 0) {
+
+        if (cobrancaAtualizada.getFicValorTaxa() != null
+                && cobrancaAtualizada.getFicValorTaxa().compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Valor da taxa não pode ser nulo ou negativo na atualização.");
         }
         if (cobrancaAtualizada.getFicValorTaxa() != null) {
@@ -104,29 +113,32 @@ public class FinanceiroCobrancaService {
             cobrancaExistente.setFicDtVencimento(cobrancaAtualizada.getFicDtVencimento());
         }
         if (cobrancaAtualizada.getFicDtPagamento() != null) {
-             cobrancaExistente.setFicDtPagamento(cobrancaAtualizada.getFicDtPagamento());
+            cobrancaExistente.setFicDtPagamento(cobrancaAtualizada.getFicDtPagamento());
         }
         if (cobrancaAtualizada.getFicValorPago() != null) {
-             cobrancaExistente.setFicValorPago(cobrancaAtualizada.getFicValorPago());
+            cobrancaExistente.setFicValorPago(cobrancaAtualizada.getFicValorPago());
         }
-        
-        if (cobrancaAtualizada.getFicStatusPagamento() != null && !cobrancaAtualizada.getFicStatusPagamento().trim().isEmpty()) {
-            String novoStatus = cobrancaAtualizada.getFicStatusPagamento().toUpperCase();
-            String statusAtual = cobrancaExistente.getFicStatusPagamento().toUpperCase();
+
+        if (cobrancaAtualizada.getFicStatusPagamento() != null) {
+            CobrancaStatus novoStatus = cobrancaAtualizada.getFicStatusPagamento();
+            CobrancaStatus statusAtual = cobrancaExistente.getFicStatusPagamento();
 
             switch (statusAtual) {
-                case "A_VENCER":
-                    if (!("PAGA".equals(novoStatus) || "VENCIDA".equals(novoStatus) || "CANCELADA".equals(novoStatus))) {
-                        throw new IllegalArgumentException("Transição de status inválida de 'A_VENCER' para '" + novoStatus + "'.");
+                case A_VENCER:
+                    if (!(CobrancaStatus.PAGA.equals(novoStatus) || CobrancaStatus.VENCIDA.equals(novoStatus)
+                            || CobrancaStatus.CANCELADA.equals(novoStatus))) {
+                        throw new IllegalArgumentException(
+                                "Transição de status inválida de 'A_VENCER' para '" + novoStatus + "'.");
                     }
                     break;
-                case "VENCIDA":
-                    if (!("PAGA".equals(novoStatus) || "CANCELADA".equals(novoStatus))) {
-                        throw new IllegalArgumentException("Transição de status inválida de 'VENCIDA' para '" + novoStatus + "'.");
+                case VENCIDA:
+                    if (!(CobrancaStatus.PAGA.equals(novoStatus) || CobrancaStatus.CANCELADA.equals(novoStatus))) {
+                        throw new IllegalArgumentException(
+                                "Transição de status inválida de 'VENCIDA' para '" + novoStatus + "'.");
                     }
                     break;
-                case "PAGA":
-                case "CANCELADA":
+                case PAGA:
+                case CANCELADA:
                     throw new IllegalArgumentException("Status final '" + statusAtual + "' não pode ser alterado.");
                 default:
                     throw new IllegalArgumentException("Status atual desconhecido: " + statusAtual + ".");
@@ -140,29 +152,32 @@ public class FinanceiroCobrancaService {
 
     public FinanceiroCobranca cancelarCobranca(Integer id) {
         FinanceiroCobranca cobranca = financeiroCobrancaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Cobrança não encontrada para cancelamento com o ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Cobrança não encontrada para cancelamento com o ID: " + id));
 
-        String statusAtual = cobranca.getFicStatusPagamento().toUpperCase();
+        CobrancaStatus statusAtual = cobranca.getFicStatusPagamento();
 
-        if ("PAGA".equals(statusAtual)) {
+        if (CobrancaStatus.PAGA.equals(statusAtual)) {
             throw new IllegalArgumentException("Não é possível cancelar uma cobrança que já foi PAGA.");
         }
-        if ("CANCELADA".equals(statusAtual)) {
+        if (CobrancaStatus.CANCELADA.equals(statusAtual)) {
             throw new IllegalArgumentException("Cobrança já está com status 'CANCELADA'.");
         }
-        
-        cobranca.setFicStatusPagamento("CANCELADA");
+
+        cobranca.setFicStatusPagamento(CobrancaStatus.CANCELADA);
         cobranca.setFicDtAtualizacao(LocalDateTime.now());
         return financeiroCobrancaRepository.save(cobranca);
     }
 
     @Transactional
-    public List<FinanceiroCobranca> gerarCobrancasEmLote(Integer condominioId, LocalDate dataVencimento, Integer tipoCobrancaId) {
+    public List<FinanceiroCobranca> gerarCobrancasEmLote(Integer condominioId, LocalDate dataVencimento,
+            Integer tipoCobrancaId) {
         Condominio condominioReferencia = condominioRepository.findById(condominioId)
                 .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado com o ID: " + condominioId));
 
         TipoCobranca tipoCobranca = tipoCobrancaRepository.findById(tipoCobrancaId)
-                .orElseThrow(() -> new IllegalArgumentException("Tipo de cobrança não encontrado com o ID: " + tipoCobrancaId));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Tipo de cobrança não encontrado com o ID: " + tipoCobrancaId));
 
         List<Unidade> unidadesDoCondominio = unidadeRepository.findByCondominio(condominioReferencia);
 
@@ -175,21 +190,19 @@ public class FinanceiroCobrancaService {
         LocalDate inicioDoMes = mesAnoVencimento.atDay(1);
         LocalDate fimDoMes = mesAnoVencimento.atEndOfMonth();
 
-
         for (Unidade unidade : unidadesDoCondominio) {
-            
-            List<FinanceiroCobranca> cobrancasExistentesNoPeriodo = financeiroCobrancaRepository.findByUnidadeAndTipoCobrancaAndFicDtVencimentoBetween(
-                unidade, tipoCobranca, inicioDoMes, fimDoMes
-            );
+            List<FinanceiroCobranca> cobrancasExistentesNoPeriodo = financeiroCobrancaRepository
+                    .findByUnidadeAndTipoCobrancaAndFicDtVencimentoBetween(
+                            unidade, tipoCobranca, inicioDoMes, fimDoMes);
 
             boolean deveGerarNovaCobranca = true;
             for (FinanceiroCobranca cobrancaExistente : cobrancasExistentesNoPeriodo) {
-                String statusExistente = cobrancaExistente.getFicStatusPagamento().toUpperCase();
-                if ("PAGA".equals(statusExistente) || "A_VENCER".equals(statusExistente) || "VENCIDA".equals(statusExistente)) {
-                    deveGerarNovaCobranca = false; 
+                CobrancaStatus statusExistente = cobrancaExistente.getFicStatusPagamento();
+                if (CobrancaStatus.PAGA.equals(statusExistente) || CobrancaStatus.A_VENCER.equals(statusExistente)
+                        || CobrancaStatus.VENCIDA.equals(statusExistente)) {
+                    deveGerarNovaCobranca = false;
                     break;
                 }
-                
             }
 
             if (deveGerarNovaCobranca) {
@@ -198,7 +211,7 @@ public class FinanceiroCobrancaService {
                 novaCobranca.setTipoCobranca(tipoCobranca);
                 novaCobranca.setFicValorTaxa(unidade.getUniValorTaxaCondominio());
                 novaCobranca.setFicDtVencimento(dataVencimento);
-                novaCobranca.setFicStatusPagamento("A_VENCER");
+                novaCobranca.setFicStatusPagamento(CobrancaStatus.A_VENCER); // Usando o ENUM
                 novaCobranca.setFicDtCadastro(LocalDateTime.now());
                 novaCobranca.setFicDtAtualizacao(LocalDateTime.now());
 

@@ -23,43 +23,41 @@ public class FinanceiroCobrancaController {
     @PostMapping
     public ResponseEntity<FinanceiroCobranca> cadastrarCobranca(@RequestBody FinanceiroCobranca cobranca) {
         FinanceiroCobranca novaCobranca = financeiroCobrancaService.cadastrarCobranca(cobranca);
-        return new ResponseEntity<>(novaCobranca, HttpStatus.CREATED);
+        return new ResponseEntity<>(novaCobranca, HttpStatus.CREATED); 
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<FinanceiroCobranca> buscarCobrancaPorId(@PathVariable Integer id) {
         Optional<FinanceiroCobranca> cobranca = financeiroCobrancaService.buscarCobrancaPorId(id);
-        return cobranca.map(c -> new ResponseEntity<>(c, HttpStatus.OK))
+        return cobranca.map(c -> new ResponseEntity<>(c, HttpStatus.OK)) 
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @GetMapping
     public ResponseEntity<List<FinanceiroCobranca>> listarTodasCobrancas() {
         List<FinanceiroCobranca> cobrancas = financeiroCobrancaService.listarTodasCobrancas();
-        return new ResponseEntity<>(cobrancas, HttpStatus.OK);
+        return new ResponseEntity<>(cobrancas, HttpStatus.OK); 
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<FinanceiroCobranca> atualizarCobranca(@PathVariable Integer id, @RequestBody FinanceiroCobranca cobrancaAtualizada) {
         FinanceiroCobranca cobrancaSalva = financeiroCobrancaService.atualizarCobranca(id, cobrancaAtualizada);
-        return new ResponseEntity<>(cobrancaSalva, HttpStatus.OK);
+        return new ResponseEntity<>(cobrancaSalva, HttpStatus.OK); 
     }
 
-   
     @PutMapping("/{id}/cancelar")
     public ResponseEntity<FinanceiroCobranca> cancelarCobranca(@PathVariable Integer id) {
         FinanceiroCobranca cobrancaCancelada = financeiroCobrancaService.cancelarCobranca(id);
         return new ResponseEntity<>(cobrancaCancelada, HttpStatus.OK);
     }
 
-   
     @PostMapping("/gerar-lote")
     public ResponseEntity<List<FinanceiroCobranca>> gerarCobrancasEmLote(
             @RequestParam Integer condominioId,
             @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate dataVencimento,
             @RequestParam Integer tipoCobrancaId) {
-        
+
         List<FinanceiroCobranca> novasCobrancas = financeiroCobrancaService.gerarCobrancasEmLote(condominioId, dataVencimento, tipoCobrancaId);
-        return new ResponseEntity<>(novasCobrancas, HttpStatus.CREATED);
+        return new ResponseEntity<>(novasCobrancas, HttpStatus.CREATED); 
     }
 }

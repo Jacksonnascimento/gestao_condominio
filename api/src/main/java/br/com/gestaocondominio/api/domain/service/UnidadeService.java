@@ -2,14 +2,14 @@ package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.domain.entity.Unidade;
 import br.com.gestaocondominio.api.domain.entity.Condominio;
+import br.com.gestaocondominio.api.domain.enums.UnidadeStatusOcupacao;
+import br.com.gestaocondominio.api.domain.enums.CobrancaStatus; 
 import br.com.gestaocondominio.api.domain.repository.UnidadeRepository;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.MoradorRepository;
 import br.com.gestaocondominio.api.domain.repository.FinanceiroCobrancaRepository;
 import br.com.gestaocondominio.api.domain.repository.ReservaAreaComumRepository;
 import br.com.gestaocondominio.api.domain.repository.SolicitacaoManutencaoRepository;
-// REMOVER A LINHA ABAIXO se estiver presente:
-// import br.com.gestaocondominio.api.domain.repository.UsuarioCondominioRepository;
 
 import org.springframework.stereotype.Service;
 
@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Arrays; 
 
 @Service
 public class UnidadeService {
@@ -33,16 +34,13 @@ public class UnidadeService {
                           MoradorRepository moradorRepository,
                           FinanceiroCobrancaRepository financeiroCobrancaRepository,
                           ReservaAreaComumRepository reservaAreaComumRepository,
-                          SolicitacaoManutencaoRepository solicitacaoManutencaoRepository
-                        
-                          ) {
+                          SolicitacaoManutencaoRepository solicitacaoManutencaoRepository) {
         this.unidadeRepository = unidadeRepository;
         this.condominioRepository = condominioRepository;
         this.moradorRepository = moradorRepository;
         this.financeiroCobrancaRepository = financeiroCobrancaRepository;
         this.reservaAreaComumRepository = reservaAreaComumRepository;
         this.solicitacaoManutencaoRepository = solicitacaoManutencaoRepository;
-       
     }
 
     public Unidade cadastrarUnidade(Unidade unidade) {
@@ -61,14 +59,8 @@ public class UnidadeService {
             throw new IllegalArgumentException("Já existe uma unidade com este número para o condomínio informado: " + unidade.getUniNumero());
         }
 
-        if (unidade.getUniStatusOcupacao() == null || String.valueOf(unidade.getUniStatusOcupacao()).trim().isEmpty()) {
-            unidade.setUniStatusOcupacao('D');
-        } else {
-            char status = Character.toUpperCase(unidade.getUniStatusOcupacao());
-            if (status != 'O' && status != 'D' && status != 'V' && status != 'A') {
-                throw new IllegalArgumentException("Status de ocupação inválido. Use 'O' (Ocupado), 'D' (Desocupado), 'V' (Em Venda) ou 'A' (Alugado).");
-            }
-            unidade.setUniStatusOcupacao(status);
+        if (unidade.getUniStatusOcupacao() == null) {
+            unidade.setUniStatusOcupacao(UnidadeStatusOcupacao.DESOCUPADO);
         }
 
         if (unidade.getUniValorTaxaCondominio() == null || unidade.getUniValorTaxaCondominio().compareTo(BigDecimal.ZERO) < 0) {
@@ -116,14 +108,11 @@ public class UnidadeService {
             unidadeExistente.setUniNumero(unidadeAtualizada.getUniNumero());
         }
         
-        if (unidadeAtualizada.getUniStatusOcupacao() != null && String.valueOf(unidadeAtualizada.getUniStatusOcupacao()).trim().isEmpty()) {
-            throw new IllegalArgumentException("Status de ocupação da unidade não pode ser vazio na atualização.");
+        if (unidadeAtualizada.getUniStatusOcupacao() == null) {
+            throw new IllegalArgumentException("Status de ocupação da unidade não pode ser nulo na atualização.");
         } else if (unidadeAtualizada.getUniStatusOcupacao() != null) {
-            char status = Character.toUpperCase(unidadeAtualizada.getUniStatusOcupacao());
-            if (status != 'O' && status != 'D' && status != 'V' && status != 'A') {
-                throw new IllegalArgumentException("Status de ocupação inválido. Use 'O' (Ocupado), 'D' (Desocupado), 'V' (Em Venda) ou 'A' (Alugado).");
-            }
-            unidadeExistente.setUniStatusOcupacao(status);
+           
+            unidadeExistente.setUniStatusOcupacao(unidadeAtualizada.getUniStatusOcupacao());
         }
 
         if (unidadeAtualizada.getUniValorTaxaCondominio() != null && unidadeAtualizada.getUniValorTaxaCondominio().compareTo(BigDecimal.ZERO) < 0) {
@@ -148,33 +137,36 @@ public class UnidadeService {
             throw new IllegalArgumentException("Não é possível inativar a unidade, pois existem moradores vinculados a ela.");
         }
         
+        
         List<br.com.gestaocondominio.api.domain.entity.FinanceiroCobranca> cobrancasAtivas = 
             financeiroCobrancaRepository.findByUnidadeAndFicStatusPagamentoNotIn(
                 unidade, 
-                java.util.Arrays.asList("PAGA", "CANCELADA") 
+                java.util.Arrays.asList(CobrancaStatus.PAGA, CobrancaStatus.CANCELADA) 
             );
         if (!cobrancasAtivas.isEmpty()) {
             throw new IllegalArgumentException("Não é possível inativar a unidade, pois existem cobranças financeiras ATIVAS ou PENDENTES vinculadas a ela.");
         }
         
+        
         List<br.com.gestaocondominio.api.domain.entity.ReservaAreaComum> reservasAtivas = 
             reservaAreaComumRepository.findByUnidadeAndStatusNotIn(
                 unidade,
-                java.util.Arrays.asList("REALIZADA", "CANCELADA") 
+                java.util.Arrays.asList(ReservaAreaComumStatus.REALIZADA, ReservaAreaComumStatus.CANCELADA) 
             );
         if (!reservasAtivas.isEmpty()) {
             throw new IllegalArgumentException("Não é possível inativar a unidade, pois existem reservas de áreas comuns ATIVAS ou FUTURAS vinculadas a ela.");
         }
         
+        
         List<br.com.gestaocondominio.api.domain.entity.SolicitacaoManutencao> solicitacoesAtivas = 
             solicitacaoManutencaoRepository.findByUnidadeAndStatusNotIn(
                 unidade,
-                java.util.Arrays.asList("CONCLUIDA", "CANCELADA") 
+                java.util.Arrays.asList(SolicitacaoManutencaoStatus.CONCLUIDA, SolicitacaoManutencaoStatus.CANCELADA) 
             );
         if (!solicitacoesAtivas.isEmpty()) {
             throw new IllegalArgumentException("Não é possível inativar a unidade, pois existem solicitações de manutenção ATIVAS ou PENDENTES vinculadas a ela.");
         }
-   
+        
         unidade.setUniAtiva(false); 
         unidade.setUniDtAtualizacao(LocalDateTime.now());
         return unidadeRepository.save(unidade);

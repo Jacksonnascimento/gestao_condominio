@@ -2,7 +2,8 @@ package br.com.gestaocondominio.api.domain.repository;
 
 import br.com.gestaocondominio.api.domain.entity.AreaComum;
 import br.com.gestaocondominio.api.domain.entity.ReservaAreaComum;
-import br.com.gestaocondominio.api.domain.entity.Unidade; // Importe Unidade
+import br.com.gestaocondominio.api.domain.entity.Unidade;
+import br.com.gestaocondominio.api.domain.enums.ReservaAreaComumStatus; 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -25,11 +26,11 @@ public interface ReservaAreaComumRepository extends JpaRepository<ReservaAreaCom
         Integer idReservaExcluir
     );
 
-    List<ReservaAreaComum> findByAreaComum(AreaComum areaComum); 
+    List<ReservaAreaComum> findByAreaComum(AreaComum areaComum);
 
-    
+   
     List<ReservaAreaComum> findByUnidadeAndStatusNotIn(
         Unidade unidade,
-        List<String> status
+        List<ReservaAreaComumStatus> status 
     );
 }

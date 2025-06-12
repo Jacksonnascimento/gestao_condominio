@@ -1,9 +1,20 @@
 package br.com.gestaocondominio.api.domain.entity;
 
-import jakarta.persistence.*;
+import br.com.gestaocondominio.api.domain.enums.ReservaAreaComumStatus; // Importar o novo ENUM
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.EnumType;   
+import jakarta.persistence.Enumerated; 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -36,8 +47,9 @@ public class ReservaAreaComum {
     @Column(name = "RAC_DATA_HORA_FIM", nullable = false)
     private LocalDateTime dataHoraFim;
 
-    @Column(name = "RAC_STATUS", nullable = false, length = 20)
-    private String status;
+    @Enumerated(EnumType.STRING) 
+    @Column(name = "RAC_STATUS", nullable = false, length = 50) 
+    private ReservaAreaComumStatus status; 
 
     @Column(name = "RAC_OBSERVACOES", length = 500)
     private String observacoes;

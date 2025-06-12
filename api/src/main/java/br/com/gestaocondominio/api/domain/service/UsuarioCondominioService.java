@@ -40,28 +40,24 @@ public class UsuarioCondominioService {
         condominioRepository.findById(usuarioCondominio.getCondominio().getConCod())
                 .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado com o ID: " + usuarioCondominio.getCondominio().getConCod()));
 
-        if (usuarioCondominio.getId() == null || usuarioCondominio.getId().getUscPapel() == null || String.valueOf(usuarioCondominio.getId().getUscPapel()).trim().isEmpty()) {
+        if (usuarioCondominio.getUscPapel() == null) {
             throw new IllegalArgumentException("Papel do usuário no condomínio deve ser informado.");
         }
-        char papel = Character.toUpperCase(usuarioCondominio.getId().getUscPapel());
-        if (papel != 'S' && papel != 'M' && papel != 'F' && papel != 'P' && papel != 'A') {
-            throw new IllegalArgumentException("Papel inválido. Use 'S', 'M', 'F', 'P' ou 'A'.");
-        }
-        usuarioCondominio.getId().setUscPapel(papel);
-
+     
         UsuarioCondominioId idComposto = new UsuarioCondominioId(
-            usuarioCondominio.getPessoa().getPesCod(),
-            usuarioCondominio.getCondominio().getConCod(),
-            usuarioCondominio.getId().getUscPapel()
+            usuarioCondominio.getPesCod(), 
+            usuarioCondominio.getConCod(), 
+            usuarioCondominio.getUscPapel() 
         );
-        usuarioCondominio.setId(idComposto);
+        
+ 
 
         if (usuarioCondominioRepository.findById(idComposto).isPresent()) {
             throw new IllegalArgumentException("Esta pessoa já possui este papel neste condomínio.");
         }
 
         if (usuarioCondominio.getUscAtivoAssociacao() == null) {
-            usuarioCondominio.setUscAtivoAssociacao(true); // Ativo por padrão
+            usuarioCondominio.setUscAtivoAssociacao(true); 
         }
 
         usuarioCondominio.setUscDtAssociacao(LocalDateTime.now());
@@ -74,12 +70,10 @@ public class UsuarioCondominioService {
         return usuarioCondominioRepository.findById(id);
     }
 
-   
     public List<UsuarioCondominio> listarTodosUsuariosCondominioAtivos() {
         return usuarioCondominioRepository.findByUscAtivoAssociacao(true);
     }
 
-    
     public List<UsuarioCondominio> listarTodosUsuariosCondominio(boolean incluirInativas) {
         if (incluirInativas) {
             return usuarioCondominioRepository.findAll();
@@ -91,11 +85,12 @@ public class UsuarioCondominioService {
         UsuarioCondominio usuarioCondominioExistente = usuarioCondominioRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Associação de usuário a condomínio não encontrada com o ID: " + id));
 
-        if (!usuarioCondominioAtualizado.getId().getPesCod().equals(usuarioCondominioExistente.getId().getPesCod()) ||
-            !usuarioCondominioAtualizado.getId().getConCod().equals(usuarioCondominioExistente.getId().getConCod()) ||
-            !usuarioCondominioAtualizado.getId().getUscPapel().equals(usuarioCondominioExistente.getId().getUscPapel())) {
-             throw new IllegalArgumentException("Não é permitido alterar Pessoa, Condomínio ou Papel de uma associação existente.");
-        }
+        
+        if (!usuarioCondominioAtualizado.getPesCod().equals(usuarioCondominioExistente.getPesCod()) ||
+            !usuarioCondominioAtualizado.getConCod().equals(usuarioCondominioExistente.getConCod()) ||
+            !usuarioCondominioAtualizado.getUscPapel().equals(usuarioCondominioExistente.getUscPapel())) {
+                 throw new IllegalArgumentException("Não é permitido alterar Pessoa, Condomínio ou Papel de uma associação existente.");
+            }
         
         if (usuarioCondominioAtualizado.getUscAtivoAssociacao() != null) { 
             usuarioCondominioExistente.setUscAtivoAssociacao(usuarioCondominioAtualizado.getUscAtivoAssociacao());
@@ -105,19 +100,15 @@ public class UsuarioCondominioService {
         return usuarioCondominioRepository.save(usuarioCondominioExistente);
     }
 
-  
     public UsuarioCondominio inativarUsuarioCondominio(UsuarioCondominioId id) {
         UsuarioCondominio usuarioCondominio = usuarioCondominioRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Associação de usuário a condomínio não encontrada com o ID: " + id));
         
-  
-
         usuarioCondominio.setUscAtivoAssociacao(false); 
         usuarioCondominio.setUscDtAtualizacao(LocalDateTime.now());
         return usuarioCondominioRepository.save(usuarioCondominio);
     }
 
-    
     public UsuarioCondominio ativarUsuarioCondominio(UsuarioCondominioId id) {
         UsuarioCondominio usuarioCondominio = usuarioCondominioRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Associação de usuário a condomínio não encontrada com o ID: " + id));

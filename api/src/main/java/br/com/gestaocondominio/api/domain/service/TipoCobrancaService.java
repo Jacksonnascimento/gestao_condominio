@@ -3,11 +3,13 @@ package br.com.gestaocondominio.api.domain.service;
 import br.com.gestaocondominio.api.domain.entity.TipoCobranca;
 import br.com.gestaocondominio.api.domain.repository.TipoCobrancaRepository;
 import br.com.gestaocondominio.api.domain.repository.FinanceiroCobrancaRepository;
+import br.com.gestaocondominio.api.domain.enums.CobrancaStatus; 
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
 
 @Service
 public class TipoCobrancaService {
@@ -16,7 +18,7 @@ public class TipoCobrancaService {
     private final FinanceiroCobrancaRepository financeiroCobrancaRepository;
 
     public TipoCobrancaService(TipoCobrancaRepository tipoCobrancaRepository,
-            FinanceiroCobrancaRepository financeiroCobrancaRepository) {
+                               FinanceiroCobrancaRepository financeiroCobrancaRepository) {
         this.tipoCobrancaRepository = tipoCobrancaRepository;
         this.financeiroCobrancaRepository = financeiroCobrancaRepository;
     }
@@ -26,11 +28,10 @@ public class TipoCobrancaService {
             throw new IllegalArgumentException("Descrição do tipo de cobrança não pode ser vazia.");
         }
 
-        Optional<TipoCobranca> tipoExistente = tipoCobrancaRepository
-                .findByTicDescricao(tipoCobranca.getTicDescricao());
+      
+        Optional<TipoCobranca> tipoExistente = tipoCobrancaRepository.findByTicDescricao(tipoCobranca.getTicDescricao());
         if (tipoExistente.isPresent()) {
-            throw new IllegalArgumentException(
-                    "Já existe um tipo de cobrança com esta descrição: " + tipoCobranca.getTicDescricao());
+            throw new IllegalArgumentException("Já existe um tipo de cobrança com esta descrição: " + tipoCobranca.getTicDescricao());
         }
 
         tipoCobranca.setTicDtCadastro(LocalDateTime.now());
@@ -62,23 +63,19 @@ public class TipoCobrancaService {
         TipoCobranca tipoCobrancaExistente = tipoCobrancaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Tipo de cobrança não encontrado com o ID: " + id));
 
-        if (tipoCobrancaAtualizada.getTicDescricao() == null
-                || tipoCobrancaAtualizada.getTicDescricao().trim().isEmpty()) {
+        if (tipoCobrancaAtualizada.getTicDescricao() == null || tipoCobrancaAtualizada.getTicDescricao().trim().isEmpty()) {
             throw new IllegalArgumentException("Descrição do tipo de cobrança não pode ser vazia na atualização.");
         }
 
         if (!tipoCobrancaExistente.getTicDescricao().equalsIgnoreCase(tipoCobrancaAtualizada.getTicDescricao())) {
-
-            Optional<TipoCobranca> tipoConflito = tipoCobrancaRepository
-                    .findByTicDescricao(tipoCobrancaAtualizada.getTicDescricao());
+            Optional<TipoCobranca> tipoConflito = tipoCobrancaRepository.findByTicDescricao(tipoCobrancaAtualizada.getTicDescricao());
             if (tipoConflito.isPresent() && !tipoConflito.get().getTicCod().equals(id)) {
-                throw new IllegalArgumentException("Nova descrição já cadastrada para outro tipo de cobrança: "
-                        + tipoCobrancaAtualizada.getTicDescricao());
+                throw new IllegalArgumentException("Nova descrição já cadastrada para outro tipo de cobrança: " + tipoCobrancaAtualizada.getTicDescricao());
             }
         }
 
         tipoCobrancaExistente.setTicDescricao(tipoCobrancaAtualizada.getTicDescricao());
-
+        
         if (tipoCobrancaAtualizada.getTicAtiva() != null) {
             tipoCobrancaExistente.setTicAtiva(tipoCobrancaAtualizada.getTicAtiva());
         }
@@ -90,15 +87,15 @@ public class TipoCobrancaService {
     public TipoCobranca inativarTipoCobranca(Integer id) {
         TipoCobranca tipo = tipoCobrancaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Tipo de cobrança não encontrado com o ID: " + id));
-
-        List<br.com.gestaocondominio.api.domain.entity.FinanceiroCobranca> cobrancasAtivas = financeiroCobrancaRepository
-                .findByTipoCobrancaAndFicStatusPagamentoNotIn(
-                        tipo,
-                        java.util.Arrays.asList("PAGA", "CANCELADA"));
+        
+        List<br.com.gestaocondominio.api.domain.entity.FinanceiroCobranca> cobrancasAtivas = 
+            financeiroCobrancaRepository.findByTipoCobrancaAndFicStatusPagamentoNotIn(
+                tipo, 
+                java.util.Arrays.asList(CobrancaStatus.PAGA, CobrancaStatus.CANCELADA) 
+            );
 
         if (!cobrancasAtivas.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Não é possível inativar o tipo de cobrança, pois existem cobranças financeiras ATIVAS ou PENDENTES vinculadas a ele.");
+            throw new IllegalArgumentException("Não é possível inativar o tipo de cobrança, pois existem cobranças financeiras ATIVAS ou PENDENTES vinculadas a ele.");
         }
 
         tipo.setTicAtiva(false);

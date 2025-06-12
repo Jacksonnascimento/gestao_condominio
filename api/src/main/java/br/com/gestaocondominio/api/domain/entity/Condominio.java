@@ -1,5 +1,6 @@
 package br.com.gestaocondominio.api.domain.entity;
 
+import br.com.gestaocondominio.api.domain.enums.CondominioTipologia; 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,6 +9,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.EnumType;   
+import jakarta.persistence.Enumerated; 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -59,8 +62,9 @@ public class Condominio {
     @Column(name = "CON_NUMERO_UNIDADES")
     private Integer conNumeroUnidades;
 
-    @Column(name = "CON_TIPOLOGIA", length = 1)
-    private Character conTipologia;
+    @Enumerated(EnumType.STRING) 
+    @Column(name = "CON_TIPOLOGIA", nullable = false, length = 50) 
+    private CondominioTipologia conTipologia; 
 
     @Column(name = "CON_DT_VENCIMENTO_TAXA")
     private Integer conDtVencimentoTaxa;
@@ -75,6 +79,6 @@ public class Condominio {
     @JoinColumn(name = "ADM_COD")
     private Administradora administradora;
 
-    @Column(name = "CON_ATIVO") // <-- NOVA COLUNA para soft delete
+    @Column(name = "CON_ATIVO")
     private Boolean conAtivo;
 }

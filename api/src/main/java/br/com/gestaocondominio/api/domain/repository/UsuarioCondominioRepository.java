@@ -12,6 +12,6 @@ import java.util.List;
 public interface UsuarioCondominioRepository extends JpaRepository<UsuarioCondominio, UsuarioCondominioId> {
     List<UsuarioCondominio> findByCondominio(Condominio condominio);
 
-    
+
     List<UsuarioCondominio> findByUscAtivoAssociacao(Boolean uscAtivoAssociacao);
 }

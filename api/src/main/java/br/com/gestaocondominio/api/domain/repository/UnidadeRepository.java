@@ -12,7 +12,5 @@ import java.util.Optional;
 public interface UnidadeRepository extends JpaRepository<Unidade, Integer> {
     Optional<Unidade> findByUniNumeroAndCondominio(String uniNumero, Condominio condominio);
     List<Unidade> findByCondominio(Condominio condominio);
-
-   
-    List<Unidade> findByUniAtiva(Boolean uniAtiva); 
+    List<Unidade> findByUniAtiva(Boolean uniAtiva);
 }

@@ -1,6 +1,17 @@
 package br.com.gestaocondominio.api.domain.entity;
 
-import jakarta.persistence.*;
+import br.com.gestaocondominio.api.domain.enums.SolicitacaoManutencaoStatus; 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.EnumType;   
+import jakarta.persistence.Enumerated; 
+import jakarta.persistence.Lob;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -38,15 +49,16 @@ public class SolicitacaoManutencao {
     private String localDescricao;
 
     @ManyToOne
-    @JoinColumn(name = "TSM_COD", nullable = false) // <-- FK para a nova tabela
-    private TipoSolicitacaoManutencao tipoSolicitacao; // <-- NOVO CAMPO
+    @JoinColumn(name = "TSM_COD", nullable = false)
+    private TipoSolicitacaoManutencao tipoSolicitacao;
 
     @Lob
     @Column(name = "SMA_DESCRICAO_PROBLEMA", nullable = false)
     private String descricaoProblema;
 
-    @Column(name = "SMA_STATUS", nullable = false, length = 30)
-    private String status;
+    @Enumerated(EnumType.STRING) // Mapeia o ENUM para String no DB
+    @Column(name = "SMA_STATUS", nullable = false, length = 50) // <-- Tipo alterado para String no DB
+    private SolicitacaoManutencaoStatus status; // <-- Tipo alterado para SolicitacaoManutencaoStatus
 
     @Column(name = "SMA_DT_ABERTURA")
     private LocalDateTime dtAbertura;

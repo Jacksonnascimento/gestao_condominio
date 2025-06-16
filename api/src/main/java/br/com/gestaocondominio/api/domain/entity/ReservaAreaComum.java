@@ -1,6 +1,6 @@
 package br.com.gestaocondominio.api.domain.entity;
 
-import br.com.gestaocondominio.api.domain.enums.ReservaAreaComumStatus; // Importar o novo ENUM
+import br.com.gestaocondominio.api.domain.enums.ReservaAreaComumStatus; 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -47,9 +47,9 @@ public class ReservaAreaComum {
     @Column(name = "RAC_DATA_HORA_FIM", nullable = false)
     private LocalDateTime dataHoraFim;
 
-    @Enumerated(EnumType.STRING) 
-    @Column(name = "RAC_STATUS", nullable = false, length = 50) 
-    private ReservaAreaComumStatus status; 
+    @Enumerated(EnumType.STRING) // Mapeia o ENUM para String no DB
+    @Column(name = "RAC_STATUS", nullable = false, length = 50) // <-- Tipo alterado para String no DB
+    private ReservaAreaComumStatus status; // <-- Tipo alterado para ReservaAreaComumStatus
 
     @Column(name = "RAC_OBSERVACOES", length = 500)
     private String observacoes;

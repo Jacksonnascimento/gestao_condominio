@@ -1,9 +1,17 @@
 package br.com.gestaocondominio.api.domain.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Data;         
+import lombok.NoArgsConstructor; 
+
 import java.time.LocalDateTime;
 
 @Data
@@ -22,7 +30,6 @@ public class Documento {
     @JoinColumn(name = "CON_COD", nullable = false)
     private Condominio condominio;
 
-    
     @ManyToOne
     @JoinColumn(name = "ASS_COD") 
     private Assembleia assembleia;
@@ -40,8 +47,9 @@ public class Documento {
     @Column(name = "DOC_CAMINHO_ARQUIVO", nullable = false, length = 500)
     private String caminhoArquivo;
 
+   
     @Column(name = "DOC_PERMISSAO_VISUALIZAR", nullable = false, length = 1)
-    private Character permissaoVisualizar;
+    private Character permissaoVisualizar; 
 
     @Column(name = "DOC_DT_UPLOAD")
     private LocalDateTime dtUpload;

@@ -1,9 +1,11 @@
 package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.domain.entity.Unidade;
-import br.com.gestaocondominio.api.domain.entity.Condominio;
+import br.com.gestaocondominio.api.domain.entity.Condominio; 
 import br.com.gestaocondominio.api.domain.enums.UnidadeStatusOcupacao;
-import br.com.gestaocondominio.api.domain.enums.CobrancaStatus; 
+import br.com.gestaocondominio.api.domain.enums.CobrancaStatus;
+import br.com.gestaocondominio.api.domain.enums.ReservaAreaComumStatus;
+import br.com.gestaocondominio.api.domain.enums.SolicitacaoManutencaoStatus;
 import br.com.gestaocondominio.api.domain.repository.UnidadeRepository;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.MoradorRepository;
@@ -17,7 +19,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Arrays; 
+import java.util.Arrays;
 
 @Service
 public class UnidadeService {
@@ -110,8 +112,7 @@ public class UnidadeService {
         
         if (unidadeAtualizada.getUniStatusOcupacao() == null) {
             throw new IllegalArgumentException("Status de ocupação da unidade não pode ser nulo na atualização.");
-        } else if (unidadeAtualizada.getUniStatusOcupacao() != null) {
-           
+        } else {
             unidadeExistente.setUniStatusOcupacao(unidadeAtualizada.getUniStatusOcupacao());
         }
 
@@ -137,31 +138,28 @@ public class UnidadeService {
             throw new IllegalArgumentException("Não é possível inativar a unidade, pois existem moradores vinculados a ela.");
         }
         
-        
         List<br.com.gestaocondominio.api.domain.entity.FinanceiroCobranca> cobrancasAtivas = 
             financeiroCobrancaRepository.findByUnidadeAndFicStatusPagamentoNotIn(
                 unidade, 
-                java.util.Arrays.asList(CobrancaStatus.PAGA, CobrancaStatus.CANCELADA) 
+                Arrays.asList(CobrancaStatus.PAGA, CobrancaStatus.CANCELADA) 
             );
         if (!cobrancasAtivas.isEmpty()) {
             throw new IllegalArgumentException("Não é possível inativar a unidade, pois existem cobranças financeiras ATIVAS ou PENDENTES vinculadas a ela.");
         }
         
-        
         List<br.com.gestaocondominio.api.domain.entity.ReservaAreaComum> reservasAtivas = 
             reservaAreaComumRepository.findByUnidadeAndStatusNotIn(
                 unidade,
-                java.util.Arrays.asList(ReservaAreaComumStatus.REALIZADA, ReservaAreaComumStatus.CANCELADA) 
+                Arrays.asList(ReservaAreaComumStatus.REALIZADA, ReservaAreaComumStatus.CANCELADA) 
             );
         if (!reservasAtivas.isEmpty()) {
             throw new IllegalArgumentException("Não é possível inativar a unidade, pois existem reservas de áreas comuns ATIVAS ou FUTURAS vinculadas a ela.");
         }
         
-        
         List<br.com.gestaocondominio.api.domain.entity.SolicitacaoManutencao> solicitacoesAtivas = 
             solicitacaoManutencaoRepository.findByUnidadeAndStatusNotIn(
                 unidade,
-                java.util.Arrays.asList(SolicitacaoManutencaoStatus.CONCLUIDA, SolicitacaoManutencaoStatus.CANCELADA) 
+                Arrays.asList(SolicitacaoManutencaoStatus.CONCLUIDA, SolicitacaoManutencaoStatus.CANCELADA) 
             );
         if (!solicitacoesAtivas.isEmpty()) {
             throw new IllegalArgumentException("Não é possível inativar a unidade, pois existem solicitações de manutenção ATIVAS ou PENDENTES vinculadas a ela.");

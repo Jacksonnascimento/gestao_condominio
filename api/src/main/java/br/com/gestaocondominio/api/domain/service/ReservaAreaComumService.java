@@ -2,6 +2,7 @@ package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.domain.entity.ReservaAreaComum;
 import br.com.gestaocondominio.api.domain.entity.AreaComum;
+import br.com.gestaocondominio.api.domain.enums.ReservaAreaComumStatus; // Importar o ENUM
 import br.com.gestaocondominio.api.domain.repository.ReservaAreaComumRepository;
 import br.com.gestaocondominio.api.domain.repository.AreaComumRepository;
 import br.com.gestaocondominio.api.domain.repository.UnidadeRepository;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
 
 @Service
 public class ReservaAreaComumService {
@@ -67,8 +69,8 @@ public class ReservaAreaComumService {
             throw new IllegalArgumentException("Já existe uma reserva para esta área comum neste período. Conflito com a reserva ID: " + conflitos.get(0).getRacCod());
         }
 
-        if (reserva.getStatus() == null || reserva.getStatus().trim().isEmpty()) {
-            reserva.setStatus("SOLICITADA");
+        if (reserva.getStatus() == null) { 
+            reserva.setStatus(ReservaAreaComumStatus.SOLICITADA);
         }
 
         reserva.setDtSolicitacao(LocalDateTime.now());
@@ -105,7 +107,7 @@ public class ReservaAreaComumService {
         if (reservaAtualizada.getDataHoraInicio().isAfter(reservaAtualizada.getDataHoraFim())) {
             throw new IllegalArgumentException("A data/hora de início da reserva não pode ser posterior à data/hora de fim na atualização.");
         }
-        
+
         List<ReservaAreaComum> conflitosNaAtualizacao = reservaAreaComumRepository.findByAreaComumAndDataHoraFimAfterAndDataHoraInicioBeforeAndRacCodIsNot(
             reservaExistente.getAreaComum(),
             reservaAtualizada.getDataHoraInicio(),
@@ -122,18 +124,20 @@ public class ReservaAreaComumService {
         if (reservaAtualizada.getDataHoraFim() != null) {
             reservaExistente.setDataHoraFim(reservaAtualizada.getDataHoraFim());
         }
-        if (reservaAtualizada.getStatus() != null) {
-            reservaExistente.setStatus(reservaAtualizada.getStatus());
+
+        if (reservaAtualizada.getStatus() == null) {
+            throw new IllegalArgumentException("Status da reserva não pode ser nulo na atualização.");
         }
+        reservaExistente.setStatus(reservaAtualizada.getStatus());
+
         if (reservaAtualizada.getObservacoes() != null) {
             reservaExistente.setObservacoes(reservaAtualizada.getObservacoes());
         }
-        
+
         reservaExistente.setDtAtualizacao(LocalDateTime.now());
         return reservaAreaComumRepository.save(reservaExistente);
     }
 
-    
     public void deletarReservaAreaComum(Integer id) {
         reservaAreaComumRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Reserva de área comum não encontrada para exclusão com o ID: " + id));

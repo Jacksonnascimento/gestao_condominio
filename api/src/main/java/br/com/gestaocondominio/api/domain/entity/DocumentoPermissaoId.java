@@ -2,9 +2,9 @@ package br.com.gestaocondominio.api.domain.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.AllArgsConstructor; // <-- IMPORT NECESSÁRIO
-import lombok.Data;         // <-- IMPORT NECESSÁRIO
-import lombok.NoArgsConstructor; // <-- IMPORT NECESSÁRIO
+import lombok.AllArgsConstructor; 
+import lombok.Data;         
+import lombok.NoArgsConstructor; 
 import java.io.Serializable;
 import java.util.Objects; 
 

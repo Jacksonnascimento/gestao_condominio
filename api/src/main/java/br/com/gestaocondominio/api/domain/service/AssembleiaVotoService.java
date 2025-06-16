@@ -33,7 +33,7 @@ public class AssembleiaVotoService {
                 .orElseThrow(() -> new IllegalArgumentException("Tópico da assembleia não encontrado com o ID: " + voto.getTopico().getAspCod()));
 
         if (voto.getPessoa() == null || voto.getPessoa().getPesCod() == null) {
-            throw new  IllegalArgumentException("Pessoa deve ser informada para o voto.");
+            throw new IllegalArgumentException("Pessoa deve ser informada para o voto.");
         }
         pessoaRepository.findById(voto.getPessoa().getPesCod())
                 .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + voto.getPessoa().getPesCod()));
@@ -48,15 +48,11 @@ public class AssembleiaVotoService {
             throw new IllegalArgumentException("Esta pessoa já votou neste tópico da assembleia.");
         }
         
-        if (voto.getVoto() != null) {
-            char tipoVoto = Character.toUpperCase(voto.getVoto());
-            if (tipoVoto != 'S' && tipoVoto != 'N' && tipoVoto != 'A') {
-                throw new IllegalArgumentException("Tipo de voto inválido. Use 'S' (SIM), 'N' (NÃO) ou 'A' (ABSTENÇÃO).");
-            }
-            voto.setVoto(tipoVoto);
-        } else {
-             throw new IllegalArgumentException("O voto não pode ser nulo.");
+    
+        if (voto.getVoto() == null) {
+            throw new IllegalArgumentException("A opção de voto não pode ser nula.");
         }
+        
 
         return assembleiaVotoRepository.save(voto);
     }
@@ -78,20 +74,16 @@ public class AssembleiaVotoService {
              throw new IllegalArgumentException("Não é permitido alterar o Tópico ou a Pessoa de um voto existente.");
         }
 
-        if (votoAtualizado.getVoto() != null) {
-            char tipoVoto = Character.toUpperCase(votoAtualizado.getVoto());
-            if (tipoVoto != 'S' && tipoVoto != 'N' && tipoVoto != 'A') {
-                throw new IllegalArgumentException("Tipo de voto inválido. Use 'S' (SIM), 'N' (NÃO) ou 'A' (ABSTENÇÃO).");
-            }
-            votoExistente.setVoto(tipoVoto);
-        } else {
-             throw new IllegalArgumentException("O voto não pode ser nulo na atualização.");
+    
+        if (votoAtualizado.getVoto() == null) {
+            throw new IllegalArgumentException("A opção de voto não pode ser nula na atualização.");
         }
+        votoExistente.setVoto(votoAtualizado.getVoto());
+  
 
         return assembleiaVotoRepository.save(votoExistente);
     }
 
-   
     public void deletarVoto(AssembleiaVotoId id) {
         assembleiaVotoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Voto de assembleia não encontrado para exclusão com o ID: " + id));

@@ -33,6 +33,6 @@ public class TipoCobranca {
     @Column(name = "TIC_DT_ATUALIZACAO")
     private LocalDateTime ticDtAtualizacao;
 
-    @Column(name = "TIC_ATIVA") // <-- NOVA COLUNA para soft delete
+    @Column(name = "TIC_ATIVA") 
     private Boolean ticAtiva;
 }

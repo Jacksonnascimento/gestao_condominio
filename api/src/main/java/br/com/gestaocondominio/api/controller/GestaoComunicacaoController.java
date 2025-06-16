@@ -22,14 +22,14 @@ public class GestaoComunicacaoController {
     @PostMapping
     public ResponseEntity<GestaoComunicacao> cadastrarComunicacao(@RequestBody GestaoComunicacao comunicacao) {
         GestaoComunicacao novaComunicacao = gestaoComunicacaoService.cadastrarComunicacao(comunicacao);
-        return new ResponseEntity<>(novaComunicacao, HttpStatus.CREATED);
+        return new ResponseEntity<>(novaComunicacao, HttpStatus.CREATED); 
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<GestaoComunicacao> buscarComunicacaoPorId(@PathVariable Integer id) {
         Optional<GestaoComunicacao> comunicacao = gestaoComunicacaoService.buscarComunicacaoPorId(id);
         return comunicacao.map(c -> new ResponseEntity<>(c, HttpStatus.OK)) 
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND)); 
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @GetMapping
@@ -46,7 +46,6 @@ public class GestaoComunicacaoController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarComunicacao(@PathVariable Integer id) {
-       
         gestaoComunicacaoService.deletarComunicacao(id); 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT); 
     }

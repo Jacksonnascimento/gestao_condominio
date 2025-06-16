@@ -13,6 +13,7 @@ import br.com.gestaocondominio.api.domain.repository.FinanceiroCobrancaRepositor
 import br.com.gestaocondominio.api.domain.repository.ReservaAreaComumRepository;
 import br.com.gestaocondominio.api.domain.repository.SolicitacaoManutencaoRepository;
 
+
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;

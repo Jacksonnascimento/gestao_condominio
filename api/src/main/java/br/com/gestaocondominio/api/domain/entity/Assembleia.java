@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import br.com.gestaocondominio.api.domain.enums.AssembleiaStatus;
 
 @Data
 @NoArgsConstructor
@@ -28,8 +29,9 @@ public class Assembleia {
     @Column(name = "ASS_DATA_HORA", nullable = false)
     private LocalDateTime assDataHora;
 
-    @Column(name = "ASS_STATUS", nullable = false, length = 20)
-    private String assStatus;
+    @Enumerated(EnumType.STRING) 
+    @Column(name = "ASS_STATUS", nullable = false, length = 50) 
+    private AssembleiaStatus assStatus; 
 
     @Column(name = "ASS_DT_CADASTRO")
     private LocalDateTime assDtCadastro;

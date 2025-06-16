@@ -70,9 +70,9 @@ public class SolicitacaoManutencaoService {
             throw new IllegalArgumentException("Descrição do problema da solicitação de manutenção não pode ser vazia.");
         }
 
-       
-        if (solicitacao.getStatus() == null) {
-            solicitacao.setStatus(SolicitacaoManutencaoStatus.ABERTA);
+      
+        if (solicitacao.getStatus() == null) { 
+            solicitacao.setStatus(SolicitacaoManutencaoStatus.ABERTA); 
         }
 
         solicitacao.setDtAbertura(LocalDateTime.now());
@@ -141,7 +141,7 @@ public class SolicitacaoManutencaoService {
         if (solicitacaoAtualizada.getStatus() == null) {
             throw new IllegalArgumentException("Status da solicitação de manutenção não pode ser nulo na atualização.");
         }
-        
+       
         solicitacaoExistente.setStatus(solicitacaoAtualizada.getStatus());
 
         if (solicitacaoAtualizada.getDtConclusao() != null) {

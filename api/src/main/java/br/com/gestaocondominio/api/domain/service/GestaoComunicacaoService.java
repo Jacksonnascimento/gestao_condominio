@@ -1,13 +1,17 @@
 package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.domain.entity.GestaoComunicacao;
+
+import br.com.gestaocondominio.api.domain.entity.ComunicadoEntrega; 
+import br.com.gestaocondominio.api.domain.enums.ComunicadoDestino;
+
 import br.com.gestaocondominio.api.domain.repository.GestaoComunicacaoRepository;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
-import br.com.gestaocondominio.api.domain.repository.ComunicadoEntregaRepository; 
+import br.com.gestaocondominio.api.domain.repository.ComunicadoEntregaRepository;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; 
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,16 +23,16 @@ public class GestaoComunicacaoService {
     private final GestaoComunicacaoRepository gestaoComunicacaoRepository;
     private final CondominioRepository condominioRepository;
     private final PessoaRepository pessoaRepository;
-    private final ComunicadoEntregaRepository comunicadoEntregaRepository; 
+    private final ComunicadoEntregaRepository comunicadoEntregaRepository;
 
     public GestaoComunicacaoService(GestaoComunicacaoRepository gestaoComunicacaoRepository,
                                     CondominioRepository condominioRepository,
                                     PessoaRepository pessoaRepository,
-                                    ComunicadoEntregaRepository comunicadoEntregaRepository) { 
+                                    ComunicadoEntregaRepository comunicadoEntregaRepository) {
         this.gestaoComunicacaoRepository = gestaoComunicacaoRepository;
         this.condominioRepository = condominioRepository;
         this.pessoaRepository = pessoaRepository;
-        this.comunicadoEntregaRepository = comunicadoEntregaRepository; 
+        this.comunicadoEntregaRepository = comunicadoEntregaRepository;
     }
 
     public GestaoComunicacao cadastrarComunicacao(GestaoComunicacao comunicacao) {
@@ -52,15 +56,8 @@ public class GestaoComunicacaoService {
         }
 
         if (comunicacao.getComDesTodos() == null) {
-            comunicacao.setComDesTodos('N'); 
+            comunicacao.setComDesTodos(ComunicadoDestino.ESPECIFICOS);
         }
-     
-        char desTodos = Character.toUpperCase(comunicacao.getComDesTodos());
-        if (desTodos != 'S' && desTodos != 'N') {
-            throw new IllegalArgumentException("Valor inválido para COM_DES_TODOS. Use 'S' para todos ou 'N' para específico.");
-        }
-        comunicacao.setComDesTodos(desTodos);
-
 
         comunicacao.setComDtCadastro(LocalDateTime.now());
         comunicacao.setComDtAtualizacao(LocalDateTime.now());
@@ -80,6 +77,11 @@ public class GestaoComunicacaoService {
         GestaoComunicacao comunicacaoExistente = gestaoComunicacaoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Comunicado não encontrado com o ID: " + id));
 
+        if (comunicacaoExistente.getComDtEnvio() != null) {
+            throw new IllegalArgumentException("Não é possível atualizar um comunicado que já foi enviado.");
+        }
+
+
         if (comunicacaoAtualizada.getCondominio() != null && !comunicacaoAtualizada.getCondominio().getConCod().equals(comunicacaoExistente.getCondominio().getConCod())) {
              throw new IllegalArgumentException("Não é permitido alterar o Condomínio de um comunicado existente.");
         }
@@ -93,36 +95,43 @@ public class GestaoComunicacaoService {
         if (comunicacaoAtualizada.getComMensagem() != null) {
             comunicacaoExistente.setComMensagem(comunicacaoAtualizada.getComMensagem());
         }
-        if (comunicacaoAtualizada.getComDesTodos() != null) {
-            char desTodos = Character.toUpperCase(comunicacaoAtualizada.getComDesTodos());
-            if (desTodos != 'S' && desTodos != 'N') {
-                throw new IllegalArgumentException("Valor inválido para COM_DES_TODOS na atualização. Use 'S' para todos ou 'N' para específico.");
-            }
-            comunicacaoExistente.setComDesTodos(desTodos);
+        
+        if (comunicacaoAtualizada.getComDesTodos() == null) {
+            throw new IllegalArgumentException("O destino do comunicado não pode ser nulo na atualização.");
         }
+        comunicacaoExistente.setComDesTodos(comunicacaoAtualizada.getComDesTodos());
+
         if (comunicacaoAtualizada.getComTipoNotificacao() != null) {
             comunicacaoExistente.setComTipoNotificacao(comunicacaoAtualizada.getComTipoNotificacao());
+        } else {
+            comunicacaoExistente.setComTipoNotificacao(null);
         }
-        if (comunicacaoAtualizada.getComDtEnvio() != null) {
-            comunicacaoExistente.setComDtEnvio(comunicacaoAtualizada.getComDtEnvio());
+        
+        if (comunicacaoAtualizada.getComDtEnvio() != null && comunicacaoExistente.getComDtEnvio() == null) {
+            comunicacaoExistente.setComDtEnvio(LocalDateTime.now());
+        } else if (comunicacaoAtualizada.getComDtEnvio() == null && comunicacaoExistente.getComDtEnvio() != null) {
+            throw new IllegalArgumentException("Não é permitido remover a data de envio de um comunicado já enviado.");
         }
+
 
         comunicacaoExistente.setComDtAtualizacao(LocalDateTime.now());
         return gestaoComunicacaoRepository.save(comunicacaoExistente);
     }
 
-    
-    @Transactional 
+    @Transactional
     public void deletarComunicacao(Integer id) {
         GestaoComunicacao comunicacao = gestaoComunicacaoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Comunicado não encontrado com o ID: " + id));
-
-        List<br.com.gestaocondominio.api.domain.entity.ComunicadoEntrega> entregas = comunicadoEntregaRepository.findByComunicado(comunicacao);
-        if (!entregas.isEmpty()) {
-            comunicadoEntregaRepository.deleteAll(entregas); 
+        
+        if (comunicacao.getComDtEnvio() != null) {
+            throw new IllegalArgumentException("Não é possível excluir um comunicado que já foi enviado.");
         }
 
-       
+        List<ComunicadoEntrega> entregas = comunicadoEntregaRepository.findByComunicado(comunicacao); // CORRIGIDO: Removido br.com...
+        if (!entregas.isEmpty()) {
+            comunicadoEntregaRepository.deleteAll(entregas);
+        }
+
         gestaoComunicacaoRepository.deleteById(id);
     }
 }

@@ -1,13 +1,12 @@
 package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.domain.entity.Assembleia;
-
+import br.com.gestaocondominio.api.domain.enums.AssembleiaStatus; 
 import br.com.gestaocondominio.api.domain.repository.AssembleiaRepository;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.AssembleiaTopicoRepository;
 import br.com.gestaocondominio.api.domain.repository.AssembleiaParticipanteRepository;
 import br.com.gestaocondominio.api.domain.repository.DocumentoRepository;
-
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -45,9 +44,11 @@ public class AssembleiaService {
         assembleia.setAssDtCadastro(LocalDateTime.now());
         assembleia.setAssDtAtualizacao(LocalDateTime.now());
 
-        if (assembleia.getAssStatus() == null || assembleia.getAssStatus().trim().isEmpty()) {
-            assembleia.setAssStatus("A");
+      
+        if (assembleia.getAssStatus() == null) {
+            assembleia.setAssStatus(AssembleiaStatus.AGENDADA);
         }
+       
 
         if (assembleia.getAssAtiva() == null) {
             assembleia.setAssAtiva(true);
@@ -60,15 +61,11 @@ public class AssembleiaService {
         return assembleiaRepository.findById(id);
     }
 
-    public List<Assembleia> listarTodasAssembleiasAtivas() {
-        return assembleiaRepository.findByAssAtiva(true);
-    }
-
-    public List<Assembleia> listarTodasAssembleias(boolean incluirInativas) {
-        if (incluirInativas) {
-            return assembleiaRepository.findAll();
+    public List<Assembleia> listarTodasAssembleias(boolean ativas) {
+        if (ativas) {
+            return assembleiaRepository.findByAssAtiva(true);
         }
-        return assembleiaRepository.findByAssAtiva(true);
+        return assembleiaRepository.findAll();
     }
 
     public Assembleia atualizarAssembleia(Integer id, Assembleia assembleiaAtualizada) {
@@ -83,7 +80,6 @@ public class AssembleiaService {
         assembleiaExistente.setAssDataHora(assembleiaAtualizada.getAssDataHora());
         assembleiaExistente.setAssStatus(assembleiaAtualizada.getAssStatus());
 
-        
         if (assembleiaAtualizada.getAssAtiva() != null) {
             assembleiaExistente.setAssAtiva(assembleiaAtualizada.getAssAtiva());
         }
@@ -95,7 +91,7 @@ public class AssembleiaService {
     public Assembleia inativarAssembleia(Integer id) {
         Assembleia assembleia = assembleiaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Assembleia não encontrada com o ID: " + id));
-        
+
         if (!assembleiaTopicoRepository.findByAssembleia(assembleia).isEmpty()) {
            throw new IllegalArgumentException("Não é possível inativar a assembleia, pois existem tópicos vinculados a ela.");
         }

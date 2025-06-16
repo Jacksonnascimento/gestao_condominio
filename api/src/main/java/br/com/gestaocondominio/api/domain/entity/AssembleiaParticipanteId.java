@@ -9,8 +9,8 @@ import java.io.Serializable;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Embeddable // Indica que esta classe pode ser embutida em outra entidade
+@Embeddable 
 public class AssembleiaParticipanteId implements Serializable {
-    private Integer assCod; // Nome deve ser igual ao do atributo na entidade principal
-    private Integer pesCod; // Nome deve ser igual ao do atributo na entidade principal
+    private Integer assCod; 
+    private Integer pesCod;
 }

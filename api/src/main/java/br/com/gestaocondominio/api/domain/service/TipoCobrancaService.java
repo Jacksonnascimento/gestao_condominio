@@ -3,13 +3,13 @@ package br.com.gestaocondominio.api.domain.service;
 import br.com.gestaocondominio.api.domain.entity.TipoCobranca;
 import br.com.gestaocondominio.api.domain.repository.TipoCobrancaRepository;
 import br.com.gestaocondominio.api.domain.repository.FinanceiroCobrancaRepository;
-import br.com.gestaocondominio.api.domain.enums.CobrancaStatus; 
+import br.com.gestaocondominio.api.domain.enums.CobrancaStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-
+import java.util.Arrays; 
 
 @Service
 public class TipoCobrancaService {
@@ -68,6 +68,7 @@ public class TipoCobrancaService {
         }
 
         if (!tipoCobrancaExistente.getTicDescricao().equalsIgnoreCase(tipoCobrancaAtualizada.getTicDescricao())) {
+          
             Optional<TipoCobranca> tipoConflito = tipoCobrancaRepository.findByTicDescricao(tipoCobrancaAtualizada.getTicDescricao());
             if (tipoConflito.isPresent() && !tipoConflito.get().getTicCod().equals(id)) {
                 throw new IllegalArgumentException("Nova descrição já cadastrada para outro tipo de cobrança: " + tipoCobrancaAtualizada.getTicDescricao());
@@ -91,7 +92,7 @@ public class TipoCobrancaService {
         List<br.com.gestaocondominio.api.domain.entity.FinanceiroCobranca> cobrancasAtivas = 
             financeiroCobrancaRepository.findByTipoCobrancaAndFicStatusPagamentoNotIn(
                 tipo, 
-                java.util.Arrays.asList(CobrancaStatus.PAGA, CobrancaStatus.CANCELADA) 
+                Arrays.asList(CobrancaStatus.PAGA, CobrancaStatus.CANCELADA) 
             );
 
         if (!cobrancasAtivas.isEmpty()) {

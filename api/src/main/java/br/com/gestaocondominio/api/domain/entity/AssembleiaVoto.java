@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import br.com.gestaocondominio.api.domain.enums.VotoOpcao;
 
 @Data
 @NoArgsConstructor
@@ -25,6 +26,7 @@ public class AssembleiaVoto {
     @JoinColumn(name = "PES_COD")
     private Pessoa pessoa;
 
-    @Column(name = "ASV_VOTO", length = 1)
-    private Character voto;
+    @Enumerated(EnumType.STRING) 
+    @Column(name = "ASV_VOTO", length = 50) 
+    private VotoOpcao voto;
 }

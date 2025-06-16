@@ -1,0 +1,26 @@
+{
+  "groups": [
+    {
+      "name": "api.security.jwt",
+      "type": "br.com.gestaocondominio.api.security.properties.JwtProperties",
+      "sourceType": "br.com.gestaocondominio.api.security.properties.JwtProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "api.security.jwt.expiration-time-ms",
+      "type": "java.lang.Long",
+      "sourceType": "br.com.gestaocondominio.api.security.properties.JwtProperties",
+      "defaultValue": 0
+    },
+    {
+      "name": "api.security.jwt.secret-key",
+      "type": "java.lang.String",
+      "sourceType": "br.com.gestaocondominio.api.security.properties.JwtProperties"
+    }
+  ],
+  "hints": [],
+  "ignored": {
+    "properties": []
+  }
+}

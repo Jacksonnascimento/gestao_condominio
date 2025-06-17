@@ -12,16 +12,15 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Data // Anotação do Lombok: gera getters, setters, toString, equals e hashCode
-@NoArgsConstructor // Anotação do Lombok: gera um construtor sem argumentos
-@AllArgsConstructor // Anotação do Lombok: gera um construtor com todos os argumentos
-
-@Entity // Indica que esta classe é uma entidade JPA (representa uma tabela)
-@Table(name = "GC_PESSOA") // Especifica o nome da tabela no banco de dados
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = "GC_PESSOA")
 public class Pessoa {
 
-    @Id // Marca o campo como a chave primária da tabela
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Configura a geração automática do ID (compatível com IDENTITY do SQL Server)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "PES_COD")
     private Integer pesCod;
 
@@ -55,4 +54,8 @@ public class Pessoa {
     @Column(name = "PES_SENHA_LOGIN", length = 255)
     private String pesSenhaLogin;
 
+    
+    @Column(name = "PES_IS_GLOBAL_ADMIN")
+    private Boolean pesIsGlobalAdmin;
+   
 }

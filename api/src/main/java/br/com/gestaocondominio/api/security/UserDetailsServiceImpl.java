@@ -24,8 +24,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private final AdministradoraUsuarioRepository administradoraUsuarioRepository;
 
     public UserDetailsServiceImpl(PessoaRepository pessoaRepository,
-                                  UsuarioCondominioRepository usuarioCondominioRepository,
-                                  AdministradoraUsuarioRepository administradoraUsuarioRepository) {
+            UsuarioCondominioRepository usuarioCondominioRepository,
+            AdministradoraUsuarioRepository administradoraUsuarioRepository) {
         this.pessoaRepository = pessoaRepository;
         this.usuarioCondominioRepository = usuarioCondominioRepository;
         this.administradoraUsuarioRepository = administradoraUsuarioRepository;
@@ -33,33 +33,32 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        
         Pessoa pessoa = pessoaRepository.findByPesEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com o e-mail: " + username));
 
         List<GrantedAuthority> authorities = new ArrayList<>();
 
-      
+        if (pessoa.getPesIsGlobalAdmin() != null && pessoa.getPesIsGlobalAdmin()) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_GLOBAL_ADMIN"));
+        }
+
         List<UsuarioCondominio> rolesCondominio = usuarioCondominioRepository.findByPessoa(pessoa);
         for (UsuarioCondominio uc : rolesCondominio) {
-            if (uc.getUscAtivoAssociacao()) { 
-               
+            if (uc.getUscAtivoAssociacao()) {
                 String authorityString = "ROLE_" + uc.getUscPapel().name() + "_" + uc.getConCod();
                 authorities.add(new SimpleGrantedAuthority(authorityString));
             }
         }
-        
-       
+
         List<AdministradoraUsuario> rolesAdministradora = administradoraUsuarioRepository.findByPessoa(pessoa);
-        for(AdministradoraUsuario au : rolesAdministradora) {
-            if (au.getAduAtivo()) { 
-                
-                String authorityString = "ROLE_" + au.getAduPapel().name() + "_ADMINISTRADORA_" + au.getAdministradora().getAdmCod();
+        for (AdministradoraUsuario au : rolesAdministradora) {
+            if (au.getAduAtivo()) {
+                String authorityString = "ROLE_" + au.getAduPapel().name() + "_ADMINISTRADORA_"
+                        + au.getAdministradora().getAdmCod();
                 authorities.add(new SimpleGrantedAuthority(authorityString));
             }
         }
 
-       
         return new UserDetailsImpl(pessoa, authorities);
     }
 }

@@ -35,6 +35,12 @@ public class PessoaService {
             pessoa.setPesAtivo(true);
         }
 
+      
+        if (pessoa.getPesIsGlobalAdmin() == null) {
+            pessoa.setPesIsGlobalAdmin(false);
+        }
+     
+
         return pessoaRepository.save(pessoa);
     }
 
@@ -78,34 +84,34 @@ public class PessoaService {
         if (pessoaAtualizada.getPesTelefone2() != null) {
             pessoaExistente.setPesTelefone2(pessoaAtualizada.getPesTelefone2());
         }
-        if (pessoaAtualizada.getPesAtivo() != null) { // Permite atualizar o status ativo/inativo
+        if (pessoaAtualizada.getPesAtivo() != null) {
             pessoaExistente.setPesAtivo(pessoaAtualizada.getPesAtivo());
         }
-        if (pessoaAtualizada.getPesSenhaLogin() != null) { // Cuidado: Senha deve ser tratada com hash! (Veremos segurança depois)
+        if (pessoaAtualizada.getPesSenhaLogin() != null) {
             pessoaExistente.setPesSenhaLogin(pessoaAtualizada.getPesSenhaLogin());
+        }
+        
+     
+        if (pessoaAtualizada.getPesIsGlobalAdmin() != null) {
+            pessoaExistente.setPesIsGlobalAdmin(pessoaAtualizada.getPesIsGlobalAdmin());
         }
 
         pessoaExistente.setPesDtAtualizacao(LocalDateTime.now());
         return pessoaRepository.save(pessoaExistente);
     }
 
-    
     public Pessoa inativarPessoa(Integer id) {
         Pessoa pessoa = pessoaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + id));
-        
-    
-
-        pessoa.setPesAtivo(false); 
+        pessoa.setPesAtivo(false);
         pessoa.setPesDtAtualizacao(LocalDateTime.now());
         return pessoaRepository.save(pessoa);
     }
 
-  
     public Pessoa ativarPessoa(Integer id) {
         Pessoa pessoa = pessoaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + id));
-        pessoa.setPesAtivo(true); 
+        pessoa.setPesAtivo(true);
         pessoa.setPesDtAtualizacao(LocalDateTime.now());
         return pessoaRepository.save(pessoa);
     }

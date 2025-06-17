@@ -1,21 +1,17 @@
 package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.domain.entity.Condominio;
-import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
-import br.com.gestaocondominio.api.domain.repository.AdministradoraRepository;
-import br.com.gestaocondominio.api.domain.repository.UnidadeRepository;
-import br.com.gestaocondominio.api.domain.repository.GestaoComunicacaoRepository;
-import br.com.gestaocondominio.api.domain.repository.AssembleiaRepository;
-import br.com.gestaocondominio.api.domain.repository.AreaComumRepository;
-import br.com.gestaocondominio.api.domain.repository.SolicitacaoManutencaoRepository;
-import br.com.gestaocondominio.api.domain.repository.UsuarioCondominioRepository;
-import br.com.gestaocondominio.api.domain.repository.DocumentoRepository;
-
+import br.com.gestaocondominio.api.domain.repository.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class CondominioService {
@@ -49,6 +45,59 @@ public class CondominioService {
         this.usuarioCondominioRepository = usuarioCondominioRepository;
         this.documentoRepository = documentoRepository;
     }
+    
+  
+    
+    
+    public List<Condominio> listarTodosCondominios(boolean incluirInativas) {
+       
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        
+        boolean isGlobalAdmin = authentication.getAuthorities().stream()
+                .anyMatch(role -> role.getAuthority().equals("ROLE_GLOBAL_ADMIN"));
+
+        if (isGlobalAdmin) {
+           
+            if (incluirInativas) {
+                return condominioRepository.findAll();
+            }
+            return condominioRepository.findByConAtivo(true);
+        }
+
+     
+        Set<Integer> condoIds = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(authString -> authString.startsWith("ROLE_SINDICO_") || 
+                                      authString.startsWith("ROLE_ADMIN_") || 
+                                      authString.startsWith("ROLE_MORADOR_") ||
+                                      authString.startsWith("ROLE_FUNCIONARIO_ADM_") ||
+                                      authString.startsWith("ROLE_PORTEIRO_"))
+                .map(authString -> Integer.parseInt(authString.substring(authString.lastIndexOf('_') + 1)))
+                .collect(Collectors.toSet());
+        
+        
+
+        if (condoIds.isEmpty()) {
+         
+            return List.of();
+        }
+
+        
+        List<Condominio> condominiosPermitidos = condominioRepository.findAllById(condoIds);
+
+     
+        if (!incluirInativas) {
+            return condominiosPermitidos.stream()
+                    .filter(condo -> condo.getConAtivo() != null && condo.getConAtivo())
+                    .collect(Collectors.toList());
+        }
+
+        return condominiosPermitidos;
+    }
+
+
+
 
     public Condominio cadastrarCondominio(Condominio condominio) {
         if (condominio.getAdministradora() == null || condominio.getAdministradora().getAdmCod() == null) {
@@ -60,37 +109,19 @@ public class CondominioService {
         if (condominio.getConPais() == null || condominio.getConPais().trim().isEmpty()) {
             condominio.setConPais("Brasil");
         }
-
         condominio.setConDtCadastro(LocalDateTime.now());
         condominio.setConDtAtualizacao(LocalDateTime.now());
-
         if (condominio.getConAtivo() == null) {
             condominio.setConAtivo(true);
         }
-
-        
-        if (condominio.getConTipologia() == null) { 
+        if (condominio.getConTipologia() == null) {
             throw new IllegalArgumentException("Tipologia do condomínio deve ser informada.");
         }
-      
-
-
         return condominioRepository.save(condominio);
     }
 
     public Optional<Condominio> buscarCondominioPorId(Integer id) {
         return condominioRepository.findById(id);
-    }
-
-    public List<Condominio> listarTodosCondominiosAtivos() {
-        return condominioRepository.findByConAtivo(true);
-    }
-
-    public List<Condominio> listarTodosCondominios(boolean incluirInativas) {
-        if (incluirInativas) {
-            return condominioRepository.findAll();
-        }
-        return condominioRepository.findByConAtivo(true);
     }
 
     public Condominio atualizarCondominio(Integer id, Condominio condominioAtualizado) {
@@ -100,10 +131,9 @@ public class CondominioService {
         if (condominioAtualizado.getAdministradora() != null &&
             (condominioExistente.getAdministradora() == null || !condominioAtualizado.getAdministradora().getAdmCod().equals(condominioExistente.getAdministradora().getAdmCod()))) {
             administradoraRepository.findById(condominioAtualizado.getAdministradora().getAdmCod())
-                .orElseThrow(() -> new IllegalArgumentException("Nova Administradora não encontrada com o ID: " + condominioAtualizado.getAdministradora().getAdmCod()));
+                    .orElseThrow(() -> new IllegalArgumentException("Nova Administradora não encontrada com o ID: " + condominioAtualizado.getAdministradora().getAdmCod()));
             condominioExistente.setAdministradora(condominioAtualizado.getAdministradora());
         }
-
         if (condominioAtualizado.getConNome() != null) {
             condominioExistente.setConNome(condominioAtualizado.getConNome());
         }
@@ -137,20 +167,15 @@ public class CondominioService {
         if (condominioAtualizado.getConNumeroUnidades() != null) {
             condominioExistente.setConNumeroUnidades(condominioAtualizado.getConNumeroUnidades());
         }
-
-     
-        if (condominioAtualizado.getConTipologia() != null) { 
+        if (condominioAtualizado.getConTipologia() != null) {
             condominioExistente.setConTipologia(condominioAtualizado.getConTipologia());
         }
-
         if (condominioAtualizado.getConDtVencimentoTaxa() != null) {
             condominioExistente.setConDtVencimentoTaxa(condominioAtualizado.getConDtVencimentoTaxa());
         }
-
         if (condominioAtualizado.getConAtivo() != null) {
             condominioExistente.setConAtivo(condominioAtualizado.getConAtivo());
         }
-
         condominioExistente.setConDtAtualizacao(LocalDateTime.now());
         return condominioRepository.save(condominioExistente);
     }

@@ -47,7 +47,7 @@ Para rodar este projeto localmente, você precisará ter instalado:
 2.  **Configure o Banco de Dados**
     * Certifique-se de que seu SQL Server está rodando.
     * Crie um novo banco de dados chamado `GESTAO_CONDOMINIO`.
-    * Execute o script `script_criacao_banco.sql` (que nós já temos) neste banco de dados para criar todas as tabelas.
+    * Execute o script `Banco de dados.sql` (que nós já temos) neste banco de dados para criar todas as tabelas.
 
 3.  **Configure a Aplicação**
     * Abra o arquivo `src/main/resources/application.properties`.

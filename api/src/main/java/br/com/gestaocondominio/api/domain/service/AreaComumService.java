@@ -3,7 +3,10 @@ package br.com.gestaocondominio.api.domain.service;
 import br.com.gestaocondominio.api.domain.entity.AreaComum;
 import br.com.gestaocondominio.api.domain.repository.AreaComumRepository;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
-import br.com.gestaocondominio.api.domain.repository.ReservaAreaComumRepository; // IMPORT ATIVO AGORA
+import br.com.gestaocondominio.api.domain.repository.ReservaAreaComumRepository;
+import org.springframework.security.authorization.AuthorizationDeniedException; 
+import org.springframework.security.core.Authentication; 
+import org.springframework.security.core.context.SecurityContextHolder; 
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -50,9 +53,13 @@ public class AreaComumService {
         return areaComumRepository.findAll();
     }
 
+   
     public AreaComum atualizarAreaComum(Integer id, AreaComum areaComumAtualizada) {
         AreaComum areaComumExistente = areaComumRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Área comum não encontrada com o ID: " + id));
+
+       
+        checkPermission(areaComumExistente.getCondominio().getConCod());
 
         if (areaComumAtualizada.getCondominio() != null && !areaComumAtualizada.getCondominio().getConCod().equals(areaComumExistente.getCondominio().getConCod())) {
              throw new IllegalArgumentException("Não é permitido alterar o condomínio de uma área comum existente.");
@@ -68,14 +75,36 @@ public class AreaComumService {
         return areaComumRepository.save(areaComumExistente);
     }
 
+    
     public void deletarAreaComum(Integer id) {
         AreaComum areaComum = areaComumRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Área comum não encontrada com o ID: " + id));
 
+        
+        checkPermission(areaComum.getCondominio().getConCod());
+        
         if (!reservaAreaComumRepository.findByAreaComum(areaComum).isEmpty()) {
             throw new IllegalArgumentException("Não é possível excluir a área comum pois existem reservas associadas a ela.");
         }
 
         areaComumRepository.deleteById(id);
+    }
+
+    
+    private void checkPermission(Integer condominioId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        boolean hasPermission = authentication.getAuthorities().stream()
+                .anyMatch(auth -> {
+                    String authority = auth.getAuthority();
+                    return authority.equals("ROLE_GLOBAL_ADMIN") ||
+                           authority.equals("ROLE_SINDICO_" + condominioId) ||
+                           authority.equals("ROLE_ADMIN_" + condominioId);
+                    
+                });
+
+        if (!hasPermission) {
+            throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para gerenciar áreas comuns neste condomínio.");
+        }
     }
 }

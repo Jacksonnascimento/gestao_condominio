@@ -1,10 +1,11 @@
 package br.com.gestaocondominio.api.controller;
 
+import br.com.gestaocondominio.api.controller.dto.PessoaUpdateRequest; 
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.service.PessoaService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize; 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +27,13 @@ public class PessoaController {
         return new ResponseEntity<>(novaPessoa, HttpStatus.CREATED);
     }
 
+    
+    @PatchMapping("/{id}")
+    public ResponseEntity<Pessoa> atualizarPessoa(@PathVariable Integer id, @RequestBody PessoaUpdateRequest dadosParaAtualizar) {
+        Pessoa pessoaSalva = pessoaService.atualizarPessoa(id, dadosParaAtualizar);
+        return new ResponseEntity<>(pessoaSalva, HttpStatus.OK);
+    }
+   
     @GetMapping("/{id}")
     public ResponseEntity<Pessoa> buscarPessoaPorId(@PathVariable Integer id) {
         Optional<Pessoa> pessoa = pessoaService.buscarPessoaPorId(id);
@@ -39,14 +47,8 @@ public class PessoaController {
         return new ResponseEntity<>(pessoas, HttpStatus.OK);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Pessoa> atualizarPessoa(@PathVariable Integer id, @RequestBody Pessoa pessoaAtualizada) {
-        Pessoa pessoaSalva = pessoaService.atualizarPessoa(id, pessoaAtualizada);
-        return new ResponseEntity<>(pessoaSalva, HttpStatus.OK);
-    }
-    
     @PutMapping("/{id}/inativar")
-    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')") 
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')")
     public ResponseEntity<Pessoa> inativarPessoa(@PathVariable Integer id) {
         Pessoa pessoaInativada = pessoaService.inativarPessoa(id);
         return new ResponseEntity<>(pessoaInativada, HttpStatus.OK);

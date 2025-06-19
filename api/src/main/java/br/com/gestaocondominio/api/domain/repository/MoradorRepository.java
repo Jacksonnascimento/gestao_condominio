@@ -11,9 +11,11 @@ import java.util.Optional;
 
 @Repository
 public interface MoradorRepository extends JpaRepository<Morador, Integer> {
-    List<Morador> findByUnidade(Unidade unidade);
+    
     List<Morador> findByPessoa(Pessoa pessoa);
+   
 
+    List<Morador> findByUnidade(Unidade unidade);
     
     Optional<Morador> findByPessoaAndUnidade(Pessoa pessoa, Unidade unidade);
 }

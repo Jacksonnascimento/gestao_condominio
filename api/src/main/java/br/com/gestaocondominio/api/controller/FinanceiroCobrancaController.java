@@ -2,8 +2,10 @@ package br.com.gestaocondominio.api.controller;
 
 import br.com.gestaocondominio.api.domain.entity.FinanceiroCobranca;
 import br.com.gestaocondominio.api.domain.service.FinanceiroCobrancaService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -21,28 +23,29 @@ public class FinanceiroCobrancaController {
     }
 
     @PostMapping
+    // A permissão será validada no serviço
     public ResponseEntity<FinanceiroCobranca> cadastrarCobranca(@RequestBody FinanceiroCobranca cobranca) {
         FinanceiroCobranca novaCobranca = financeiroCobrancaService.cadastrarCobranca(cobranca);
-        return new ResponseEntity<>(novaCobranca, HttpStatus.CREATED); 
+        return new ResponseEntity<>(novaCobranca, HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<FinanceiroCobranca> buscarCobrancaPorId(@PathVariable Integer id) {
         Optional<FinanceiroCobranca> cobranca = financeiroCobrancaService.buscarCobrancaPorId(id);
-        return cobranca.map(c -> new ResponseEntity<>(c, HttpStatus.OK)) 
+        return cobranca.map(c -> new ResponseEntity<>(c, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @GetMapping
     public ResponseEntity<List<FinanceiroCobranca>> listarTodasCobrancas() {
         List<FinanceiroCobranca> cobrancas = financeiroCobrancaService.listarTodasCobrancas();
-        return new ResponseEntity<>(cobrancas, HttpStatus.OK); 
+        return new ResponseEntity<>(cobrancas, HttpStatus.OK);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<FinanceiroCobranca> atualizarCobranca(@PathVariable Integer id, @RequestBody FinanceiroCobranca cobrancaAtualizada) {
         FinanceiroCobranca cobrancaSalva = financeiroCobrancaService.atualizarCobranca(id, cobrancaAtualizada);
-        return new ResponseEntity<>(cobrancaSalva, HttpStatus.OK); 
+        return new ResponseEntity<>(cobrancaSalva, HttpStatus.OK);
     }
 
     @PutMapping("/{id}/cancelar")
@@ -52,12 +55,13 @@ public class FinanceiroCobrancaController {
     }
 
     @PostMapping("/gerar-lote")
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN') or hasAnyAuthority('ROLE_SINDICO_' + #condominioId, 'ROLE_ADMIN_' + #condominioId)")
     public ResponseEntity<List<FinanceiroCobranca>> gerarCobrancasEmLote(
             @RequestParam Integer condominioId,
-            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate dataVencimento,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataVencimento,
             @RequestParam Integer tipoCobrancaId) {
 
         List<FinanceiroCobranca> novasCobrancas = financeiroCobrancaService.gerarCobrancasEmLote(condominioId, dataVencimento, tipoCobrancaId);
-        return new ResponseEntity<>(novasCobrancas, HttpStatus.CREATED); 
+        return new ResponseEntity<>(novasCobrancas, HttpStatus.CREATED);
     }
 }

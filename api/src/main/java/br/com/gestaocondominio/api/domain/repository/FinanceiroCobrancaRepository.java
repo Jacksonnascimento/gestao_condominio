@@ -1,9 +1,9 @@
 package br.com.gestaocondominio.api.domain.repository;
 
 import br.com.gestaocondominio.api.domain.entity.FinanceiroCobranca;
-import br.com.gestaocondominio.api.domain.entity.Unidade;
 import br.com.gestaocondominio.api.domain.entity.TipoCobranca;
-import br.com.gestaocondominio.api.domain.enums.CobrancaStatus; 
+import br.com.gestaocondominio.api.domain.entity.Unidade;
+import br.com.gestaocondominio.api.domain.enums.CobrancaStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,6 +12,11 @@ import java.util.List;
 
 @Repository
 public interface FinanceiroCobrancaRepository extends JpaRepository<FinanceiroCobranca, Integer> {
+
+   
+    List<FinanceiroCobranca> findByUnidadeIn(List<Unidade> unidades);
+   
+
     List<FinanceiroCobranca> findByUnidadeAndTipoCobrancaAndFicDtVencimentoBetween(
             Unidade unidade,
             TipoCobranca tipoCobranca,

@@ -4,6 +4,7 @@ import br.com.gestaocondominio.api.domain.entity.AssembleiaTopico;
 import br.com.gestaocondominio.api.domain.service.AssembleiaTopicoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public class AssembleiaTopicoController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN') or @assembleiaTopicoService.temPermissaoParaGerenciarTopico(#topico)")
     public ResponseEntity<AssembleiaTopico> cadastrarTopico(@RequestBody AssembleiaTopico topico) {
         AssembleiaTopico novoTopico = assembleiaTopicoService.cadastrarAssembleiaTopico(topico);
         return new ResponseEntity<>(novoTopico, HttpStatus.CREATED);
@@ -27,16 +29,18 @@ public class AssembleiaTopicoController {
 
     @GetMapping("/{id}")
     public ResponseEntity<AssembleiaTopico> buscarTopicoPorId(@PathVariable Integer id) {
-        Optional<AssembleiaTopico> topico = assembleiaTopicoService.buscarAssembleiaTopicoPorId(id);
+        Optional<AssembleiaTopico> topico = assembleiaTopicoService.buscarTopicoPorId(id);
         return topico.map(t -> new ResponseEntity<>(t, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    @GetMapping
-    public ResponseEntity<List<AssembleiaTopico>> listarTodosTopicos() {
-        List<AssembleiaTopico> topicos = assembleiaTopicoService.listarTodosTopicos();
+  
+    @GetMapping("/por-assembleia/{assembleiaId}")
+    public ResponseEntity<List<AssembleiaTopico>> listarTopicosPorAssembleia(@PathVariable Integer assembleiaId) {
+        List<AssembleiaTopico> topicos = assembleiaTopicoService.listarTopicosPorAssembleia(assembleiaId);
         return new ResponseEntity<>(topicos, HttpStatus.OK);
     }
+    
 
     @PutMapping("/{id}")
     public ResponseEntity<AssembleiaTopico> atualizarTopico(@PathVariable Integer id, @RequestBody AssembleiaTopico topicoAtualizado) {

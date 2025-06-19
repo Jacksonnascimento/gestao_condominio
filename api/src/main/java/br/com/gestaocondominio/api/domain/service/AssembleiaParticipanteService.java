@@ -1,21 +1,29 @@
 package br.com.gestaocondominio.api.domain.service;
 
+import br.com.gestaocondominio.api.domain.entity.Assembleia;
 import br.com.gestaocondominio.api.domain.entity.AssembleiaParticipante;
 import br.com.gestaocondominio.api.domain.entity.AssembleiaParticipanteId;
 import br.com.gestaocondominio.api.domain.repository.AssembleiaParticipanteRepository;
 import br.com.gestaocondominio.api.domain.repository.AssembleiaRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
-@Service
+@Service("assembleiaParticipanteService")
 public class AssembleiaParticipanteService {
 
     private final AssembleiaParticipanteRepository assembleiaParticipanteRepository;
     private final AssembleiaRepository assembleiaRepository;
     private final PessoaRepository pessoaRepository;
+
+    @Autowired
+    private AssembleiaService assembleiaService;
 
     public AssembleiaParticipanteService(AssembleiaParticipanteRepository assembleiaParticipanteRepository,
                                          AssembleiaRepository assembleiaRepository,
@@ -26,15 +34,9 @@ public class AssembleiaParticipanteService {
     }
 
     public AssembleiaParticipante cadastrarAssembleiaParticipante(AssembleiaParticipante participante) {
-        if (participante.getAssembleia() == null || participante.getAssembleia().getAssCod() == null) {
-            throw new IllegalArgumentException("Assembleia deve ser informada para o participante.");
-        }
+        
         assembleiaRepository.findById(participante.getAssembleia().getAssCod())
                 .orElseThrow(() -> new IllegalArgumentException("Assembleia não encontrada com o ID: " + participante.getAssembleia().getAssCod()));
-
-        if (participante.getPessoa() == null || participante.getPessoa().getPesCod() == null) {
-            throw new IllegalArgumentException("Pessoa deve ser informada para o participante.");
-        }
         pessoaRepository.findById(participante.getPessoa().getPesCod())
                 .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + participante.getPessoa().getPesCod()));
 
@@ -49,27 +51,32 @@ public class AssembleiaParticipanteService {
         }
         
         if (participante.getParticipacao() == null) {
-            participante.setParticipacao(false); 
+            participante.setParticipacao(false);
         }
 
         return assembleiaParticipanteRepository.save(participante);
     }
-
-    public Optional<AssembleiaParticipante> buscarAssembleiaParticipantePorId(AssembleiaParticipanteId id) {
-        return assembleiaParticipanteRepository.findById(id);
+    
+    public List<AssembleiaParticipante> listarParticipantesPorAssembleia(Integer assembleiaId) {
+        Assembleia assembleia = assembleiaRepository.findById(assembleiaId)
+                .orElseThrow(() -> new IllegalArgumentException("Assembleia não encontrada com o ID: " + assembleiaId));
+        
+        assembleiaService.checkPermissionToView(assembleia);
+        return assembleiaParticipanteRepository.findByAssembleia(assembleia);
     }
 
-    public List<AssembleiaParticipante> listarTodosParticipantes() {
-        return assembleiaParticipanteRepository.findAll();
+    public Optional<AssembleiaParticipante> buscarAssembleiaParticipantePorId(AssembleiaParticipanteId id) {
+        Optional<AssembleiaParticipante> participanteOpt = assembleiaParticipanteRepository.findById(id);
+        participanteOpt.ifPresent(p -> assembleiaService.checkPermissionToView(p.getAssembleia()));
+        return participanteOpt;
     }
 
     public AssembleiaParticipante atualizarAssembleiaParticipante(AssembleiaParticipanteId id, AssembleiaParticipante participanteAtualizado) {
         AssembleiaParticipante participanteExistente = assembleiaParticipanteRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Participante da assembleia não encontrado com o ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Participante da assembleia não encontrado."));
 
-        if (!participanteAtualizado.getAssembleia().getAssCod().equals(participanteExistente.getAssembleia().getAssCod()) ||
-            !participanteAtualizado.getPessoa().getPesCod().equals(participanteExistente.getPessoa().getPesCod())) {
-             throw new IllegalArgumentException("Não é permitido alterar a Assembleia ou Pessoa de um participante existente.");
+        if (!temPermissaoParaGerenciarParticipantes(id.getAssCod())) {
+            throw new AuthorizationDeniedException("Acesso negado.");
         }
         
         if (participanteAtualizado.getParticipacao() != null) {
@@ -80,9 +87,30 @@ public class AssembleiaParticipanteService {
     }
 
     public void deletarParticipante(AssembleiaParticipanteId id) {
-        assembleiaParticipanteRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Participante da assembleia não encontrado para exclusão com o ID: " + id));
-
+        if (!assembleiaParticipanteRepository.existsById(id)) {
+            throw new IllegalArgumentException("Participante da assembleia não encontrado para exclusão.");
+        }
+        
+        if (!temPermissaoParaGerenciarParticipantes(id.getAssCod())) {
+            throw new AuthorizationDeniedException("Acesso negado.");
+        }
+        
         assembleiaParticipanteRepository.deleteById(id);
+    }
+
+    public boolean temPermissaoParaGerenciarParticipantes(Integer assembleiaId) {
+        Assembleia assembleia = assembleiaRepository.findById(assembleiaId).orElse(null);
+        if (assembleia == null) return false;
+
+        Integer condominioId = assembleia.getCondominio().getConCod();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        return authentication.getAuthorities().stream()
+                .anyMatch(auth -> {
+                    String authority = auth.getAuthority();
+                    return authority.equals("ROLE_GLOBAL_ADMIN") ||
+                           authority.equals("ROLE_SINDICO_" + condominioId) ||
+                           authority.equals("ROLE_ADMIN_" + condominioId);
+                });
     }
 }

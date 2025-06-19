@@ -5,6 +5,7 @@ import br.com.gestaocondominio.api.domain.entity.AssembleiaParticipanteId;
 import br.com.gestaocondominio.api.domain.service.AssembleiaParticipanteService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class AssembleiaParticipanteController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN') or @assembleiaParticipanteService.temPermissaoParaGerenciarParticipantes(#participante.assembleia.assCod)")
     public ResponseEntity<AssembleiaParticipante> cadastrarParticipante(@RequestBody AssembleiaParticipante participante) {
         AssembleiaParticipante novoParticipante = assembleiaParticipanteService.cadastrarAssembleiaParticipante(participante);
         return new ResponseEntity<>(novoParticipante, HttpStatus.CREATED);
@@ -34,9 +36,9 @@ public class AssembleiaParticipanteController {
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    @GetMapping
-    public ResponseEntity<List<AssembleiaParticipante>> listarTodosParticipantes() {
-        List<AssembleiaParticipante> participantes = assembleiaParticipanteService.listarTodosParticipantes();
+    @GetMapping("/por-assembleia/{assembleiaId}")
+    public ResponseEntity<List<AssembleiaParticipante>> listarParticipantesPorAssembleia(@PathVariable Integer assembleiaId) {
+        List<AssembleiaParticipante> participantes = assembleiaParticipanteService.listarParticipantesPorAssembleia(assembleiaId);
         return new ResponseEntity<>(participantes, HttpStatus.OK);
     }
 
@@ -50,7 +52,7 @@ public class AssembleiaParticipanteController {
     @DeleteMapping("/{assCod}/{pesCod}")
     public ResponseEntity<Void> deletarParticipante(@PathVariable Integer assCod, @PathVariable Integer pesCod) {
         AssembleiaParticipanteId id = new AssembleiaParticipanteId(assCod, pesCod);
-        assembleiaParticipanteService.deletarParticipante(id); 
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT); 
+        assembleiaParticipanteService.deletarParticipante(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

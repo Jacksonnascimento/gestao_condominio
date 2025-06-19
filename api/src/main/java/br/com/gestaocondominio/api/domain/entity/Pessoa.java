@@ -7,14 +7,20 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = "pesCod")
+@ToString(of = {"pesCod", "pesNome", "pesEmail"})
 @Entity
 @Table(name = "GC_PESSOA")
 public class Pessoa {
@@ -54,8 +60,6 @@ public class Pessoa {
     @Column(name = "PES_SENHA_LOGIN", length = 255)
     private String pesSenhaLogin;
 
-    
     @Column(name = "PES_IS_GLOBAL_ADMIN")
     private Boolean pesIsGlobalAdmin;
-   
 }

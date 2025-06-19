@@ -7,14 +7,20 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = "tsmCod")
+@ToString(of = {"tsmCod", "tsmDescricao", "tsmAtiva"})
 @Entity
 @Table(name = "GC_TIPO_SOLICITACAO_MANUTENCAO", schema = "dbo")
 public class TipoSolicitacaoManutencao {

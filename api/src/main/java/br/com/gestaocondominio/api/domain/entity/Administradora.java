@@ -9,14 +9,20 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = "admCod")
+@ToString(exclude = {"dadosEmpresa", "responsavel"})
 @Entity
 @Table(name = "GC_ADMINISTRADORA", schema = "dbo")
 public class Administradora {
@@ -40,6 +46,6 @@ public class Administradora {
     @Column(name = "ADM_DT_ATUALIZACAO")
     private LocalDateTime admDtAtualizacao;
 
-    @Column(name = "ADM_ATIVO") 
+    @Column(name = "ADM_ATIVO")
     private Boolean admAtivo;
 }

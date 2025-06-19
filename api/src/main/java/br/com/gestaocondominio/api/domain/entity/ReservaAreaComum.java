@@ -1,25 +1,31 @@
 package br.com.gestaocondominio.api.domain.entity;
 
-import br.com.gestaocondominio.api.domain.enums.ReservaAreaComumStatus; 
+import br.com.gestaocondominio.api.domain.enums.ReservaAreaComumStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.EnumType;   
-import jakarta.persistence.Enumerated; 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = "racCod")
+@ToString(of = {"racCod", "status", "dataHoraInicio"})
 @Entity
 @Table(name = "GC_RESERVA_AREA_COMUM", schema = "dbo")
 public class ReservaAreaComum {
@@ -47,9 +53,9 @@ public class ReservaAreaComum {
     @Column(name = "RAC_DATA_HORA_FIM", nullable = false)
     private LocalDateTime dataHoraFim;
 
-    @Enumerated(EnumType.STRING) // Mapeia o ENUM para String no DB
-    @Column(name = "RAC_STATUS", nullable = false, length = 50) // <-- Tipo alterado para String no DB
-    private ReservaAreaComumStatus status; // <-- Tipo alterado para ReservaAreaComumStatus
+    @Enumerated(EnumType.STRING)
+    @Column(name = "RAC_STATUS", nullable = false, length = 50)
+    private ReservaAreaComumStatus status;
 
     @Column(name = "RAC_OBSERVACOES", length = 500)
     private String observacoes;

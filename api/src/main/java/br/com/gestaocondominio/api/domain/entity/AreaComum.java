@@ -1,14 +1,29 @@
 package br.com.gestaocondominio.api.domain.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = "arcCod")
+@ToString(of = {"arcCod", "arcNome"})
 @Entity
 @Table(name = "GC_AREA_COMUM", schema = "dbo")
 public class AreaComum {
@@ -28,7 +43,7 @@ public class AreaComum {
     @Column(name = "ARC_DESCRICAO", length = 500)
     private String arcDescricao;
 
-    @Lob 
+    @Lob
     @Column(name = "ARC_REGRAS_USO")
     private String arcRegrasUso;
 

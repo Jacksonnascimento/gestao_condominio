@@ -1,25 +1,31 @@
 package br.com.gestaocondominio.api.domain.entity;
 
-import br.com.gestaocondominio.api.domain.enums.CondominioTipologia; 
+import br.com.gestaocondominio.api.domain.enums.CondominioTipologia;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.EnumType;   
-import jakarta.persistence.Enumerated; 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = "conCod")
+@ToString(of = {"conCod", "conNome"})
 @Entity
 @Table(name = "GC_CONDOMINIO", schema = "dbo")
 public class Condominio {
@@ -62,9 +68,9 @@ public class Condominio {
     @Column(name = "CON_NUMERO_UNIDADES")
     private Integer conNumeroUnidades;
 
-    @Enumerated(EnumType.STRING) 
-    @Column(name = "CON_TIPOLOGIA", nullable = false, length = 50) 
-    private CondominioTipologia conTipologia; 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "CON_TIPOLOGIA", nullable = false, length = 50)
+    private CondominioTipologia conTipologia;
 
     @Column(name = "CON_DT_VENCIMENTO_TAXA")
     private Integer conDtVencimentoTaxa;

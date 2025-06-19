@@ -9,14 +9,20 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Data;         
-import lombok.NoArgsConstructor; 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = "docCod")
+@ToString(of = {"docCod", "nome", "tipo"})
 @Entity
 @Table(name = "GC_DOCUMENTO", schema = "dbo")
 public class Documento {
@@ -31,12 +37,12 @@ public class Documento {
     private Condominio condominio;
 
     @ManyToOne
-    @JoinColumn(name = "ASS_COD") 
+    @JoinColumn(name = "ASS_COD")
     private Assembleia assembleia;
 
     @ManyToOne
     @JoinColumn(name = "PES_COD_UPLOAD", nullable = false)
-    private Pessoa uploader; 
+    private Pessoa uploader;
 
     @Column(name = "DOC_NOME", nullable = false, length = 150)
     private String nome;
@@ -47,9 +53,8 @@ public class Documento {
     @Column(name = "DOC_CAMINHO_ARQUIVO", nullable = false, length = 500)
     private String caminhoArquivo;
 
-   
     @Column(name = "DOC_PERMISSAO_VISUALIZAR", nullable = false, length = 1)
-    private Character permissaoVisualizar; 
+    private Character permissaoVisualizar;
 
     @Column(name = "DOC_DT_UPLOAD")
     private LocalDateTime dtUpload;

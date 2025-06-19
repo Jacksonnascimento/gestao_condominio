@@ -1,18 +1,33 @@
 package br.com.gestaocondominio.api.domain.entity;
 
-import br.com.gestaocondominio.api.domain.enums.CobrancaStatus; 
-import jakarta.persistence.*;
+import br.com.gestaocondominio.api.domain.enums.CobrancaStatus;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = "ficCod")
+@ToString(of = {"ficCod", "ficStatusPagamento", "ficValorTaxa"})
 @Entity
 @Table(name = "GC_FINANCEIRO_COBRANCA", schema = "dbo")
 public class FinanceiroCobranca {
@@ -48,7 +63,7 @@ public class FinanceiroCobranca {
     @Column(name = "FIC_DT_ATUALIZACAO")
     private LocalDateTime ficDtAtualizacao;
 
-    @Enumerated(EnumType.STRING) 
-    @Column(name = "FIC_STATUS_PAGAMENTO", nullable = false, length = 50) 
-    private CobrancaStatus ficStatusPagamento; 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "FIC_STATUS_PAGAMENTO", nullable = false, length = 50)
+    private CobrancaStatus ficStatusPagamento;
 }

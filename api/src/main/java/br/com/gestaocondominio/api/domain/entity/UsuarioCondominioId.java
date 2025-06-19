@@ -1,35 +1,22 @@
 package br.com.gestaocondominio.api.domain.entity;
 
-import br.com.gestaocondominio.api.domain.enums.UserRole; 
+import br.com.gestaocondominio.api.domain.enums.UserRole;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.io.Serializable;
-import java.util.Objects;
 
-
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode
 public class UsuarioCondominioId implements Serializable {
 
-   
     private Integer pesCod;
     private Integer conCod;
     private UserRole uscPapel;
-    
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        UsuarioCondominioId that = (UsuarioCondominioId) o;
-        return Objects.equals(pesCod, that.pesCod) &&
-               Objects.equals(conCod, that.conCod) &&
-               Objects.equals(uscPapel, that.uscPapel); 
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(pesCod, conCod, uscPapel);
-    }
 }

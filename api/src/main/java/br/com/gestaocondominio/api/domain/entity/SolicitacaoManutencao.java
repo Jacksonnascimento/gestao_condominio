@@ -1,25 +1,32 @@
 package br.com.gestaocondominio.api.domain.entity;
 
-import br.com.gestaocondominio.api.domain.enums.SolicitacaoManutencaoStatus; 
+import br.com.gestaocondominio.api.domain.enums.SolicitacaoManutencaoStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.EnumType;   
-import jakarta.persistence.Enumerated; 
-import jakarta.persistence.Lob;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = "smaCod")
+@ToString(of = {"smaCod", "status", "localDescricao"})
 @Entity
 @Table(name = "GC_SOLICITACAO_MANUTENCAO", schema = "dbo")
 public class SolicitacaoManutencao {
@@ -56,9 +63,9 @@ public class SolicitacaoManutencao {
     @Column(name = "SMA_DESCRICAO_PROBLEMA", nullable = false)
     private String descricaoProblema;
 
-    @Enumerated(EnumType.STRING) // Mapeia o ENUM para String no DB
-    @Column(name = "SMA_STATUS", nullable = false, length = 50) // <-- Tipo alterado para String no DB
-    private SolicitacaoManutencaoStatus status; // <-- Tipo alterado para SolicitacaoManutencaoStatus
+    @Enumerated(EnumType.STRING)
+    @Column(name = "SMA_STATUS", nullable = false, length = 50)
+    private SolicitacaoManutencaoStatus status;
 
     @Column(name = "SMA_DT_ABERTURA")
     private LocalDateTime dtAbertura;

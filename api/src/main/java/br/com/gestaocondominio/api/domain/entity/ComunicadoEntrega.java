@@ -10,14 +10,20 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = "cmeCod")
+@ToString(of = {"cmeCod", "statusLeitura", "statusEnvio"})
 @Entity
 @Table(name = "GC_COMUNICADO_ENTREGA", schema = "dbo",
     uniqueConstraints = @UniqueConstraint(columnNames = {"COM_COD", "PES_COD"})

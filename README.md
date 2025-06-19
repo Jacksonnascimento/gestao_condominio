@@ -4,7 +4,7 @@ Bem-vindo ao repositório da API do Sistema de Gestão de Condomínios.
 
 ## 📖 Descrição
 
-O Gestão de Condomínio é um sistema de backend completo, desenvolvido para facilitar a administração de condomínios residenciais, comerciais ou mistos. A API oferece um conjunto robusto de funcionalidades para gerenciar cadastros, finanças, comunicação e recursos, com o objetivo de tornar a gestão mais eficiente, organizada e transparente para síndicos, administradoras e moradores.
+O Gestão de Condomínio é uma plataforma de software robusta e centralizada, projetada para facilitar a administração e a vida em comunidade em condomínios residenciais, comerciais ou mistos. O objetivo é otimizar a comunicação, automatizar processos financeiros e gerenciar os recursos do condomínio de forma eficiente, transparente e acessível para todos os envolvidos.
 
 ## ✨ Funcionalidades Principais
 
@@ -18,8 +18,8 @@ O Gestão de Condomínio é um sistema de backend completo, desenvolvido para fa
 ## 🚀 Pilha Tecnológica (Stack)
 
 ### **Backend**
-* **Java 24**
-* **Spring Boot 3.5:** Framework principal para a construção da API.
+* **Java 21**
+* **Spring Boot 3.3.1:** Framework principal para a construção da API.
 * **Spring Security 6:** Para autenticação (JWT) e autorização (`@PreAuthorize`).
 * **Spring Data JPA / Hibernate:** Para persistência de dados e comunicação com o banco.
 * **JJWT (Java JWT):** Biblioteca para criação e validação dos tokens JWT.
@@ -31,7 +31,7 @@ O Gestão de Condomínio é um sistema de backend completo, desenvolvido para fa
 ## ⚙️ Pré-requisitos
 
 Para rodar este projeto localmente, você precisará ter instalado:
-* [**JDK 24**](https://www.oracle.com/java/technologies/downloads/#jdk24-windows) ou superior.
+* [**JDK 21**](https://www.oracle.com/java/technologies/downloads/#jdk21-windows) ou superior.
 * [**Apache Maven 3.9**](https://maven.apache.org/download.cgi) ou superior.
 * [**Microsoft SQL Server**](https://www.microsoft.com/pt-br/sql-server/sql-server-downloads) (qualquer edição, incluindo a Express ou Developer).
 * Uma ferramenta de API, como [**Postman**](https://www.postman.com/downloads/) ou [**Insomnia**](https://insomnia.rest/download).
@@ -47,7 +47,7 @@ Para rodar este projeto localmente, você precisará ter instalado:
 2.  **Configure o Banco de Dados**
     * Certifique-se de que seu SQL Server está rodando.
     * Crie um novo banco de dados chamado `GESTAO_CONDOMINIO`.
-    * Execute o script `Banco de dados.sql` (que nós já temos) neste banco de dados para criar todas as tabelas.
+    * Execute o script `Banco de dados.sql` neste banco de dados para criar todas as tabelas.
 
 3.  **Configure a Aplicação**
     * Abra o arquivo `src/main/resources/application.properties`.
@@ -90,4 +90,4 @@ A API é RESTful e protegida por JWT. Para interagir com ela:
 1.  **Faça login:** Envie uma requisição `POST` para `/api/auth/login` com `{ "email": "...", "senha": "..." }` para obter um token.
 2.  **Envie o Token:** Em todas as outras requisições, inclua o cabeçalho `Authorization: Bearer <seu_token>`.
 
-Para uma documentação completa de todos os endpoints e exemplos de JSON, consulte o **Manual do Desenvolvedor Frontend**.
+Para uma documentação completa de todos os endpoints e exemplos de JSON, consulte o **Manual do Desenvolvedor Frontend** ou acesse a documentação interativa da API via Swagger UI em: `http://localhost:8080/swagger-ui/index.html`.

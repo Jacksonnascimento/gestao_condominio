@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -35,13 +34,13 @@ public class AssembleiaVotoController {
     }
 
     @GetMapping("/por-topico/{topicoId}")
-    public ResponseEntity<List<AssembleiaVoto>> listarVotosPorTopico(@PathVariable Integer topicoId) {
-        List<AssembleiaVoto> votos = assembleiaVotoService.listarVotosPorTopico(topicoId);
-        return new ResponseEntity<>(votos, HttpStatus.OK);
+    public ResponseEntity<Object> listarVotosPorTopico(@PathVariable Integer topicoId) {
+        Object resultado = assembleiaVotoService.listarVotosPorTopico(topicoId);
+        return new ResponseEntity<>(resultado, HttpStatus.OK);
     }
 
     @PutMapping("/{aspCod}/{pesCod}")
-    public ResponseEntity<AssembleiaVoto> atualizarVoto(@PathVariable Integer aspCod, @PathVariable Integer pesCod, @RequestBody AssembleiaVoto votoAtualizado) {
+    public ResponseEntity<AssembleiaVoto> atualizarAssembleiaVoto(@PathVariable Integer aspCod, @PathVariable Integer pesCod, @RequestBody AssembleiaVoto votoAtualizado) {
         AssembleiaVotoId id = new AssembleiaVotoId(aspCod, pesCod);
         AssembleiaVoto votoSalvo = assembleiaVotoService.atualizarAssembleiaVoto(id, votoAtualizado);
         return new ResponseEntity<>(votoSalvo, HttpStatus.OK);

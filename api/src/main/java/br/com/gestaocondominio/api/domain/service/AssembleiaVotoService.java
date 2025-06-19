@@ -1,9 +1,11 @@
 package br.com.gestaocondominio.api.domain.service;
 
+import br.com.gestaocondominio.api.controller.dto.VotacaoResultadoDTO;
 import br.com.gestaocondominio.api.domain.entity.*;
+import br.com.gestaocondominio.api.domain.enums.VotoOpcao;
 import br.com.gestaocondominio.api.domain.repository.AssembleiaParticipanteRepository;
-import br.com.gestaocondominio.api.domain.repository.AssembleiaVotoRepository;
 import br.com.gestaocondominio.api.domain.repository.AssembleiaTopicoRepository;
+import br.com.gestaocondominio.api.domain.repository.AssembleiaVotoRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
 import org.springframework.security.authorization.AuthorizationDeniedException;
@@ -47,7 +49,7 @@ public class AssembleiaVotoService {
         AssembleiaParticipanteId participanteId = new AssembleiaParticipanteId(topico.getAssembleia().getAssCod(), pessoaVotante.getPesCod());
         assembleiaParticipanteRepository.findById(participanteId)
                 .orElseThrow(() -> new AuthorizationDeniedException("Acesso negado. Você não é um participante desta assembleia."));
-        
+
         AssembleiaVotoId id = new AssembleiaVotoId(topico.getAspCod(), pessoaVotante.getPesCod());
         if (assembleiaVotoRepository.findById(id).isPresent()) {
             throw new IllegalArgumentException("Esta pessoa já votou neste tópico da assembleia.");
@@ -57,13 +59,33 @@ public class AssembleiaVotoService {
         return assembleiaVotoRepository.save(voto);
     }
 
-    public List<AssembleiaVoto> listarVotosPorTopico(Integer topicoId) {
+    public Object listarVotosPorTopico(Integer topicoId) {
         AssembleiaTopico topico = assembleiaTopicoRepository.findById(topicoId)
                 .orElseThrow(() -> new IllegalArgumentException("Tópico não encontrado com o ID: " + topicoId));
-        
+
         assembleiaService.checkPermissionToView(topico.getAssembleia());
-        
-        return assembleiaVotoRepository.findByTopico(topico);
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Integer condominioId = topico.getAssembleia().getCondominio().getConCod();
+
+        boolean isGestor = authentication.getAuthorities().stream().anyMatch(a ->
+                a.getAuthority().equals("ROLE_GLOBAL_ADMIN") ||
+                a.getAuthority().equals("ROLE_SINDICO_" + condominioId) ||
+                a.getAuthority().equals("ROLE_ADMIN_" + condominioId)
+        );
+
+        List<AssembleiaVoto> votos = assembleiaVotoRepository.findByTopico(topico);
+
+        if (isGestor) {
+            return votos;
+        } else {
+            long votosSim = votos.stream().filter(v -> v.getVoto() == VotoOpcao.SIM).count();
+            long votosNao = votos.stream().filter(v -> v.getVoto() == VotoOpcao.NAO).count();
+            long votosAbstencao = votos.stream().filter(v -> v.getVoto() == VotoOpcao.ABSTENCAO).count();
+            long total = votos.size();
+
+            return new VotacaoResultadoDTO(votosSim, votosNao, votosAbstencao, total);
+        }
     }
 
     public Optional<AssembleiaVoto> buscarVotoPorId(AssembleiaVotoId id) {
@@ -72,7 +94,6 @@ public class AssembleiaVotoService {
         return votoOpt;
     }
 
-    
     public AssembleiaVoto atualizarAssembleiaVoto(AssembleiaVotoId id, AssembleiaVoto votoAtualizado) {
         AssembleiaVoto votoExistente = assembleiaVotoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Voto não encontrado."));
@@ -82,7 +103,7 @@ public class AssembleiaVotoService {
         if (!userDetails.getPessoa().getPesCod().equals(votoExistente.getPessoa().getPesCod())) {
             throw new AuthorizationDeniedException("Acesso negado. Você não pode alterar o voto de outra pessoa.");
         }
-        
+
         votoExistente.setVoto(votoAtualizado.getVoto());
         return assembleiaVotoRepository.save(votoExistente);
     }
@@ -96,10 +117,10 @@ public class AssembleiaVotoService {
         Integer condominioId = voto.getTopico().getAssembleia().getCondominio().getConCod();
 
         boolean isOwner = userDetails.getPessoa().getPesCod().equals(voto.getPessoa().getPesCod());
-        boolean isGestor = authentication.getAuthorities().stream().anyMatch(a -> 
-            a.getAuthority().equals("ROLE_GLOBAL_ADMIN") ||
-            a.getAuthority().equals("ROLE_SINDICO_" + condominioId) ||
-            a.getAuthority().equals("ROLE_ADMIN_" + condominioId)
+        boolean isGestor = authentication.getAuthorities().stream().anyMatch(a ->
+                a.getAuthority().equals("ROLE_GLOBAL_ADMIN") ||
+                a.getAuthority().equals("ROLE_SINDICO_" + condominioId) ||
+                a.getAuthority().equals("ROLE_ADMIN_" + condominioId)
         );
 
         if (!isOwner && !isGestor) {

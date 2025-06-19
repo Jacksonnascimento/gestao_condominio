@@ -2,12 +2,14 @@ package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.repository.*;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -46,58 +48,31 @@ public class CondominioService {
         this.documentoRepository = documentoRepository;
     }
     
-  
-    
-    
     public List<Condominio> listarTodosCondominios(boolean incluirInativas) {
-       
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         
-        
-        boolean isGlobalAdmin = authentication.getAuthorities().stream()
-                .anyMatch(role -> role.getAuthority().equals("ROLE_GLOBAL_ADMIN"));
-
-        if (isGlobalAdmin) {
-           
+        if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) {
             if (incluirInativas) {
                 return condominioRepository.findAll();
             }
             return condominioRepository.findByConAtivo(true);
         }
 
-     
-        Set<Integer> condoIds = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .filter(authString -> authString.startsWith("ROLE_SINDICO_") || 
-                                      authString.startsWith("ROLE_ADMIN_") || 
-                                      authString.startsWith("ROLE_MORADOR_") ||
-                                      authString.startsWith("ROLE_FUNCIONARIO_ADM_") ||
-                                      authString.startsWith("ROLE_PORTEIRO_"))
-                .map(authString -> Integer.parseInt(authString.substring(authString.lastIndexOf('_') + 1)))
-                .collect(Collectors.toSet());
+        Set<Integer> condoIds = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_", "ROLE_MORADOR_", "ROLE_FUNCIONARIO_ADM_", "ROLE_PORTEIRO_");
         
-        
-
         if (condoIds.isEmpty()) {
-         
             return List.of();
         }
 
-        
         List<Condominio> condominiosPermitidos = condominioRepository.findAllById(condoIds);
 
-     
         if (!incluirInativas) {
             return condominiosPermitidos.stream()
                     .filter(condo -> condo.getConAtivo() != null && condo.getConAtivo())
                     .collect(Collectors.toList());
         }
-
         return condominiosPermitidos;
     }
-
-
-
 
     public Condominio cadastrarCondominio(Condominio condominio) {
         if (condominio.getAdministradora() == null || condominio.getAdministradora().getAdmCod() == null) {
@@ -121,12 +96,16 @@ public class CondominioService {
     }
 
     public Optional<Condominio> buscarCondominioPorId(Integer id) {
-        return condominioRepository.findById(id);
+        Optional<Condominio> condominioOpt = condominioRepository.findById(id);
+        condominioOpt.ifPresent(this::checkPermissionToViewCondo);
+        return condominioOpt;
     }
 
     public Condominio atualizarCondominio(Integer id, Condominio condominioAtualizado) {
         Condominio condominioExistente = condominioRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado com o ID: " + id));
+
+        checkPermissionToManageCondo(condominioExistente);
 
         if (condominioAtualizado.getAdministradora() != null &&
             (condominioExistente.getAdministradora() == null || !condominioAtualizado.getAdministradora().getAdmCod().equals(condominioExistente.getAdministradora().getAdmCod()))) {
@@ -184,26 +163,28 @@ public class CondominioService {
         Condominio condominio = condominioRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado com o ID: " + id));
 
+        checkPermissionToManageCondo(condominio);
+
         if (!unidadeRepository.findByCondominio(condominio).isEmpty()) {
-            throw new IllegalArgumentException("Não é possível inativar o condomínio, pois existem unidades vinculadas a ele.");
+            throw new IllegalStateException("Não é possível inativar o condomínio, pois existem unidades vinculadas a ele.");
         }
         if (!gestaoComunicacaoRepository.findByCondominio(condominio).isEmpty()) {
-            throw new IllegalArgumentException("Não é possível inativar o condomínio, pois existem comunicados vinculados a ele.");
+            throw new IllegalStateException("Não é possível inativar o condomínio, pois existem comunicados vinculados a ele.");
         }
         if (!assembleiaRepository.findByCondominio(condominio).isEmpty()) {
-            throw new IllegalArgumentException("Não é possível inativar o condomínio, pois existem assembleias vinculadas a ele.");
+            throw new IllegalStateException("Não é possível inativar o condomínio, pois existem assembleias vinculadas a ele.");
         }
         if (!areaComumRepository.findByCondominio(condominio).isEmpty()) {
-            throw new IllegalArgumentException("Não é possível inativar o condomínio, pois existem áreas comuns vinculadas a ele.");
+            throw new IllegalStateException("Não é possível inativar o condomínio, pois existem áreas comuns vinculadas a ele.");
         }
         if (!solicitacaoManutencaoRepository.findByCondominio(condominio).isEmpty()) {
-            throw new IllegalArgumentException("Não é possível inativar o condomínio, pois existem solicitações de manutenção vinculadas a ele.");
+            throw new IllegalStateException("Não é possível inativar o condomínio, pois existem solicitações de manutenção vinculadas a ele.");
         }
         if (!usuarioCondominioRepository.findByCondominio(condominio).isEmpty()) {
-            throw new IllegalArgumentException("Não é possível inativar o condomínio, pois existem usuários/papéis vinculados a ele.");
+            throw new IllegalStateException("Não é possível inativar o condomínio, pois existem usuários/papéis vinculados a ele.");
         }
         if (!documentoRepository.findByCondominio(condominio).isEmpty()) {
-            throw new IllegalArgumentException("Não é possível inativar o condomínio, pois existem documentos vinculados a ele.");
+            throw new IllegalStateException("Não é possível inativar o condomínio, pois existem documentos vinculados a ele.");
         }
 
         condominio.setConAtivo(false);
@@ -214,8 +195,46 @@ public class CondominioService {
     public Condominio ativarCondominio(Integer id) {
         Condominio condominio = condominioRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado com o ID: " + id));
+        
+        checkPermissionToManageCondo(condominio);
+        
         condominio.setConAtivo(true);
         condominio.setConDtAtualizacao(LocalDateTime.now());
         return condominioRepository.save(condominio);
+    }
+
+    private void checkPermissionToManageCondo(Condominio condominio) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) return;
+        if (hasAuthority(authentication, "ROLE_SINDICO_" + condominio.getConCod())) return;
+        if (condominio.getAdministradora() != null) {
+            if (hasAuthority(authentication, "ROLE_GERENTE_ADMINISTRADORA_" + condominio.getAdministradora().getAdmCod())) {
+                return;
+            }
+        }
+        throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para gerenciar este condomínio.");
+    }
+
+    private void checkPermissionToViewCondo(Condominio condominio) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) return;
+        
+        boolean hasAnyRoleInCondo = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_", "ROLE_MORADOR_")
+                                        .contains(condominio.getConCod());
+        if (hasAnyRoleInCondo) return;
+        
+        throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para visualizar este condomínio.");
+    }
+
+    private boolean hasAuthority(Authentication auth, String authority) {
+        return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals(authority));
+    }
+
+    private Set<Integer> getCondoIdsFromRoles(Authentication auth, String... prefixes) {
+        return auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(authString -> Arrays.stream(prefixes).anyMatch(authString::startsWith))
+                .map(authString -> Integer.parseInt(authString.substring(authString.lastIndexOf('_') + 1)))
+                .collect(Collectors.toSet());
     }
 }

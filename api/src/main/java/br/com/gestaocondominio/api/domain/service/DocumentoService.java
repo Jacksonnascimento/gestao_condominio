@@ -7,7 +7,7 @@ import br.com.gestaocondominio.api.domain.repository.DocumentoPermissaoVisualiza
 import br.com.gestaocondominio.api.domain.repository.DocumentoRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
-import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -48,7 +48,7 @@ public class DocumentoService {
         Optional<Documento> documentoOpt = documentoRepository.findById(id);
         documentoOpt.ifPresent(doc -> {
             if (!temPermissaoParaVisualizar(doc, SecurityContextHolder.getContext().getAuthentication())) {
-                throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para visualizar este documento.");
+                throw new AccessDeniedException("Acesso negado. Você não tem permissão para visualizar este documento.");
             }
         });
         return documentoOpt;
@@ -69,7 +69,7 @@ public class DocumentoService {
                 .orElseThrow(() -> new IllegalArgumentException("Documento não encontrado com o ID: " + id));
         
         if (!temPermissaoParaGerenciar(documentoExistente.getCondominio().getConCod())) {
-            throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para gerenciar documentos neste condomínio.");
+            throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar documentos neste condomínio.");
         }
         
         if(documentoAtualizado.getNome() != null) documentoExistente.setNome(documentoAtualizado.getNome());
@@ -87,7 +87,7 @@ public class DocumentoService {
                 .orElseThrow(() -> new IllegalArgumentException("Documento não encontrado com o ID: " + id));
 
         if (!temPermissaoParaGerenciar(documento.getCondominio().getConCod())) {
-            throw new AuthorizationDeniedException("Acesso negado.");
+            throw new AccessDeniedException("Acesso negado.");
         }
         
         documentoPermissaoVisualizarRepository.deleteAll(documentoPermissaoVisualizarRepository.findByDocumento(documento));

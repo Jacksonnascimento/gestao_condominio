@@ -5,7 +5,7 @@ import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.repository.AdministradoraRepository;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository; 
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
-import org.springframework.security.authorization.AuthorizationDeniedException; 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication; 
 import org.springframework.security.core.context.SecurityContextHolder; 
 import org.springframework.stereotype.Service;
@@ -135,6 +135,6 @@ public class AdministradoraService {
         }
 
        
-        throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para visualizar esta administradora.");
+        throw new AccessDeniedException("Acesso negado. Você não tem permissão para visualizar esta administradora.");
     }
 }

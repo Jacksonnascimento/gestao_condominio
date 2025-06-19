@@ -2,7 +2,7 @@ package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.repository.*;
-import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -212,7 +212,7 @@ public class CondominioService {
                 return;
             }
         }
-        throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para gerenciar este condomínio.");
+        throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar este condomínio.");
     }
 
     private void checkPermissionToViewCondo(Condominio condominio) {
@@ -223,7 +223,7 @@ public class CondominioService {
                                         .contains(condominio.getConCod());
         if (hasAnyRoleInCondo) return;
         
-        throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para visualizar este condomínio.");
+        throw new AccessDeniedException("Acesso negado. Você não tem permissão para visualizar este condomínio.");
     }
 
     private boolean hasAuthority(Authentication auth, String authority) {

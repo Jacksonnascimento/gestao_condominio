@@ -19,8 +19,5 @@
       "sourceType": "br.com.gestaocondominio.api.security.properties.JwtProperties"
     }
   ],
-  "hints": [],
-  "ignored": {
-    "properties": []
-  }
+  "hints": []
 }

@@ -2,8 +2,8 @@ package br.com.gestaocondominio.api.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
@@ -19,19 +19,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
     
- 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentialsException(BadCredentialsException ex, WebRequest request) {
         String path = request.getDescription(false).replace("uri=", "");
         String customMessage = "Credenciais inválidas. Por favor, verifique seu e-mail e senha.";
-       
         ErrorResponse errorResponse = new ErrorResponse(HttpStatus.UNAUTHORIZED, customMessage, path);
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
     }
-   
 
-    @ExceptionHandler(AuthorizationDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAuthorizationDeniedException(AuthorizationDeniedException ex, WebRequest request) {
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex, WebRequest request) {
         String path = request.getDescription(false).replace("uri=", "");
         String customMessage = "Acesso negado. Você não tem permissão para executar esta ação.";
         ErrorResponse errorResponse = new ErrorResponse(HttpStatus.FORBIDDEN, customMessage, path);
@@ -48,7 +45,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         );
 
         System.err.println("Erro interno do servidor em " + path + ": " + ex.getMessage());
-        ex.printStackTrace(); // remover em produção
+        ex.printStackTrace();
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

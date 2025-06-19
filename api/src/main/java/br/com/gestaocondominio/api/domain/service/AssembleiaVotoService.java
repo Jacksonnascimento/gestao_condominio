@@ -8,7 +8,7 @@ import br.com.gestaocondominio.api.domain.repository.AssembleiaTopicoRepository;
 import br.com.gestaocondominio.api.domain.repository.AssembleiaVotoRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
-import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -43,12 +43,12 @@ public class AssembleiaVotoService {
                 .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada."));
 
         if (!userDetails.getPessoa().getPesCod().equals(pessoaVotante.getPesCod())) {
-            throw new AuthorizationDeniedException("Um usuário não pode votar em nome de outro.");
+            throw new AccessDeniedException("Um usuário não pode votar em nome de outro.");
         }
 
         AssembleiaParticipanteId participanteId = new AssembleiaParticipanteId(topico.getAssembleia().getAssCod(), pessoaVotante.getPesCod());
         assembleiaParticipanteRepository.findById(participanteId)
-                .orElseThrow(() -> new AuthorizationDeniedException("Acesso negado. Você não é um participante desta assembleia."));
+                .orElseThrow(() -> new AccessDeniedException("Acesso negado. Você não é um participante desta assembleia."));
 
         AssembleiaVotoId id = new AssembleiaVotoId(topico.getAspCod(), pessoaVotante.getPesCod());
         if (assembleiaVotoRepository.findById(id).isPresent()) {
@@ -101,7 +101,7 @@ public class AssembleiaVotoService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         if (!userDetails.getPessoa().getPesCod().equals(votoExistente.getPessoa().getPesCod())) {
-            throw new AuthorizationDeniedException("Acesso negado. Você não pode alterar o voto de outra pessoa.");
+            throw new AccessDeniedException("Acesso negado. Você não pode alterar o voto de outra pessoa.");
         }
 
         votoExistente.setVoto(votoAtualizado.getVoto());
@@ -124,7 +124,7 @@ public class AssembleiaVotoService {
         );
 
         if (!isOwner && !isGestor) {
-            throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para deletar este voto.");
+            throw new AccessDeniedException("Acesso negado. Você não tem permissão para deletar este voto.");
         }
 
         assembleiaVotoRepository.delete(voto);

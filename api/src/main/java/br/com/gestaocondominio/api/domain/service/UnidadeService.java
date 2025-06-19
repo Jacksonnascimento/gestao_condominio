@@ -10,7 +10,7 @@ import br.com.gestaocondominio.api.domain.enums.SolicitacaoManutencaoStatus;
 import br.com.gestaocondominio.api.domain.enums.UnidadeStatusOcupacao;
 import br.com.gestaocondominio.api.domain.repository.*;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
-import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -186,7 +186,7 @@ public class UnidadeService {
             return;
         }
 
-        throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para visualizar esta unidade.");
+        throw new AccessDeniedException("Acesso negado. Você não tem permissão para visualizar esta unidade.");
     }
 
     private void checkAdminOrSindicoPermission(Integer condominioId) {
@@ -197,7 +197,7 @@ public class UnidadeService {
                                 hasAuthority(authentication, "ROLE_ADMIN_" + condominioId);
 
         if (!hasPermission) {
-            throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para gerenciar unidades neste condomínio.");
+            throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar unidades neste condomínio.");
         }
     }
 

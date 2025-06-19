@@ -6,10 +6,11 @@ import br.com.gestaocondominio.api.domain.entity.DocumentoPermissaoVisualizar;
 import br.com.gestaocondominio.api.domain.repository.DocumentoPermissaoVisualizarRepository;
 import br.com.gestaocondominio.api.domain.repository.DocumentoRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
+import org.springframework.security.access.AccessDeniedException; 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-
 
 @Service("documentoPermissaoVisualizarService")
 public class DocumentoPermissaoVisualizarService {
@@ -42,12 +43,14 @@ public class DocumentoPermissaoVisualizarService {
         return documentoPermissaoVisualizarRepository.findAll();
     }
 
+    @Transactional
     public void deletarPermissao(DocumentoPermissaoId id) {
         DocumentoPermissaoVisualizar permissao = documentoPermissaoVisualizarRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Permissão não encontrada."));
         
         if (!documentoService.temPermissaoParaGerenciar(permissao.getDocumento().getCondominio().getConCod())) {
-            throw new org.springframework.security.authorization.AuthorizationDeniedException("Acesso negado.");
+            // --- LINHA CORRIGIDA ---
+            throw new AccessDeniedException("Acesso negado.");
         }
         
         documentoPermissaoVisualizarRepository.delete(permissao);

@@ -4,7 +4,7 @@ import br.com.gestaocondominio.api.domain.entity.*;
 import br.com.gestaocondominio.api.domain.enums.SolicitacaoManutencaoStatus;
 import br.com.gestaocondominio.api.domain.repository.*;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
-import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -82,7 +82,7 @@ public class SolicitacaoManutencaoService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         if (!userDetails.getPessoa().getPesCod().equals(solicitante.getPesCod())) {
-            throw new AuthorizationDeniedException("Um usuário não pode criar uma solicitação em nome de outro.");
+            throw new AccessDeniedException("Um usuário não pode criar uma solicitação em nome de outro.");
         }
 
         if (solicitacao.getTipoSolicitacao() == null || solicitacao.getTipoSolicitacao().getTsmCod() == null) {
@@ -139,7 +139,7 @@ public class SolicitacaoManutencaoService {
                                 hasAuthority(authentication, "ROLE_SINDICO_" + condominioId) ||
                                 hasAuthority(authentication, "ROLE_ADMIN_" + condominioId);
         if (!hasPermission) {
-            throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para gerenciar solicitações de manutenção neste condomínio.");
+            throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar solicitações de manutenção neste condomínio.");
         }
     }
 
@@ -157,7 +157,7 @@ public class SolicitacaoManutencaoService {
             return;
         }
 
-        throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para visualizar esta solicitação.");
+        throw new AccessDeniedException("Acesso negado. Você não tem permissão para visualizar esta solicitação.");
     }
     
     private boolean hasAuthority(Authentication auth, String authority) {

@@ -4,7 +4,7 @@ import br.com.gestaocondominio.api.domain.entity.*;
 import br.com.gestaocondominio.api.domain.enums.CobrancaStatus;
 import br.com.gestaocondominio.api.domain.repository.*;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
-import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -195,7 +195,7 @@ public class FinanceiroCobrancaService {
                                 hasAuthority(authentication, "ROLE_SINDICO_" + condominioId) ||
                                 hasAuthority(authentication, "ROLE_ADMIN_" + condominioId);
         if (!hasPermission) {
-            throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para gerenciar finanças neste condomínio.");
+            throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar finanças neste condomínio.");
         }
     }
     
@@ -209,7 +209,7 @@ public class FinanceiroCobrancaService {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         boolean isMoradorDaUnidade = moradorRepository.findByPessoaAndUnidade(userDetails.getPessoa(), cobranca.getUnidade()).isPresent();
         if (!isMoradorDaUnidade) {
-            throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para visualizar esta cobrança.");
+            throw new AccessDeniedException("Acesso negado. Você não tem permissão para visualizar esta cobrança.");
         }
     }
 

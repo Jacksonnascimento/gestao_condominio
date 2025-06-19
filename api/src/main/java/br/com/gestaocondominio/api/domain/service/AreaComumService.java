@@ -5,7 +5,7 @@ import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.repository.AreaComumRepository;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.ReservaAreaComumRepository;
-import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -83,7 +83,7 @@ public class AreaComumService {
                                     hasAuthority(authentication, "ROLE_MORADOR_" + condominioId);
             
             if (!hasPermission) {
-                throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para visualizar recursos deste condomínio.");
+                throw new AccessDeniedException("Acesso negado. Você não tem permissão para visualizar recursos deste condomínio.");
             }
         });
 
@@ -127,7 +127,7 @@ public class AreaComumService {
                                 hasAuthority(authentication, "ROLE_ADMIN_" + condominioId);
 
         if (!hasPermission) {
-            throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para gerenciar áreas comuns neste condomínio.");
+            throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar áreas comuns neste condomínio.");
         }
     }
 

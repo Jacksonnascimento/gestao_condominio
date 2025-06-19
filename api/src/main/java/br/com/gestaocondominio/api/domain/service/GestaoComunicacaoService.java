@@ -10,7 +10,7 @@ import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.GestaoComunicacaoRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
-import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -47,12 +47,12 @@ public class GestaoComunicacaoService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         if (!userDetails.getPessoa().getPesCod().equals(remetente.getPesCod())) {
-            throw new AuthorizationDeniedException("Um usuário não pode enviar um comunicado em nome de outro.");
+            throw new AccessDeniedException("Um usuário não pode enviar um comunicado em nome de outro.");
         }
 
         boolean isGestor = hasAuthority(authentication, "ROLE_GLOBAL_ADMIN") || hasAuthority(authentication, "ROLE_SINDICO_" + condominio.getConCod()) || hasAuthority(authentication, "ROLE_ADMIN_" + condominio.getConCod());
         if (!isGestor && comunicacao.getComDesTodos() == ComunicadoDestino.TODOS) {
-            throw new AuthorizationDeniedException("Moradores não podem enviar comunicados para todos.");
+            throw new AccessDeniedException("Moradores não podem enviar comunicados para todos.");
         }
         
         comunicacao.setComDtCadastro(LocalDateTime.now());
@@ -179,7 +179,7 @@ public class GestaoComunicacaoService {
                                 hasAuthority(authentication, "ROLE_SINDICO_" + condominioId) ||
                                 hasAuthority(authentication, "ROLE_ADMIN_" + condominioId);
         if (!hasPermission) {
-            throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para gerenciar comunicados neste condomínio.");
+            throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar comunicados neste condomínio.");
         }
     }
     

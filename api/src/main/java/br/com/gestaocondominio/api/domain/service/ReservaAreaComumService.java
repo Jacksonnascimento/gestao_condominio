@@ -4,7 +4,7 @@ import br.com.gestaocondominio.api.domain.entity.*;
 import br.com.gestaocondominio.api.domain.enums.ReservaAreaComumStatus;
 import br.com.gestaocondominio.api.domain.repository.*;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
-import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -75,7 +75,7 @@ public class ReservaAreaComumService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         if (!userDetails.getPessoa().getPesCod().equals(solicitante.getPesCod())) {
-            throw new AuthorizationDeniedException("Um usuário não pode criar uma reserva em nome de outro.");
+            throw new AccessDeniedException("Um usuário não pode criar uma reserva em nome de outro.");
         }
 
         if (reserva.getDataHoraInicio().isAfter(reserva.getDataHoraFim())) {
@@ -140,7 +140,7 @@ public class ReservaAreaComumService {
             return;
         }
         
-        throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para visualizar ou modificar esta reserva.");
+        throw new AccessDeniedException("Acesso negado. Você não tem permissão para visualizar ou modificar esta reserva.");
     }
     
     private boolean hasAuthority(Authentication auth, String authority) {

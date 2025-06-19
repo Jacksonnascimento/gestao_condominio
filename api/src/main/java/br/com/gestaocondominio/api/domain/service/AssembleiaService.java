@@ -4,7 +4,7 @@ import br.com.gestaocondominio.api.domain.entity.Assembleia;
 import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.enums.AssembleiaStatus;
 import br.com.gestaocondominio.api.domain.repository.*;
-import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -128,7 +128,7 @@ public class AssembleiaService {
                                 hasAuthority(authentication, "ROLE_SINDICO_" + condominioId) ||
                                 hasAuthority(authentication, "ROLE_ADMIN_" + condominioId);
         if (!hasPermission) {
-            throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para gerenciar assembleias neste condomínio.");
+            throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar assembleias neste condomínio.");
         }
     }
 
@@ -141,7 +141,7 @@ public class AssembleiaService {
                                 hasAuthority(authentication, "ROLE_ADMIN_" + condominioId) ||
                                 hasAuthority(authentication, "ROLE_MORADOR_" + condominioId);
         if (!hasPermission) {
-            throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para visualizar recursos deste condomínio.");
+            throw new AccessDeniedException("Acesso negado. Você não tem permissão para visualizar recursos deste condomínio.");
         }
     }
 

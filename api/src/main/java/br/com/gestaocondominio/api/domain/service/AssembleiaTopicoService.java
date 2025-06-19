@@ -5,7 +5,7 @@ import br.com.gestaocondominio.api.domain.entity.AssembleiaTopico;
 import br.com.gestaocondominio.api.domain.repository.AssembleiaRepository;
 import br.com.gestaocondominio.api.domain.repository.AssembleiaTopicoRepository;
 import br.com.gestaocondominio.api.domain.repository.AssembleiaVotoRepository;
-import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -58,7 +58,7 @@ public class AssembleiaTopicoService {
                 .orElseThrow(() -> new IllegalArgumentException("Tópico de assembleia não encontrado com o ID: " + id));
 
         if (!temPermissaoParaGerenciarTopico(topicoExistente)) {
-            throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para gerenciar este tópico.");
+            throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar este tópico.");
         }
         
         topicoExistente.setAspDescricao(topicoAtualizado.getAspDescricao());
@@ -70,7 +70,7 @@ public class AssembleiaTopicoService {
                 .orElseThrow(() -> new IllegalArgumentException("Tópico de assembleia não encontrado com o ID: " + id));
 
         if (!temPermissaoParaGerenciarTopico(topico)) {
-            throw new AuthorizationDeniedException("Acesso negado. Você não tem permissão para gerenciar este tópico.");
+            throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar este tópico.");
         }
 
         if (!assembleiaVotoRepository.findByTopico(topico).isEmpty()) {

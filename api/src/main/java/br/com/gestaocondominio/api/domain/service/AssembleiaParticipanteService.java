@@ -7,7 +7,7 @@ import br.com.gestaocondominio.api.domain.repository.AssembleiaParticipanteRepos
 import br.com.gestaocondominio.api.domain.repository.AssembleiaRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -76,7 +76,7 @@ public class AssembleiaParticipanteService {
                 .orElseThrow(() -> new IllegalArgumentException("Participante da assembleia não encontrado."));
 
         if (!temPermissaoParaGerenciarParticipantes(id.getAssCod())) {
-            throw new AuthorizationDeniedException("Acesso negado.");
+            throw new AccessDeniedException("Acesso negado.");
         }
         
         if (participanteAtualizado.getParticipacao() != null) {
@@ -92,7 +92,7 @@ public class AssembleiaParticipanteService {
         }
         
         if (!temPermissaoParaGerenciarParticipantes(id.getAssCod())) {
-            throw new AuthorizationDeniedException("Acesso negado.");
+            throw new AccessDeniedException("Acesso negado.");
         }
         
         assembleiaParticipanteRepository.deleteById(id);

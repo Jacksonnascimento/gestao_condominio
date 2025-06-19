@@ -149,13 +149,16 @@ public class FinanceiroCobrancaService {
 
     @Transactional
     public List<FinanceiroCobranca> gerarCobrancasEmLote(Integer condominioId, LocalDate dataVencimento, Integer tipoCobrancaId) {
-        condominioRepository.findById(condominioId)
+        Condominio condominioReferencia = condominioRepository.findById(condominioId)
                 .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado com o ID: " + condominioId));
 
         TipoCobranca tipoCobranca = tipoCobrancaRepository.findById(tipoCobrancaId)
                 .orElseThrow(() -> new IllegalArgumentException("Tipo de cobrança não encontrado com o ID: " + tipoCobrancaId));
+        
+       
+        List<Unidade> unidadesDoCondominio = unidadeRepository.findByCondominio(condominioReferencia);
+       
 
-        List<Unidade> unidadesDoCondominio = unidadeRepository.findByCondominio(new Condominio(condominioId));
         if (unidadesDoCondominio.isEmpty()) {
             throw new IllegalArgumentException("Nenhuma unidade encontrada para o condomínio especificado.");
         }

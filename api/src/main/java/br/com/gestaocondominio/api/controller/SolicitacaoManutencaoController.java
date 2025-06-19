@@ -22,26 +22,26 @@ public class SolicitacaoManutencaoController {
     @PostMapping
     public ResponseEntity<SolicitacaoManutencao> cadastrarSolicitacaoManutencao(@RequestBody SolicitacaoManutencao solicitacao) {
         SolicitacaoManutencao novaSolicitacao = solicitacaoManutencaoService.cadastrarSolicitacaoManutencao(solicitacao);
-        return new ResponseEntity<>(novaSolicitacao, HttpStatus.CREATED); 
+        return new ResponseEntity<>(novaSolicitacao, HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<SolicitacaoManutencao> buscarSolicitacaoManutencaoPorId(@PathVariable Integer id) {
         Optional<SolicitacaoManutencao> solicitacao = solicitacaoManutencaoService.buscarSolicitacaoManutencaoPorId(id);
-        return solicitacao.map(s -> new ResponseEntity<>(s, HttpStatus.OK)) 
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND)); 
+        return solicitacao.map(s -> new ResponseEntity<>(s, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @GetMapping
     public ResponseEntity<List<SolicitacaoManutencao>> listarTodasSolicitacoesManutencao() {
         List<SolicitacaoManutencao> solicitacoes = solicitacaoManutencaoService.listarTodasSolicitacoesManutencao();
-        return new ResponseEntity<>(solicitacoes, HttpStatus.OK); 
+        return new ResponseEntity<>(solicitacoes, HttpStatus.OK);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<SolicitacaoManutencao> atualizarSolicitacaoManutencao(@PathVariable Integer id, @RequestBody SolicitacaoManutencao solicitacaoAtualizada) {
         SolicitacaoManutencao solicitacaoSalva = solicitacaoManutencaoService.atualizarSolicitacaoManutencao(id, solicitacaoAtualizada);
-        return new ResponseEntity<>(solicitacaoSalva, HttpStatus.OK); 
+        return new ResponseEntity<>(solicitacaoSalva, HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")

@@ -22,31 +22,31 @@ public class ReservaAreaComumController {
     @PostMapping
     public ResponseEntity<ReservaAreaComum> cadastrarReservaAreaComum(@RequestBody ReservaAreaComum reserva) {
         ReservaAreaComum novaReserva = reservaAreaComumService.cadastrarReservaAreaComum(reserva);
-        return new ResponseEntity<>(novaReserva, HttpStatus.CREATED); 
+        return new ResponseEntity<>(novaReserva, HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ReservaAreaComum> buscarReservaAreaComumPorId(@PathVariable Integer id) {
         Optional<ReservaAreaComum> reserva = reservaAreaComumService.buscarReservaAreaComumPorId(id);
-        return reserva.map(r -> new ResponseEntity<>(r, HttpStatus.OK)) 
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND)); 
+        return reserva.map(r -> new ResponseEntity<>(r, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @GetMapping
     public ResponseEntity<List<ReservaAreaComum>> listarTodasReservasAreaComum() {
         List<ReservaAreaComum> reservas = reservaAreaComumService.listarTodasReservasAreaComum();
-        return new ResponseEntity<>(reservas, HttpStatus.OK); 
+        return new ResponseEntity<>(reservas, HttpStatus.OK);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ReservaAreaComum> atualizarReservaAreaComum(@PathVariable Integer id, @RequestBody ReservaAreaComum reservaAtualizada) {
         ReservaAreaComum reservaSalva = reservaAreaComumService.atualizarReservaAreaComum(id, reservaAtualizada);
-        return new ResponseEntity<>(reservaSalva, HttpStatus.OK); 
+        return new ResponseEntity<>(reservaSalva, HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarReservaAreaComum(@PathVariable Integer id) {
         reservaAreaComumService.deletarReservaAreaComum(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT); 
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

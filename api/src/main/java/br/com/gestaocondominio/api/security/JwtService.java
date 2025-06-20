@@ -10,7 +10,10 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.HashMap; // NOVO: Importe esta classe
+import java.util.Map; // NOVO: Importe esta classe
 import java.util.function.Function;
+import java.util.stream.Collectors; // NOVO: Importe esta classe
 
 @Service
 public class JwtService {
@@ -21,14 +24,19 @@ public class JwtService {
     @Value("${api.security.jwt.expiration-time-ms}")
     private long expirationTime;
 
-  
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-  
     public String generateToken(UserDetails userDetails) {
+        // NOVO: Crie um mapa para armazenar as claims extras, incluindo as autoridades
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("authorities", userDetails.getAuthorities().stream()
+                                        .map(grantedAuthority -> grantedAuthority.getAuthority())
+                                        .collect(Collectors.toList()));
+
         return Jwts.builder()
+                .claims(claims) // NOVO: Adiciona as claims extras ao token
                 .subject(userDetails.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expirationTime))
@@ -36,7 +44,6 @@ public class JwtService {
                 .compact();
     }
 
-   
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);

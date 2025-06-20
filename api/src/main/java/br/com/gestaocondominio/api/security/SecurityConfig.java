@@ -79,7 +79,7 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of("http://localhost:5173")); // IMPORTANTE: Verifique se esta é a porta correta do seu frontend React
+        config.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5500")); // IMPORTANTE: Verifique se esta é a porta correta do seu frontend React
         config.setAllowedHeaders(Arrays.asList("Origin", "Content-Type", "Accept", "Authorization"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         source.registerCorsConfiguration("/**", config);

@@ -27,7 +27,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(of = "assCod")
 @ToString(of = {"assCod", "assDescricao", "assStatus"})
 @Entity
-@Table(name = "GC_ASSEMBLEIA", schema = "dbo")
+@Table(name = "gc_assembleia")
 public class Assembleia {
 
     @Id

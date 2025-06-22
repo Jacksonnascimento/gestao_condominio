@@ -22,7 +22,7 @@ import lombok.ToString;
 @EqualsAndHashCode(of = "aspCod")
 @ToString(of = {"aspCod", "aspDescricao"})
 @Entity
-@Table(name = "GC_ASSEMBLEIA_TOPICO", schema = "dbo")
+@Table(name = "gc_assembleia_topico")
 public class AssembleiaTopico {
 
     @Id

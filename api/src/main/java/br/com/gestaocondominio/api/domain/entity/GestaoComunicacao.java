@@ -28,7 +28,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(of = "comCod")
 @ToString(of = {"comCod", "comAssunto"})
 @Entity
-@Table(name = "GC_GESTAO_COMUNICACAO", schema = "dbo")
+@Table(name = "gc_gestao_comunicacao")
 public class GestaoComunicacao {
 
     @Id

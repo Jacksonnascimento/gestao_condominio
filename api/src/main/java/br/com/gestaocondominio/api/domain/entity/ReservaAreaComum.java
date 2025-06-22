@@ -27,7 +27,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(of = "racCod")
 @ToString(of = {"racCod", "status", "dataHoraInicio"})
 @Entity
-@Table(name = "GC_RESERVA_AREA_COMUM", schema = "dbo")
+@Table(name = "gc_reserva_area_comum")
 public class ReservaAreaComum {
 
     @Id

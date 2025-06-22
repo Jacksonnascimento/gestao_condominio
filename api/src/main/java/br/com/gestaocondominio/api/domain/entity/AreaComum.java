@@ -25,7 +25,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(of = "arcCod")
 @ToString(of = {"arcCod", "arcNome"})
 @Entity
-@Table(name = "GC_AREA_COMUM", schema = "dbo")
+@Table(name = "gc_area_comum")
 public class AreaComum {
 
     @Id
@@ -44,7 +44,7 @@ public class AreaComum {
     private String arcDescricao;
 
     @Lob
-    @Column(name = "ARC_REGRAS_USO")
+    @Column(name = "ARC_REGRAS_USO", columnDefinition = "TEXT")
     private String arcRegrasUso;
 
     @Column(name = "ARC_CAPACIDADE_MAXIMA")

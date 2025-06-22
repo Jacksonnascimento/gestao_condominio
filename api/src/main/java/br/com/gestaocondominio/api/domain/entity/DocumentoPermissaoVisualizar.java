@@ -19,7 +19,7 @@ import lombok.ToString;
 @EqualsAndHashCode(of = "id")
 @ToString(of = "id")
 @Entity
-@Table(name = "GC_DOCUMENTO_PERMISSAO_VISUALIZAR", schema = "dbo")
+@Table(name = "gc_documento_permissao_visualizar")
 public class DocumentoPermissaoVisualizar {
 
     @EmbeddedId

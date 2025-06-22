@@ -28,7 +28,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(of = "smaCod")
 @ToString(of = {"smaCod", "status", "localDescricao"})
 @Entity
-@Table(name = "GC_SOLICITACAO_MANUTENCAO", schema = "dbo")
+@Table(name = "gc_solicitacao_manutencao")
 public class SolicitacaoManutencao {
 
     @Id
@@ -60,7 +60,7 @@ public class SolicitacaoManutencao {
     private TipoSolicitacaoManutencao tipoSolicitacao;
 
     @Lob
-    @Column(name = "SMA_DESCRICAO_PROBLEMA", nullable = false)
+    @Column(name = "SMA_DESCRICAO_PROBLEMA", nullable = false, columnDefinition = "TEXT")
     private String descricaoProblema;
 
     @Enumerated(EnumType.STRING)

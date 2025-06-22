@@ -25,7 +25,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(of = "cmeCod")
 @ToString(of = {"cmeCod", "statusLeitura", "statusEnvio"})
 @Entity
-@Table(name = "GC_COMUNICADO_ENTREGA", schema = "dbo",
+@Table(name = "gc_comunicado_entrega",
     uniqueConstraints = @UniqueConstraint(columnNames = {"COM_COD", "PES_COD"})
 )
 public class ComunicadoEntrega {

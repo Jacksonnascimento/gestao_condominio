@@ -24,7 +24,7 @@ import lombok.ToString;
 @EqualsAndHashCode(of = "id")
 @ToString(of = {"id", "voto"})
 @Entity
-@Table(name = "GC_ASSEMBLEIA_VOTO", schema = "dbo")
+@Table(name = "gc_assembleia_voto")
 public class AssembleiaVoto {
 
     @EmbeddedId

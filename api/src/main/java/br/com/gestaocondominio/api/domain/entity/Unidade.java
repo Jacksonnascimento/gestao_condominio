@@ -28,7 +28,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(of = "uniCod")
 @ToString(of = {"uniCod", "uniNumero"})
 @Entity
-@Table(name = "GC_UNIDADE", schema = "dbo")
+@Table(name = "gc_unidade")
 public class Unidade {
 
     @Id

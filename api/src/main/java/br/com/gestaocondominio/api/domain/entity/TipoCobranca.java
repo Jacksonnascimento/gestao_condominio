@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(of = "ticCod")
 @ToString(of = {"ticCod", "ticDescricao", "ticAtiva"})
 @Entity
-@Table(name = "GC_TIPO_COBRANCA", schema = "dbo")
+@Table(name = "gc_tipo_cobranca")
 public class TipoCobranca {
 
     @Id

@@ -24,7 +24,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(of = "admCod")
 @ToString(exclude = {"dadosEmpresa", "responsavel"})
 @Entity
-@Table(name = "GC_ADMINISTRADORA", schema = "dbo")
+@Table(name = "gc_administradora")
 public class Administradora {
 
     @Id

@@ -29,7 +29,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(of = "ficCod")
 @ToString(of = {"ficCod", "ficStatusPagamento", "ficValorTaxa"})
 @Entity
-@Table(name = "GC_FINANCEIRO_COBRANCA", schema = "dbo")
+@Table(name = "gc_financeiro_cobranca")
 public class FinanceiroCobranca {
 
     @Id

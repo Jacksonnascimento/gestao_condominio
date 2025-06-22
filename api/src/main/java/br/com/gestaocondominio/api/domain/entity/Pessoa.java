@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(of = "pesCod")
 @ToString(of = {"pesCod", "pesNome", "pesEmail"})
 @Entity
-@Table(name = "GC_PESSOA")
+@Table(name = "gc_pessoa")
 public class Pessoa {
 
     @Id

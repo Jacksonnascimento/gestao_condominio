@@ -11,12 +11,13 @@ import java.util.List;
 
 @Repository
 public interface UsuarioCondominioRepository extends JpaRepository<UsuarioCondominio, UsuarioCondominioId> {
-
     
     List<UsuarioCondominio> findByPessoa(Pessoa pessoa);
  
-
     List<UsuarioCondominio> findByCondominio(Condominio condominio);
+
+   
+    List<UsuarioCondominio> findByCondominioIn(List<Condominio> condominios);
 
     List<UsuarioCondominio> findByUscAtivoAssociacao(Boolean uscAtivoAssociacao);
 }

@@ -79,7 +79,7 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5500", "http://localhost:3000")); //porta do front - a api aceita requisições dessas portas
+        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5500", "http://localhost:3000", "https://gestao-condominio-frontend-app.onrender.com")); //porta do front - a api aceita requisições dessas portas
         config.setAllowedHeaders(Arrays.asList("Origin", "Content-Type", "Accept", "Authorization"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         source.registerCorsConfiguration("/**", config);

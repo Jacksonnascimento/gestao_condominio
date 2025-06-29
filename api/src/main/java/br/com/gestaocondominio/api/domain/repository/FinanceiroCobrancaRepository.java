@@ -13,9 +13,7 @@ import java.util.List;
 @Repository
 public interface FinanceiroCobrancaRepository extends JpaRepository<FinanceiroCobranca, Integer> {
 
-   
     List<FinanceiroCobranca> findByUnidadeIn(List<Unidade> unidades);
-   
 
     List<FinanceiroCobranca> findByUnidadeAndTipoCobrancaAndFicDtVencimentoBetween(
             Unidade unidade,
@@ -32,4 +30,6 @@ public interface FinanceiroCobrancaRepository extends JpaRepository<FinanceiroCo
     List<FinanceiroCobranca> findByUnidadeAndFicStatusPagamentoNotIn(
             Unidade unidade,
             List<CobrancaStatus> ficStatusPagamento);
+
+    List<FinanceiroCobranca> findByFicStatusPagamentoAndFicDtVencimentoBefore(CobrancaStatus status, LocalDate data);
 }

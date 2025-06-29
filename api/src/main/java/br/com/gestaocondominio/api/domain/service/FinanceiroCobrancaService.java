@@ -4,6 +4,8 @@ import br.com.gestaocondominio.api.domain.entity.*;
 import br.com.gestaocondominio.api.domain.enums.CobrancaStatus;
 import br.com.gestaocondominio.api.domain.repository.*;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
+import jakarta.annotation.PostConstruct;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -197,6 +199,38 @@ public class FinanceiroCobrancaService {
             }
         }
         return novasCobrancas;
+    }
+    
+    @PostConstruct
+    @Transactional
+    public void executarAoIniciar() {
+        System.out.println("Executando rotina de verificação de cobranças na inicialização do sistema...");
+        verificarEAtualizarCobrancas();
+    }
+    
+    @Transactional
+    @Scheduled(cron = "0 0 0 * * ?")
+    public void atualizarStatusCobrancasVencidasAgendado() {
+        System.out.println("Executando rotina agendada para atualizar cobranças vencidas em: " + LocalDateTime.now());
+        verificarEAtualizarCobrancas();
+    }
+
+    private void verificarEAtualizarCobrancas() {
+        List<FinanceiroCobranca> cobrancasParaAtualizar = financeiroCobrancaRepository
+                .findByFicStatusPagamentoAndFicDtVencimentoBefore(CobrancaStatus.A_VENCER, LocalDate.now());
+
+        if (cobrancasParaAtualizar.isEmpty()) {
+            System.out.println("Nenhuma cobrança vencida encontrada para atualização.");
+            return;
+        }
+
+        for (FinanceiroCobranca cobranca : cobrancasParaAtualizar) {
+            cobranca.setFicStatusPagamento(CobrancaStatus.VENCIDA);
+            cobranca.setFicDtAtualizacao(LocalDateTime.now());
+        }
+
+        financeiroCobrancaRepository.saveAll(cobrancasParaAtualizar);
+        System.out.println(cobrancasParaAtualizar.size() + " cobrança(s) atualizada(s) para 'VENCIDA'.");
     }
 
     private void checkAdminOrSindicoPermission(Integer condominioId) {

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -43,7 +44,8 @@ public class FinanceiroCobrancaController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<FinanceiroCobranca> atualizarCobranca(@PathVariable Integer id, @RequestBody FinanceiroCobranca cobrancaAtualizada) {
+    public ResponseEntity<FinanceiroCobranca> atualizarCobranca(@PathVariable Integer id,
+            @RequestBody FinanceiroCobranca cobrancaAtualizada) {
         FinanceiroCobranca cobrancaSalva = financeiroCobrancaService.atualizarCobranca(id, cobrancaAtualizada);
         return new ResponseEntity<>(cobrancaSalva, HttpStatus.OK);
     }
@@ -59,9 +61,12 @@ public class FinanceiroCobrancaController {
     public ResponseEntity<List<FinanceiroCobranca>> gerarCobrancasEmLote(
             @RequestParam Integer condominioId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataVencimento,
-            @RequestParam Integer tipoCobrancaId) {
+            @RequestParam Integer tipoCobrancaId,
 
-        List<FinanceiroCobranca> novasCobrancas = financeiroCobrancaService.gerarCobrancasEmLote(condominioId, dataVencimento, tipoCobrancaId);
+            @RequestParam(required = false) BigDecimal valor) {
+
+        List<FinanceiroCobranca> novasCobrancas = financeiroCobrancaService.gerarCobrancasEmLote(condominioId,
+                dataVencimento, tipoCobrancaId, valor);
         return new ResponseEntity<>(novasCobrancas, HttpStatus.CREATED);
     }
 }

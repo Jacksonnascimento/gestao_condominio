@@ -10,6 +10,7 @@ import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
 import br.com.gestaocondominio.api.domain.repository.UsuarioCondominioRepository;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
+import br.com.gestaocondominio.api.util.ValidadorDocumento;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -27,7 +28,6 @@ public class PessoaService {
 
     private final PessoaRepository pessoaRepository;
     private final PasswordEncoder passwordEncoder;
-    // INJEÇÕES ADICIONADAS
     private final UsuarioCondominioRepository usuarioCondominioRepository;
     private final CondominioRepository condominioRepository;
     private final AdministradoraRepository administradoraRepository;
@@ -45,6 +45,9 @@ public class PessoaService {
     }
 
     public Pessoa cadastrarPessoa(Pessoa pessoa) {
+        if (!ValidadorDocumento.isValid(pessoa.getPesCpfCnpj())) {
+            throw new IllegalArgumentException("O CPF/CNPJ informado é inválido.");
+        }
         Optional<Pessoa> pessoaExistentePorCpfCnpj = pessoaRepository.findByPesCpfCnpj(pessoa.getPesCpfCnpj());
         if (pessoaExistentePorCpfCnpj.isPresent()) {
             throw new IllegalArgumentException("CPF/CNPJ já cadastrado no sistema.");
@@ -78,13 +81,10 @@ public class PessoaService {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         Pessoa pessoaLogada = userDetails.getPessoa();
         
-        // Um usuário sempre pode ver a si mesmo.
         pessoasVisiveis.add(pessoaLogada);
 
-        // IDs dos condomínios que o usuário gerencia (Síndico/Admin)
         Set<Integer> idsCondosGerenciados = getCondoIdsPorPapel(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_");
 
-        // IDs dos condomínios gerenciados pela administradora do usuário
         Set<Integer> idsAdministradoras = getAdministradoraIds(authentication);
         if (!idsAdministradoras.isEmpty()) {
             List<Administradora> administradoras = administradoraRepository.findAllById(idsAdministradoras);
@@ -94,7 +94,6 @@ public class PessoaService {
             }
         }
 
-        // Busca todas as pessoas vinculadas aos condomínios gerenciados
         if (!idsCondosGerenciados.isEmpty()) {
             List<Condominio> condominios = condominioRepository.findAllById(idsCondosGerenciados);
             List<UsuarioCondominio> associacoes = usuarioCondominioRepository.findByCondominioIn(condominios);
@@ -104,19 +103,14 @@ public class PessoaService {
         return new ArrayList<>(pessoasVisiveis);
     }
     
-    /**
-     * Busca uma pessoa por ID, aplicando as regras de permissão.
-     */
     public Optional<Pessoa> buscarPessoaPorId(Integer id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-        // Usuário pode ver seu próprio perfil
         if (userDetails.getPessoa().getPesCod().equals(id)) {
             return pessoaRepository.findById(id);
         }
 
-        // Admin Global pode ver qualquer perfil
         if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) {
             return pessoaRepository.findById(id);
         }
@@ -124,7 +118,6 @@ public class PessoaService {
         Pessoa pessoaParaVisualizar = pessoaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + id));
 
-        // Obter todos os condomínios que o usuário logado gerencia (direta ou indiretamente)
         Set<Integer> idsCondosGerenciados = getCondoIdsPorPapel(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_");
         Set<Integer> idsAdministradoras = getAdministradoraIds(authentication);
         if (!idsAdministradoras.isEmpty()) {
@@ -135,7 +128,6 @@ public class PessoaService {
             }
         }
 
-        // Verifica se a pessoa a ser visualizada pertence a um dos condomínios gerenciados
         List<UsuarioCondominio> associacoesDaPessoaAlvo = usuarioCondominioRepository.findByPessoa(pessoaParaVisualizar);
         
         boolean temAcesso = associacoesDaPessoaAlvo.stream()
@@ -145,7 +137,6 @@ public class PessoaService {
             return Optional.of(pessoaParaVisualizar);
         }
 
-        // Se nenhuma permissão foi concedida, nega o acesso.
         throw new AccessDeniedException("Acesso negado. Você não tem permissão para visualizar este perfil.");
     }
 
@@ -171,6 +162,9 @@ public class PessoaService {
         }
 
         if (dadosParaAtualizar.pesCpfCnpj() != null && !pessoaNoBanco.getPesCpfCnpj().equals(dadosParaAtualizar.pesCpfCnpj())) {
+            if (!ValidadorDocumento.isValid(dadosParaAtualizar.pesCpfCnpj())) {
+                throw new IllegalArgumentException("O novo CPF/CNPJ informado é inválido.");
+            }
             pessoaRepository.findByPesCpfCnpj(dadosParaAtualizar.pesCpfCnpj()).ifPresent(p -> {
                 if (!p.getPesCod().equals(id)) throw new IllegalArgumentException("Novo CPF/CNPJ já cadastrado para outra pessoa.");
             });
@@ -207,7 +201,6 @@ public class PessoaService {
         return pessoaRepository.save(pessoa);
     }
 
-    // MÉTODOS AUXILIARES PRIVADOS
     private boolean hasAuthority(Authentication auth, String authority) {
         return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals(authority));
     }

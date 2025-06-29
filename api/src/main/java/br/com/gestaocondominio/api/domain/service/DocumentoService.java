@@ -53,7 +53,7 @@ public class DocumentoService {
         });
         return documentoOpt;
     }
-    
+
     public Documento cadastrarDocumento(Documento documento) {
         condominioRepository.findById(documento.getCondominio().getConCod()).orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado"));
         pessoaRepository.findById(documento.getUploader().getPesCod()).orElseThrow(() -> new IllegalArgumentException("Usuário de upload não encontrado"));
@@ -63,15 +63,11 @@ public class DocumentoService {
         documento.setDtUpload(LocalDateTime.now());
         return documentoRepository.save(documento);
     }
-    
+
     public Documento atualizarDocumento(Integer id, Documento documentoAtualizado) {
         Documento documentoExistente = documentoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Documento não encontrado com o ID: " + id));
-        
-        if (!temPermissaoParaGerenciar(documentoExistente.getCondominio().getConCod())) {
-            throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar documentos neste condomínio.");
-        }
-        
+
         if(documentoAtualizado.getNome() != null) documentoExistente.setNome(documentoAtualizado.getNome());
         if(documentoAtualizado.getTipo() != null) documentoExistente.setTipo(documentoAtualizado.getTipo());
         if(documentoAtualizado.getCaminhoArquivo() != null) documentoExistente.setCaminhoArquivo(documentoAtualizado.getCaminhoArquivo());
@@ -85,10 +81,6 @@ public class DocumentoService {
     public void deletarDocumento(Integer id) {
         Documento documento = documentoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Documento não encontrado com o ID: " + id));
-
-        if (!temPermissaoParaGerenciar(documento.getCondominio().getConCod())) {
-            throw new AccessDeniedException("Acesso negado.");
-        }
         
         documentoPermissaoVisualizarRepository.deleteAll(documentoPermissaoVisualizarRepository.findByDocumento(documento));
         documentoRepository.delete(documento);
@@ -100,6 +92,40 @@ public class DocumentoService {
                 a.getAuthority().equals("ROLE_GLOBAL_ADMIN") ||
                 a.getAuthority().equals("ROLE_SINDICO_" + condominioId) ||
                 a.getAuthority().equals("ROLE_ADMIN_" + condominioId));
+    }
+
+    public boolean temPermissaoParaGerenciarPorId(Integer documentoId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
+
+        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_GLOBAL_ADMIN"))) {
+            return true;
+        }
+
+        Documento documento = documentoRepository.findById(documentoId)
+            .orElseThrow(() -> new IllegalArgumentException("Documento não encontrado com o ID: " + documentoId));
+
+        if (documento.getUploader().getPesCod().equals(userDetails.getPessoa().getPesCod())) {
+            return true;
+        }
+        
+        Integer condominioId = documento.getCondominio().getConCod();
+
+        boolean isGestorCondominio = auth.getAuthorities().stream().anyMatch(a ->
+                a.getAuthority().equals("ROLE_SINDICO_" + condominioId) ||
+                a.getAuthority().equals("ROLE_ADMIN_" + condominioId));
+        if (isGestorCondominio) {
+            return true;
+        }
+        
+        if (documento.getCondominio().getAdministradora() != null) {
+            Integer admCod = documento.getCondominio().getAdministradora().getAdmCod();
+            if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_GERENTE_ADMINISTRADORA_" + admCod))) {
+                return true;
+            }
+        }
+
+        return false;
     }
     
     private boolean temPermissaoParaVisualizar(Documento doc, Authentication auth) {
@@ -113,13 +139,13 @@ public class DocumentoService {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_MORADOR_" + doc.getCondominio().getConCod()));
 
         switch (doc.getPermissaoVisualizar()) {
-            case 'T': // Todos no condomínio
+            case 'T': 
                 return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().endsWith("_" + doc.getCondominio().getConCod()));
-            case 'M': // Todos os moradores
+            case 'M': 
                 return isMoradorDoCondominio;
-            case 'A': // Apenas Administração (já coberto pelo temPermissaoParaGerenciar no início)
+            case 'A': 
                 return false; 
-            case 'S': // Apenas os selecionados
+            case 'S': 
                 return documentoPermissaoVisualizarRepository.existsById_DocCodAndId_PesCod(doc.getDocCod(), pessoaId);
             default:
                 return false;

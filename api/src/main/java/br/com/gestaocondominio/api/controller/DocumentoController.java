@@ -41,12 +41,14 @@ public class DocumentoController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@documentoService.temPermissaoParaGerenciarPorId(#id)")
     public ResponseEntity<Documento> atualizarDocumento(@PathVariable Integer id, @RequestBody Documento documentoAtualizado) {
         Documento documentoSalvo = documentoService.atualizarDocumento(id, documentoAtualizado);
         return new ResponseEntity<>(documentoSalvo, HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@documentoService.temPermissaoParaGerenciarPorId(#id)")
     public ResponseEntity<Void> deletarDocumento(@PathVariable Integer id) {
         documentoService.deletarDocumento(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);

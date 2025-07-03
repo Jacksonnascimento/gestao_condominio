@@ -8,7 +8,6 @@ import br.com.gestaocondominio.api.domain.enums.ComunicadoDestino;
 import br.com.gestaocondominio.api.domain.repository.ComunicadoEntregaRepository;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.GestaoComunicacaoRepository;
-import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -27,12 +26,13 @@ public class GestaoComunicacaoService {
 
     private final GestaoComunicacaoRepository gestaoComunicacaoRepository;
     private final CondominioRepository condominioRepository;
+   
     private final ComunicadoEntregaRepository comunicadoEntregaRepository;
 
-    public GestaoComunicacaoService(GestaoComunicacaoRepository gestaoComunicacaoRepository, CondominioRepository condominioRepository, PessoaRepository pessoaRepository, ComunicadoEntregaRepository comunicadoEntregaRepository) {
+    
+    public GestaoComunicacaoService(GestaoComunicacaoRepository gestaoComunicacaoRepository, CondominioRepository condominioRepository, ComunicadoEntregaRepository comunicadoEntregaRepository) {
         this.gestaoComunicacaoRepository = gestaoComunicacaoRepository;
         this.condominioRepository = condominioRepository;
-        this.pessoaRepository = pessoaRepository;
         this.comunicadoEntregaRepository = comunicadoEntregaRepository;
     }
 
@@ -40,14 +40,12 @@ public class GestaoComunicacaoService {
     public GestaoComunicacao cadastrarComunicacao(GestaoComunicacao comunicacao) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        Pessoa remetenteLogado = userDetails.getPessoa(); 
+        Pessoa remetente = userDetails.getPessoa();
 
-        comunicacao.setRemetente(remetenteLogado); 
+        comunicacao.setRemetente(remetente);
 
         Condominio condominio = condominioRepository.findById(comunicacao.getCondominio().getConCod())
                 .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado"));
-
-        
 
         boolean isGestor = hasAuthority(authentication, "ROLE_GLOBAL_ADMIN") || hasAuthority(authentication, "ROLE_SINDICO_" + condominio.getConCod()) || hasAuthority(authentication, "ROLE_ADMIN_" + condominio.getConCod());
         if (!isGestor && comunicacao.getComDesTodos() == ComunicadoDestino.TODOS) {

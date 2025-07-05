@@ -81,8 +81,7 @@ public class SecurityConfig {
         "http://localhost:5500", 
         "http://localhost:3000",
          "https://gestao-condominio-frontend.onrender.com",
-         "http://localhost",      // Padrão comum para emuladores
-        "capacitor://localhost"  // Padrão para Capacitor
+         "null" 
         ));
         config.setAllowedHeaders(Arrays.asList("Origin", "Content-Type", "Accept", "Authorization"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));

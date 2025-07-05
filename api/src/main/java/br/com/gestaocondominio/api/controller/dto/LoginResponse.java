@@ -1,4 +1,6 @@
 package br.com.gestaocondominio.api.controller.dto;
 
-public record LoginResponse(String token) {
+import br.com.gestaocondominio.api.domain.entity.Pessoa;
+
+public record LoginResponse(String token, Pessoa user) {
 }

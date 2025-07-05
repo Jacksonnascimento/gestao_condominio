@@ -1,5 +1,6 @@
 package br.com.gestaocondominio.api.domain.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -57,6 +58,7 @@ public class Pessoa {
     @Column(name = "PES_DT_ATUALIZACAO")
     private LocalDateTime pesDtAtualizacao;
 
+    @JsonIgnore
     @Column(name = "PES_SENHA_LOGIN", length = 255)
     private String pesSenhaLogin;
 

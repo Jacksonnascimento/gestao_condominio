@@ -2,7 +2,9 @@ package br.com.gestaocondominio.api.controller.auth;
 
 import br.com.gestaocondominio.api.controller.dto.LoginRequest;
 import br.com.gestaocondominio.api.controller.dto.LoginResponse;
+import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.security.JwtService;
+import br.com.gestaocondominio.api.security.UserDetailsImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -36,10 +38,11 @@ public class AuthenticationController {
                 )
         );
 
-     
         final UserDetails userDetails = userDetailsService.loadUserByUsername(request.email());
         final String token = jwtService.generateToken(userDetails);
+        
+        Pessoa pessoa = ((UserDetailsImpl) userDetails).getPessoa();
 
-        return new LoginResponse(token);
+        return new LoginResponse(token, pessoa);
     }
 }

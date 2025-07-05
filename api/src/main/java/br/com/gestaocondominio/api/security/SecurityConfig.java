@@ -81,7 +81,8 @@ public class SecurityConfig {
         "http://localhost:5500", 
         "http://localhost:3000",
          "https://gestao-condominio-frontend.onrender.com",
-         "null" 
+         "null" ,
+         "http://localhost:8081"
         ));
         config.setAllowedHeaders(Arrays.asList("Origin", "Content-Type", "Accept", "Authorization"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));

@@ -28,19 +28,20 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
-    private final RequestLoggingFilter requestLoggingFilter; // Injeção do novo filtro
+    // Remova o RequestLoggingFilter da injeção se for remover a classe
+    // private final RequestLoggingFilter requestLoggingFilter; 
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, UserDetailsServiceImpl userDetailsService, RequestLoggingFilter requestLoggingFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, UserDetailsServiceImpl userDetailsService /*, RequestLoggingFilter requestLoggingFilter */) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
-        this.requestLoggingFilter = requestLoggingFilter; // Atribuição no construtor
+        // this.requestLoggingFilter = requestLoggingFilter;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-            .addFilterBefore(requestLoggingFilter, CorsFilter.class) // Adiciona nosso filtro de log no início
+            // .addFilterBefore(requestLoggingFilter, CorsFilter.class) // Pode remover esta linha
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/api/auth/**",
@@ -79,15 +80,7 @@ public class SecurityConfig {
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of(
-            "http://localhost:5173", 
-            "http://localhost:5500", 
-            "http://localhost:3000", 
-            "https://gestao-condominio-frontend.onrender.com",
-            "null",
-            "http://localhost:8081"
-        ));
+        config.addAllowedOrigin("*"); 
         config.setAllowedHeaders(Arrays.asList("Origin", "Content-Type", "Accept", "Authorization"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         source.registerCorsConfiguration("/**", config);

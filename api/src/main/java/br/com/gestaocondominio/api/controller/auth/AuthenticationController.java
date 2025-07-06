@@ -6,7 +6,6 @@ import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.security.JwtService;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -32,31 +31,12 @@ public class AuthenticationController {
     @PostMapping("/login")
     public LoginResponse authenticate(@RequestBody LoginRequest request) {
         
-        try {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            request.email(),
-                            request.senha()
-                    )
-            );
-        } catch (BadCredentialsException e) {
-            // --- Bloco de Depuração Avançada ---
-            String senhaRecebida = request.senha();
-            if (senhaRecebida == null) {
-                throw new BadCredentialsException("DEBUG: Senha recebida é NULA.");
-            } else if (senhaRecebida.isBlank()) {
-                throw new BadCredentialsException("DEBUG: Senha recebida está em BRANCO ou VAZIA.");
-            } else {
-                int tamanho = senhaRecebida.length();
-                boolean temEspacos = !senhaRecebida.equals(senhaRecebida.trim());
-                String debugMessage = String.format(
-                    "DEBUG: Senha inválida. Tamanho recebido: %d. Contém espaços no início/fim: %b.",
-                    tamanho,
-                    temEspacos
-                );
-                throw new BadCredentialsException(debugMessage);
-            }
-        }
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.email(),
+                        request.senha()
+                )
+        );
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(request.email());
         final String token = jwtService.generateToken(userDetails);

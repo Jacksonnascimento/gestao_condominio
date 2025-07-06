@@ -28,16 +28,19 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
+    private final RequestLoggingFilter requestLoggingFilter; // Injeção do novo filtro
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, UserDetailsServiceImpl userDetailsService) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, UserDetailsServiceImpl userDetailsService, RequestLoggingFilter requestLoggingFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
+        this.requestLoggingFilter = requestLoggingFilter; // Atribuição no construtor
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
+            .addFilterBefore(requestLoggingFilter, CorsFilter.class) // Adiciona nosso filtro de log no início
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/api/auth/**",
@@ -77,12 +80,13 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of("http://localhost:5173", 
-        "http://localhost:5500", 
-        "http://localhost:3000",
-         "https://gestao-condominio-frontend.onrender.com",
-         "null" ,
-         "http://localhost:8081"
+        config.setAllowedOrigins(List.of(
+            "http://localhost:5173", 
+            "http://localhost:5500", 
+            "http://localhost:3000", 
+            "https://gestao-condominio-frontend.onrender.com",
+            "null",
+            "http://localhost:8081"
         ));
         config.setAllowedHeaders(Arrays.asList("Origin", "Content-Type", "Accept", "Authorization"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));

@@ -19,7 +19,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
 import java.util.Arrays;
-import java.util.List;
+
 
 @Configuration
 @EnableWebSecurity
@@ -28,20 +28,19 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
-    // Remova o RequestLoggingFilter da injeção se for remover a classe
-    // private final RequestLoggingFilter requestLoggingFilter; 
+   
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, UserDetailsServiceImpl userDetailsService /*, RequestLoggingFilter requestLoggingFilter */) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
-        // this.requestLoggingFilter = requestLoggingFilter;
+        
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-            // .addFilterBefore(requestLoggingFilter, CorsFilter.class) // Pode remover esta linha
+          
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/api/auth/**",

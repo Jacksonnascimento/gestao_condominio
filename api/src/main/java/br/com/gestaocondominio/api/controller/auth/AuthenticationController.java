@@ -40,10 +40,22 @@ public class AuthenticationController {
                     )
             );
         } catch (BadCredentialsException e) {
-            // Bloco de depuração temporário
+            // --- Bloco de Depuração Avançada ---
             String senhaRecebida = request.senha();
-            int tamanhoSenha = (senhaRecebida != null) ? senhaRecebida.length() : -1;
-            throw new BadCredentialsException("DEBUG: Senha inválida. Tamanho da senha recebida: " + tamanhoSenha);
+            if (senhaRecebida == null) {
+                throw new BadCredentialsException("DEBUG: Senha recebida é NULA.");
+            } else if (senhaRecebida.isBlank()) {
+                throw new BadCredentialsException("DEBUG: Senha recebida está em BRANCO ou VAZIA.");
+            } else {
+                int tamanho = senhaRecebida.length();
+                boolean temEspacos = !senhaRecebida.equals(senhaRecebida.trim());
+                String debugMessage = String.format(
+                    "DEBUG: Senha inválida. Tamanho recebido: %d. Contém espaços no início/fim: %b.",
+                    tamanho,
+                    temEspacos
+                );
+                throw new BadCredentialsException(debugMessage);
+            }
         }
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(request.email());

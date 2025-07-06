@@ -6,6 +6,7 @@ import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.security.JwtService;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -31,12 +32,19 @@ public class AuthenticationController {
     @PostMapping("/login")
     public LoginResponse authenticate(@RequestBody LoginRequest request) {
         
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.email(),
-                        request.senha()
-                )
-        );
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.email(),
+                            request.senha()
+                    )
+            );
+        } catch (BadCredentialsException e) {
+            // Bloco de depuração temporário
+            String senhaRecebida = request.senha();
+            int tamanhoSenha = (senhaRecebida != null) ? senhaRecebida.length() : -1;
+            throw new BadCredentialsException("DEBUG: Senha inválida. Tamanho da senha recebida: " + tamanhoSenha);
+        }
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(request.email());
         final String token = jwtService.generateToken(userDetails);

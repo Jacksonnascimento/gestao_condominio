@@ -7,8 +7,8 @@ import br.com.gestaocondominio.api.security.JwtService;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,26 +19,24 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthenticationController {
 
     private final AuthenticationManager authenticationManager;
-    private final UserDetailsService userDetailsService;
     private final JwtService jwtService;
 
-    public AuthenticationController(AuthenticationManager authenticationManager, UserDetailsService userDetailsService, JwtService jwtService) {
+    public AuthenticationController(AuthenticationManager authenticationManager, JwtService jwtService) {
         this.authenticationManager = authenticationManager;
-        this.userDetailsService = userDetailsService;
         this.jwtService = jwtService;
     }
 
     @PostMapping("/login")
     public LoginResponse authenticate(@RequestBody LoginRequest request) {
         
-        authenticationManager.authenticate(
+        Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.email(),
                         request.senha()
                 )
         );
 
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(request.email());
+        final UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         final String token = jwtService.generateToken(userDetails);
         
         Pessoa pessoa = ((UserDetailsImpl) userDetails).getPessoa();

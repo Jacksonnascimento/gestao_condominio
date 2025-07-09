@@ -29,7 +29,7 @@ public class UsuarioCondominioService {
     }
 
     public UsuarioCondominio cadastrarUsuarioCondominio(UsuarioCondominio usuarioCondominio) {
-       
+
         if (usuarioCondominio.getPessoa() == null || usuarioCondominio.getPessoa().getPesCod() == null) {
             throw new IllegalArgumentException("Pessoa deve ser informada para a associação.");
         }
@@ -37,8 +37,6 @@ public class UsuarioCondominioService {
                 .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + usuarioCondominio.getPessoa().getPesCod()));
         usuarioCondominio.setPessoa(pessoa);
 
-
-     
         if (usuarioCondominio.getCondominio() == null || usuarioCondominio.getCondominio().getConCod() == null) {
             throw new IllegalArgumentException("Condomínio deve ser informado para a associação.");
         }
@@ -46,15 +44,13 @@ public class UsuarioCondominioService {
                 .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado com o ID: " + usuarioCondominio.getCondominio().getConCod()));
         usuarioCondominio.setCondominio(condominio);
 
-      
         if (usuarioCondominio.getUscPapel() == null) {
             throw new IllegalArgumentException("Papel do usuário no condomínio deve ser informado.");
         }
 
-       
         usuarioCondominio.setPesCod(pessoa.getPesCod());
         usuarioCondominio.setConCod(condominio.getConCod());
-      
+
         UsuarioCondominioId idComposto = new UsuarioCondominioId(
                 usuarioCondominio.getPesCod(),
                 usuarioCondominio.getConCod(),
@@ -64,7 +60,6 @@ public class UsuarioCondominioService {
             throw new IllegalArgumentException("Esta pessoa já possui este papel neste condomínio.");
         }
 
-      
         if (usuarioCondominio.getUscAtivoAssociacao() == null) {
             usuarioCondominio.setUscAtivoAssociacao(true);
         }
@@ -84,13 +79,11 @@ public class UsuarioCondominioService {
         }
         return usuarioCondominioRepository.findAll();
     }
-    
-    
+
     public UsuarioCondominio atualizarUsuarioCondominio(UsuarioCondominioId id, UsuarioCondominio usuarioCondominioAtualizado) {
         UsuarioCondominio usuarioCondominioExistente = usuarioCondominioRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Associação de usuário a condomínio não encontrada com o ID: " + id));
 
-    
         if (usuarioCondominioAtualizado.getUscAtivoAssociacao() != null) {
             usuarioCondominioExistente.setUscAtivoAssociacao(usuarioCondominioAtualizado.getUscAtivoAssociacao());
         }
@@ -114,5 +107,11 @@ public class UsuarioCondominioService {
         usuarioCondominio.setUscAtivoAssociacao(true);
         usuarioCondominio.setUscDtAtualizacao(LocalDateTime.now());
         return usuarioCondominioRepository.save(usuarioCondominio);
+    }
+
+    public void deletarUsuarioCondominio(UsuarioCondominioId id) {
+        usuarioCondominioRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Associação de usuário a condomínio não encontrada para exclusão com o ID: " + id));
+        usuarioCondominioRepository.deleteById(id);
     }
 }

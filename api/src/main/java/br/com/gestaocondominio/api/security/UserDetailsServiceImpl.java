@@ -59,6 +59,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             }
         }
 
+        if (authorities.isEmpty()) {
+            throw new UsernameNotFoundException("Usuário '" + username + "' encontrado, mas não possui papéis (roles) ativos para acessar o sistema.");
+        }
+
         return new UserDetailsImpl(pessoa, authorities);
     }
 }

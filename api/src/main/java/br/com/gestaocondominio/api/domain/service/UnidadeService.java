@@ -16,7 +16,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -66,9 +65,7 @@ public class UnidadeService {
         if (unidade.getUniStatusOcupacao() == null) {
             unidade.setUniStatusOcupacao(UnidadeStatusOcupacao.DESOCUPADO);
         }
-        if (unidade.getUniValorTaxaCondominio() == null) {
-            unidade.setUniValorTaxaCondominio(BigDecimal.ZERO);
-        }
+        
         unidade.setUniDtCadastro(LocalDateTime.now());
         unidade.setUniDtAtualizacao(LocalDateTime.now());
         if (unidade.getUniAtiva() == null) {
@@ -126,9 +123,7 @@ public class UnidadeService {
         if (unidadeAtualizada.getUniStatusOcupacao() != null) {
             unidadeExistente.setUniStatusOcupacao(unidadeAtualizada.getUniStatusOcupacao());
         }
-        if (unidadeAtualizada.getUniValorTaxaCondominio() != null) {
-            unidadeExistente.setUniValorTaxaCondominio(unidadeAtualizada.getUniValorTaxaCondominio());
-        }
+        
         if (unidadeAtualizada.getUniAtiva() != null) {
             unidadeExistente.setUniAtiva(unidadeAtualizada.getUniAtiva());
         }

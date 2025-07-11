@@ -1,5 +1,6 @@
 package br.com.gestaocondominio.api.controller;
 
+import br.com.gestaocondominio.api.controller.dto.TipoCobrancaDTO;
 import br.com.gestaocondominio.api.domain.entity.TipoCobranca;
 import br.com.gestaocondominio.api.domain.service.TipoCobrancaService;
 import org.springframework.http.HttpStatus;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/cobrancas/tipos")
@@ -26,15 +28,18 @@ public class TipoCobrancaController {
     } 
 
     @GetMapping("/{id}")
-    public ResponseEntity<TipoCobranca> buscarTipoCobrancaPorId(@PathVariable Integer id) {
+    public ResponseEntity<TipoCobrancaDTO> buscarTipoCobrancaPorId(@PathVariable Integer id) {
         Optional<TipoCobranca> tipo = tipoCobrancaService.buscarTipoCobrancaPorId(id);
-        return tipo.map(t -> new ResponseEntity<>(t, HttpStatus.OK)) 
+        return tipo.map(t -> new ResponseEntity<>(new TipoCobrancaDTO(t), HttpStatus.OK)) 
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND)); 
     }
 
     @GetMapping
-    public ResponseEntity<List<TipoCobranca>> listarTodosTiposCobranca(@RequestParam(required = false, defaultValue = "true") boolean ativos) {
-        List<TipoCobranca> tipos = tipoCobrancaService.listarTodosTiposCobranca(ativos);
+    public ResponseEntity<List<TipoCobrancaDTO>> listarTodosTiposCobranca(@RequestParam(required = false, defaultValue = "true") boolean ativos) {
+        List<TipoCobrancaDTO> tipos = tipoCobrancaService.listarTodosTiposCobranca(ativos)
+                .stream()
+                .map(TipoCobrancaDTO::new)
+                .collect(Collectors.toList());
         return new ResponseEntity<>(tipos, HttpStatus.OK); 
     }
 

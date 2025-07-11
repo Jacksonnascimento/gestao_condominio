@@ -1,24 +1,8 @@
 package br.com.gestaocondominio.api.domain.entity;
 
 import br.com.gestaocondominio.api.domain.enums.UnidadeStatusOcupacao;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-
-import java.math.BigDecimal;
+import jakarta.persistence.*;
+import lombok.*;
 import java.time.LocalDateTime;
 
 @Getter
@@ -42,9 +26,6 @@ public class Unidade {
     @Enumerated(EnumType.STRING)
     @Column(name = "UNI_STATUS_OCUPACAO", length = 50)
     private UnidadeStatusOcupacao uniStatusOcupacao;
-
-    @Column(name = "UNI_VALOR_TAXA_CONDOMINIO", nullable = false, precision = 10, scale = 2)
-    private BigDecimal uniValorTaxaCondominio;
 
     @Column(name = "UNI_DT_CADASTRO", nullable = false)
     private LocalDateTime uniDtCadastro;

@@ -57,13 +57,20 @@ public class FinanceiroCobrancaService {
         if (cobranca.getTipoCobranca() == null || cobranca.getTipoCobranca().getTicCod() == null) {
             throw new IllegalArgumentException("Tipo de cobrança deve ser informado.");
         }
-        tipoCobrancaRepository.findById(cobranca.getTipoCobranca().getTicCod())
+        TipoCobranca tipoCobranca = tipoCobrancaRepository.findById(cobranca.getTipoCobranca().getTicCod())
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Tipo de cobrança não encontrado com o ID: " + cobranca.getTipoCobranca().getTicCod()));
+        
+        cobranca.setTipoCobranca(tipoCobranca);
 
-        if (cobranca.getFicValorTaxa() == null || cobranca.getFicValorTaxa().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Valor da taxa não pode ser nulo ou negativo.");
+        if (cobranca.getFicValorTaxa() == null) {
+            cobranca.setFicValorTaxa(tipoCobranca.getTicValor());
         }
+
+        if (cobranca.getFicValorTaxa().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Valor da taxa não pode ser negativo.");
+        }
+
         if (cobranca.getFicDtVencimento() == null) {
             throw new IllegalArgumentException("Data de vencimento da cobrança deve ser informada.");
         }
@@ -188,7 +195,7 @@ public class FinanceiroCobrancaService {
                 novaCobranca.setTipoCobranca(tipoCobranca);
 
                 BigDecimal valorDaCobranca = (valorOpcional != null) ? valorOpcional
-                        : unidade.getUniValorTaxaCondominio();
+                        : tipoCobranca.getTicValor();
                 novaCobranca.setFicValorTaxa(valorDaCobranca);
 
                 novaCobranca.setFicDtVencimento(dataVencimento);

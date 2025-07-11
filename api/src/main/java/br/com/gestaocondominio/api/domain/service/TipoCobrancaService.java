@@ -1,5 +1,6 @@
 package br.com.gestaocondominio.api.domain.service;
 
+import br.com.gestaocondominio.api.controller.dto.TipoCobrancaDTO;
 import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.entity.TipoCobranca;
 import br.com.gestaocondominio.api.domain.enums.CobrancaStatus;
@@ -11,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -59,36 +61,44 @@ public class TipoCobrancaService {
         return tipoCobrancaRepository.save(tipoCobranca);
     }
 
+    @Transactional(readOnly = true)
     public Optional<TipoCobranca> buscarTipoCobrancaPorId(Integer id) {
         Optional<TipoCobranca> tipoCobrancaOpt = tipoCobrancaRepository.findById(id);
         tipoCobrancaOpt.ifPresent(this::checkPermissionToView);
         return tipoCobrancaOpt;
     }
 
-    public List<TipoCobranca> listarTodosTiposCobranca(boolean incluirInativas) {
+    @Transactional(readOnly = true)
+    public List<TipoCobrancaDTO> listarTodosTiposCobranca(boolean incluirInativas) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         
+        List<TipoCobranca> tipos;
+
         if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) {
-            return incluirInativas ? tipoCobrancaRepository.findAll() : tipoCobrancaRepository.findByTicAtiva(true);
-        }
-        
-        Set<Integer> condoIds = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_", "ROLE_MORADOR_");
-        if(condoIds.isEmpty()){
-            return List.of();
+            tipos = incluirInativas ? tipoCobrancaRepository.findAll() : tipoCobrancaRepository.findByTicAtiva(true);
+        } else {
+            Set<Integer> condoIds = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_", "ROLE_MORADOR_");
+            if(condoIds.isEmpty()){
+                return List.of();
+            }
+
+            List<Condominio> condominios = condominioRepository.findAllById(condoIds);
+            
+            Stream<TipoCobranca> streamDeTipos = condominios.stream()
+                    .flatMap(condo -> {
+                        if (incluirInativas) {
+                            return tipoCobrancaRepository.findByCondominio(condo).stream();
+                        } else {
+                            return tipoCobrancaRepository.findByCondominioAndTicAtiva(condo, true).stream();
+                        }
+                    });
+            
+            tipos = streamDeTipos.distinct().collect(Collectors.toList());
         }
 
-        List<Condominio> condominios = condominioRepository.findAllById(condoIds);
-        
-        Stream<TipoCobranca> streamDeTipos = condominios.stream()
-                .flatMap(condo -> {
-                    if (incluirInativas) {
-                        return tipoCobrancaRepository.findByCondominio(condo).stream();
-                    } else {
-                        return tipoCobrancaRepository.findByCondominioAndTicAtiva(condo, true).stream();
-                    }
-                });
-
-        return streamDeTipos.distinct().collect(Collectors.toList());
+        return tipos.stream()
+                    .map(TipoCobrancaDTO::new)
+                    .collect(Collectors.toList());
     }
 
     public TipoCobranca atualizarTipoCobranca(Integer id, TipoCobranca tipoCobrancaAtualizada) {

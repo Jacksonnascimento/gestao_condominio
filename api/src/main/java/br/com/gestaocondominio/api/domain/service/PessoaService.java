@@ -48,6 +48,15 @@ public class PessoaService {
         if (!ValidadorDocumento.isValid(pessoa.getPesCpfCnpj())) {
             throw new IllegalArgumentException("O CPF/CNPJ informado é inválido.");
         }
+
+        String documentoNumerico = pessoa.getPesCpfCnpj().replaceAll("[^0-9]", "");
+        if (pessoa.getPesTipo() == 'F' && documentoNumerico.length() == 14) {
+            throw new IllegalArgumentException("CNPJ não pode ser cadastrado para Pessoa Física.");
+        }
+        if (pessoa.getPesTipo() == 'J' && documentoNumerico.length() == 11) {
+            throw new IllegalArgumentException("CPF não pode ser cadastrado para Pessoa Jurídica.");
+        }
+
         Optional<Pessoa> pessoaExistentePorCpfCnpj = pessoaRepository.findByPesCpfCnpj(pessoa.getPesCpfCnpj());
         if (pessoaExistentePorCpfCnpj.isPresent()) {
             throw new IllegalArgumentException("CPF/CNPJ já cadastrado no sistema.");
@@ -170,6 +179,18 @@ public class PessoaService {
             });
             pessoaNoBanco.setPesCpfCnpj(dadosParaAtualizar.pesCpfCnpj());
         }
+
+        Character tipoPessoaFinal = (dadosParaAtualizar.pesTipo() != null) ? dadosParaAtualizar.pesTipo() : pessoaNoBanco.getPesTipo();
+        String documentoFinal = (dadosParaAtualizar.pesCpfCnpj() != null) ? dadosParaAtualizar.pesCpfCnpj() : pessoaNoBanco.getPesCpfCnpj();
+        String documentoNumerico = documentoFinal.replaceAll("[^0-9]", "");
+
+        if (tipoPessoaFinal == 'F' && documentoNumerico.length() == 14) {
+            throw new IllegalArgumentException("CNPJ não pode ser cadastrado para Pessoa Física.");
+        }
+        if (tipoPessoaFinal == 'J' && documentoNumerico.length() == 11) {
+            throw new IllegalArgumentException("CPF não pode ser cadastrado para Pessoa Jurídica.");
+        }
+
         if (dadosParaAtualizar.pesEmail() != null && !pessoaNoBanco.getPesEmail().equals(dadosParaAtualizar.pesEmail())) {
             pessoaRepository.findByPesEmail(dadosParaAtualizar.pesEmail()).ifPresent(p -> {
                 if (!p.getPesCod().equals(id)) throw new IllegalArgumentException("Novo E-mail já cadastrado para outra pessoa.");

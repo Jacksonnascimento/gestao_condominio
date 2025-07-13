@@ -148,6 +148,13 @@ public class PessoaService {
 
         throw new AccessDeniedException("Acesso negado. Você não tem permissão para visualizar este perfil.");
     }
+    
+    public byte[] buscarImagemPorId(Integer id) {
+        Pessoa pessoa = pessoaRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + id));
+        return pessoa.getPesImagem();
+    }
+
 
     public List<Pessoa> listarTodasPessoas() {
         return pessoaRepository.findAll();

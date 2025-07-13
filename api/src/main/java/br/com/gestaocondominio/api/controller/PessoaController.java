@@ -1,9 +1,12 @@
 package br.com.gestaocondominio.api.controller;
 
-import br.com.gestaocondominio.api.controller.dto.PessoaUpdateRequest; 
+import br.com.gestaocondominio.api.controller.dto.PessoaUpdateRequest;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.service.PessoaService;
+
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -48,6 +51,18 @@ public class PessoaController {
         
         List<Pessoa> pessoas = pessoaService.listarPessoasAutorizadas();
         return new ResponseEntity<>(pessoas, HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}/imagem")
+    public ResponseEntity<byte[]> buscarImagemDaPessoa(@PathVariable Integer id) {
+        byte[] imagem = pessoaService.buscarImagemPorId(id);
+        if (imagem != null && imagem.length > 0) {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.IMAGE_JPEG); 
+            return new ResponseEntity<>(imagem, headers, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
     @PutMapping("/{id}/inativar")

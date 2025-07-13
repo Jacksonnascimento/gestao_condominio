@@ -233,6 +233,41 @@ public class FinanceiroCobrancaService {
         System.out.println("Executando rotina agendada para atualizar cobranças vencidas em: " + LocalDateTime.now());
         verificarEAtualizarCobrancas();
     }
+    
+    @Transactional
+    @Scheduled(cron = "0 1 0 * * ?") 
+    public void gerarCobrancasRecorrentesAgendadas() {
+        System.out.println("Iniciando job para geração de cobranças recorrentes...");
+        int diaAtual = LocalDate.now().getDayOfMonth();
+
+        List<Condominio> condominiosParaGeracao = condominioRepository.findAll().stream()
+                .filter(c -> c.getConGeracaoAutoAtiva() != null && c.getConGeracaoAutoAtiva())
+                .filter(c -> c.getConDiaGeracaoCobranca() != null && c.getConDiaGeracaoCobranca() == diaAtual)
+                .collect(Collectors.toList());
+
+        System.out.println(condominiosParaGeracao.size() + " condomínio(s) encontrado(s) para geração automática hoje.");
+
+        for (Condominio condominio : condominiosParaGeracao) {
+            Optional<TipoCobranca> taxaPrincipalOpt = tipoCobrancaRepository
+                    .findByCondominioAndTicIsTaxaPrincipal(condominio, true);
+            
+            if (taxaPrincipalOpt.isPresent()) {
+                TipoCobranca taxaPrincipal = taxaPrincipalOpt.get();
+                LocalDate dataVencimento = LocalDate.now().withDayOfMonth(condominio.getConDtVencimentoTaxa());
+                
+                System.out.println("Gerando cobranças para o condomínio: " + condominio.getConNome());
+                try {
+                    gerarCobrancasEmLote(condominio.getConCod(), dataVencimento, taxaPrincipal.getTicCod(), null);
+                    System.out.println("Cobranças geradas com sucesso para o condomínio: " + condominio.getConNome());
+                } catch (Exception e) {
+                    System.err.println("Erro ao gerar cobranças para o condomínio " + condominio.getConNome() + ": " + e.getMessage());
+                }
+            } else {
+                System.err.println("Condomínio " + condominio.getConNome() + " está configurado para geração automática, mas não possui uma Taxa Principal definida.");
+            }
+        }
+        System.out.println("Job de geração de cobranças recorrentes finalizado.");
+    }
 
     private void verificarEAtualizarCobrancas() {
         List<FinanceiroCobranca> cobrancasParaAtualizar = financeiroCobrancaRepository

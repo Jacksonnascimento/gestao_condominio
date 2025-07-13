@@ -155,6 +155,12 @@ public class CondominioService {
         if (condominioAtualizado.getConAtivo() != null) {
             condominioExistente.setConAtivo(condominioAtualizado.getConAtivo());
         }
+        if (condominioAtualizado.getConGeracaoAutoAtiva() != null) {
+            condominioExistente.setConGeracaoAutoAtiva(condominioAtualizado.getConGeracaoAutoAtiva());
+        }
+        if (condominioAtualizado.getConDiaGeracaoCobranca() != null) {
+            condominioExistente.setConDiaGeracaoCobranca(condominioAtualizado.getConDiaGeracaoCobranca());
+        }
         condominioExistente.setConDtAtualizacao(LocalDateTime.now());
         return condominioRepository.save(condominioExistente);
     }

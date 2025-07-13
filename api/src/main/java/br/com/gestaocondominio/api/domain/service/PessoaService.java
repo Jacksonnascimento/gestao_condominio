@@ -17,6 +17,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional; // Importe esta classe
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
@@ -160,6 +161,7 @@ public class PessoaService {
         return pessoaRepository.findAll();
     }
    
+    @Transactional // <--- CORREÇÃO APLICADA AQUI
     public Pessoa atualizarPessoa(Integer id, PessoaUpdateRequest dadosParaAtualizar) {
         Pessoa pessoaNoBanco = pessoaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + id));

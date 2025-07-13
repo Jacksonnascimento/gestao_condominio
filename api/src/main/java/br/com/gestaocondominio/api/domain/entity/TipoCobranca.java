@@ -41,4 +41,7 @@ public class TipoCobranca {
 
     @Column(name = "TIC_IS_TAXA_PRINCIPAL")
     private Boolean ticIsTaxaPrincipal;
+
+    @Column(name = "TIC_GERACAO_AUTOMATICA")
+    private Boolean ticGeracaoAutomatica;
 }

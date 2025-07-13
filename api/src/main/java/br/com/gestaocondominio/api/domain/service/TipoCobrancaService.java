@@ -75,6 +75,10 @@ public class TipoCobrancaService {
             tipoCobranca.setTicIsTaxaPrincipal(false);
         }
 
+        if (tipoCobranca.getTicGeracaoAutomatica() == null) {
+            tipoCobranca.setTicGeracaoAutomatica(false);
+        }
+
         return tipoCobrancaRepository.save(tipoCobranca);
     }
 
@@ -130,7 +134,6 @@ public class TipoCobrancaService {
         }
         validarTaxaPrincipalUnica(tipoCobrancaExistente);
 
-
         if (tipoCobrancaAtualizada.getTicDescricao() == null || tipoCobrancaAtualizada.getTicDescricao().trim().isEmpty()) {
             throw new IllegalArgumentException("Descrição do tipo de cobrança não pode ser vazia na atualização.");
         }
@@ -150,6 +153,10 @@ public class TipoCobrancaService {
 
         if (tipoCobrancaAtualizada.getTicValor() != null) {
             tipoCobrancaExistente.setTicValor(tipoCobrancaAtualizada.getTicValor());
+        }
+
+        if (tipoCobrancaAtualizada.getTicGeracaoAutomatica() != null) {
+            tipoCobrancaExistente.setTicGeracaoAutomatica(tipoCobrancaAtualizada.getTicGeracaoAutomatica());
         }
 
         tipoCobrancaExistente.setTicDtAtualizacao(LocalDateTime.now());

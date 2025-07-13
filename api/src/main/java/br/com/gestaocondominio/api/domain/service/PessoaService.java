@@ -202,6 +202,10 @@ public class PessoaService {
             pessoaNoBanco.setPesSenhaLogin(passwordEncoder.encode(dadosParaAtualizar.pesSenhaLogin()));
         }
 
+        if (StringUtils.hasText(dadosParaAtualizar.pesImagem())) {
+            pessoaNoBanco.setPesImagem(Base64.getDecoder().decode(dadosParaAtualizar.pesImagem()));
+        }
+
         pessoaNoBanco.setPesDtAtualizacao(LocalDateTime.now());
         return pessoaRepository.save(pessoaNoBanco);
     }

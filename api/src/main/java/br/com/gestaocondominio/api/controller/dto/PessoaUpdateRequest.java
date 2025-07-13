@@ -11,5 +11,6 @@ public record PessoaUpdateRequest(
     String pesEmail,
     String pesTelefone,
     String pesTelefone2,
-    String pesSenhaLogin
+    String pesSenhaLogin,
+    String pesImagem 
 ) {}

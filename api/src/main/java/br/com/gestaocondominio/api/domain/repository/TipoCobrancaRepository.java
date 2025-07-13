@@ -17,4 +17,6 @@ public interface TipoCobrancaRepository extends JpaRepository<TipoCobranca, Inte
     List<TipoCobranca> findByCondominioAndTicAtiva(Condominio condominio, Boolean ticAtiva);
 
     List<TipoCobranca> findByCondominio(Condominio condominio);
+
+    Optional<TipoCobranca> findByCondominioAndTicIsTaxaPrincipal(Condominio condominio, Boolean ticIsTaxaPrincipal);
 }

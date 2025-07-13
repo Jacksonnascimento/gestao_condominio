@@ -37,6 +37,17 @@ public class TipoCobrancaService {
         this.condominioRepository = condominioRepository;
     }
 
+    private void validarTaxaPrincipalUnica(TipoCobranca tipoCobranca) {
+        if (tipoCobranca.getTicIsTaxaPrincipal() != null && tipoCobranca.getTicIsTaxaPrincipal()) {
+            Optional<TipoCobranca> taxaPrincipalExistente = tipoCobrancaRepository
+                .findByCondominioAndTicIsTaxaPrincipal(tipoCobranca.getCondominio(), true);
+            
+            if (taxaPrincipalExistente.isPresent() && !taxaPrincipalExistente.get().getTicCod().equals(tipoCobranca.getTicCod())) {
+                throw new IllegalArgumentException("Já existe uma 'Taxa de Condomínio Principal' definida para este condomínio.");
+            }
+        }
+    }
+
     public TipoCobranca cadastrarTipoCobranca(TipoCobranca tipoCobranca) {
         if (tipoCobranca.getTicDescricao() == null || tipoCobranca.getTicDescricao().trim().isEmpty()) {
             throw new IllegalArgumentException("Descrição do tipo de cobrança não pode ser vazia.");
@@ -45,6 +56,8 @@ public class TipoCobrancaService {
         Condominio condominio = condominioRepository.findById(tipoCobranca.getCondominio().getConCod())
                 .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado."));
         tipoCobranca.setCondominio(condominio);
+
+        validarTaxaPrincipalUnica(tipoCobranca);
 
         Optional<TipoCobranca> tipoExistente = tipoCobrancaRepository.findByTicDescricaoAndCondominio(tipoCobranca.getTicDescricao(), condominio);
         if (tipoExistente.isPresent()) {
@@ -56,6 +69,10 @@ public class TipoCobrancaService {
 
         if (tipoCobranca.getTicAtiva() == null) {
             tipoCobranca.setTicAtiva(true);
+        }
+        
+        if (tipoCobranca.getTicIsTaxaPrincipal() == null) {
+            tipoCobranca.setTicIsTaxaPrincipal(false);
         }
 
         return tipoCobrancaRepository.save(tipoCobranca);
@@ -106,6 +123,13 @@ public class TipoCobrancaService {
                 .orElseThrow(() -> new IllegalArgumentException("Tipo de cobrança não encontrado com o ID: " + id));
 
         checkPermissionToManage(tipoCobrancaExistente);
+        
+        tipoCobrancaExistente.setCondominio(tipoCobrancaExistente.getCondominio());
+        if (tipoCobrancaAtualizada.getTicIsTaxaPrincipal() != null) {
+            tipoCobrancaExistente.setTicIsTaxaPrincipal(tipoCobrancaAtualizada.getTicIsTaxaPrincipal());
+        }
+        validarTaxaPrincipalUnica(tipoCobrancaExistente);
+
 
         if (tipoCobrancaAtualizada.getTicDescricao() == null || tipoCobrancaAtualizada.getTicDescricao().trim().isEmpty()) {
             throw new IllegalArgumentException("Descrição do tipo de cobrança não pode ser vazia na atualização.");

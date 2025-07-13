@@ -32,15 +32,27 @@ public class FinanceiroCobrancaService {
     private final TipoCobrancaRepository tipoCobrancaRepository;
     private final CondominioRepository condominioRepository;
     private final MoradorRepository moradorRepository;
+    private final TaxaCondominioValorRepository taxaCondominioValorRepository;
 
     public FinanceiroCobrancaService(FinanceiroCobrancaRepository financeiroCobrancaRepository,
             UnidadeRepository unidadeRepository, TipoCobrancaRepository tipoCobrancaRepository,
-            CondominioRepository condominioRepository, MoradorRepository moradorRepository) {
+            CondominioRepository condominioRepository, MoradorRepository moradorRepository,
+            TaxaCondominioValorRepository taxaCondominioValorRepository) {
         this.financeiroCobrancaRepository = financeiroCobrancaRepository;
         this.unidadeRepository = unidadeRepository;
         this.tipoCobrancaRepository = tipoCobrancaRepository;
         this.condominioRepository = condominioRepository;
         this.moradorRepository = moradorRepository;
+        this.taxaCondominioValorRepository = taxaCondominioValorRepository;
+    }
+
+    private BigDecimal getValorDaTaxa(Unidade unidade, TipoCobranca tipoCobranca) {
+        if (unidade.getUnidadeTipo() != null && tipoCobranca.getTicIsTaxaPrincipal() != null && tipoCobranca.getTicIsTaxaPrincipal()) {
+            return taxaCondominioValorRepository.findByUnidadeTipoAndTipoCobranca(unidade.getUnidadeTipo(), tipoCobranca)
+                    .map(TaxaCondominioValor::getTcvValor)
+                    .orElse(tipoCobranca.getTicValor());
+        }
+        return tipoCobranca.getTicValor();
     }
 
     @Transactional
@@ -62,9 +74,10 @@ public class FinanceiroCobrancaService {
                         "Tipo de cobrança não encontrado com o ID: " + cobranca.getTipoCobranca().getTicCod()));
         
         cobranca.setTipoCobranca(tipoCobranca);
+        cobranca.setUnidade(unidade);
 
         if (cobranca.getFicValorTaxa() == null) {
-            cobranca.setFicValorTaxa(tipoCobranca.getTicValor());
+            cobranca.setFicValorTaxa(getValorDaTaxa(unidade, tipoCobranca));
         }
 
         if (cobranca.getFicValorTaxa().compareTo(BigDecimal.ZERO) < 0) {
@@ -194,8 +207,7 @@ public class FinanceiroCobrancaService {
                 novaCobranca.setUnidade(unidade);
                 novaCobranca.setTipoCobranca(tipoCobranca);
 
-                BigDecimal valorDaCobranca = (valorOpcional != null) ? valorOpcional
-                        : tipoCobranca.getTicValor();
+                BigDecimal valorDaCobranca = (valorOpcional != null) ? valorOpcional : getValorDaTaxa(unidade, tipoCobranca);
                 novaCobranca.setFicValorTaxa(valorDaCobranca);
 
                 novaCobranca.setFicDtVencimento(dataVencimento);

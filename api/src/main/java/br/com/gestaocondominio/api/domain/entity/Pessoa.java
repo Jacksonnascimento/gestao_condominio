@@ -60,6 +60,7 @@ public class Pessoa {
     @Column(name = "PES_IS_GLOBAL_ADMIN")
     private Boolean pesIsGlobalAdmin;
 
+    @JsonIgnore
     @Lob
     @Basic(fetch = FetchType.LAZY)
     @Column(name = "PES_IMAGEM", columnDefinition = "BYTEA")

@@ -1,23 +1,8 @@
 package br.com.gestaocondominio.api.domain.entity;
 
 import br.com.gestaocondominio.api.domain.enums.CondominioTipologia;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-
+import jakarta.persistence.*;
+import lombok.*;
 import java.time.LocalDateTime;
 
 @Getter
@@ -87,4 +72,10 @@ public class Condominio {
 
     @Column(name = "CON_ATIVO")
     private Boolean conAtivo;
+
+    @Column(name = "CON_GERACAO_AUTO_ATIVA")
+    private Boolean conGeracaoAutoAtiva;
+
+    @Column(name = "CON_DIA_GERACAO_COBRANCA")
+    private Integer conDiaGeracaoCobranca;
 }

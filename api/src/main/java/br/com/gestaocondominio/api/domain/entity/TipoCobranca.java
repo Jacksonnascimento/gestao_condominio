@@ -38,4 +38,7 @@ public class TipoCobranca {
 
     @Column(name = "TIC_ATIVA")
     private Boolean ticAtiva;
+
+    @Column(name = "TIC_IS_TAXA_PRINCIPAL")
+    private Boolean ticIsTaxaPrincipal;
 }

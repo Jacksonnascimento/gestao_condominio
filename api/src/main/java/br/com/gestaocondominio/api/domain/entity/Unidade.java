@@ -39,4 +39,8 @@ public class Unidade {
 
     @Column(name = "UNI_ATIVA")
     private Boolean uniAtiva;
+
+    @ManyToOne
+    @JoinColumn(name = "UTI_COD")
+    private UnidadeTipo unidadeTipo;
 }

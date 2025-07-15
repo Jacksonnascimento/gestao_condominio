@@ -1,6 +1,4 @@
-// src/main/java/br/com/gestaocondominio/api/controller/FinanceiroDespesaController.java
 package br.com.gestaocondominio.api.controller;
-
 
 import br.com.gestaocondominio.api.domain.entity.FinanceiroDespesa;
 import br.com.gestaocondominio.api.domain.service.FinanceiroDespesaService;
@@ -26,7 +24,7 @@ public class FinanceiroDespesaController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN') or " +
-                  "@financeiroDespesaService.hasPermissionToManageFinance(#despesa.condominio.conCod)")
+                  "@financeiroDespesaService.hasPermissionToManageFinanceByCondominioId(#despesa.condominio.conCod)")
     public ResponseEntity<FinanceiroDespesa> cadastrarDespesa(@RequestBody FinanceiroDespesa despesa) {
         FinanceiroDespesa novaDespesa = financeiroDespesaService.cadastrarDespesa(despesa);
         return new ResponseEntity<>(novaDespesa, HttpStatus.CREATED);
@@ -52,7 +50,7 @@ public class FinanceiroDespesaController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN') or " +
-                  "@financeiroDespesaService.hasPermissionToManageFinance(#despesaAtualizada.condominio.conCod)")
+                  "@financeiroDespesaService.hasPermissionToManageFinanceByCondominioId(#despesaAtualizada.condominio.conCod)")
     public ResponseEntity<FinanceiroDespesa> atualizarDespesa(@PathVariable Integer id, @RequestBody FinanceiroDespesa despesaAtualizada) {
         FinanceiroDespesa despesaSalva = financeiroDespesaService.atualizarDespesa(id, despesaAtualizada);
         return new ResponseEntity<>(despesaSalva, HttpStatus.OK);
@@ -60,9 +58,9 @@ public class FinanceiroDespesaController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN') or " +
-                  "@financeiroDespesaService.hasPermissionToManageFinance(#id)") // O serviço resolverá o condomínio a partir do ID da despesa
-    public ResponseEntity<Void> deletarDespesa(@PathVariable Integer id) {
+                  "@financeiroDespesaService.hasPermissionToManageFinanceByDespesaId(#id)")
+    public ResponseEntity<Void> deletarDespesa(@PathVariable Integer id) { // <<-- CORREÇÃO AQUI: Assinatura do método e abertura de chaves
         financeiroDespesaService.deletarDespesa(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
+    } 
 }

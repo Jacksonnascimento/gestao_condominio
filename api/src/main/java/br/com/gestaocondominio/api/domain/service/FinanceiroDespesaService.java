@@ -48,8 +48,8 @@ public class FinanceiroDespesaService {
                 .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado com o ID: " + despesa.getCondominio().getConCod()));
         despesa.setCondominio(condominio);
 
-      
-        hasPermissionToManageFinance(despesa.getCondominio().getConCod());
+     
+        internalCheckPermissionToManageFinance(despesa.getCondominio().getConCod());
 
         if (despesa.getCategoria() == null || despesa.getCategoria().getDcaCod() == null) {
             throw new IllegalArgumentException("Categoria da despesa deve ser informada.");
@@ -109,7 +109,6 @@ public class FinanceiroDespesaService {
             }
         }
         
-      
         List<FinanceiroDespesa> despesasFiltradas = financeiroDespesaRepository.findByCondominioIn(condominiosAcessiveis);
 
         Stream<FinanceiroDespesa> filteredStream = despesasFiltradas.stream();
@@ -137,10 +136,9 @@ public class FinanceiroDespesaService {
         FinanceiroDespesa despesaExistente = financeiroDespesaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Despesa não encontrada com o ID: " + id));
 
-        
-        hasPermissionToManageFinance(despesaExistente.getCondominio().getConCod());
+        internalCheckPermissionToManageFinance(despesaExistente.getCondominio().getConCod());
 
-    
+       
         if (despesaAtualizada.getCondominio() != null && !despesaAtualizada.getCondominio().getConCod().equals(despesaExistente.getCondominio().getConCod()) ||
             despesaAtualizada.getCategoria() != null && !despesaAtualizada.getCategoria().getDcaCod().equals(despesaExistente.getCategoria().getDcaCod())) {
              throw new IllegalArgumentException("Não é permitido alterar o Condomínio ou a Categoria de uma despesa existente.");
@@ -173,8 +171,8 @@ public class FinanceiroDespesaService {
         FinanceiroDespesa despesa = financeiroDespesaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Despesa não encontrada para exclusão com o ID: " + id));
 
-       
-        hasPermissionToManageFinance(despesa.getCondominio().getConCod());
+  
+        internalCheckPermissionToManageFinance(despesa.getCondominio().getConCod()); 
 
         if (despesa.getDesStatusPagamento() == DespesaStatusPagamento.PAGA) {
             throw new IllegalArgumentException("Não é possível excluir uma despesa que já foi PAGA.");
@@ -183,8 +181,8 @@ public class FinanceiroDespesaService {
         financeiroDespesaRepository.delete(despesa);
     }
 
-
-    public boolean hasPermissionToManageFinance(Integer condominioId) {
+    
+    public boolean hasPermissionToManageFinanceByCondominioId(Integer condominioId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) return true;
         if (hasAuthority(authentication, "ROLE_SINDICO_" + condominioId)) return true;
@@ -200,6 +198,32 @@ public class FinanceiroDespesaService {
 
         return false;
     }
+
+   
+    public boolean hasPermissionToManageFinanceByDespesaId(Integer despesaId) {
+        FinanceiroDespesa despesa = financeiroDespesaRepository.findById(despesaId)
+                .orElseThrow(() -> new IllegalArgumentException("Despesa não encontrada com o ID: " + despesaId));
+        return hasPermissionToManageFinanceByCondominioId(despesa.getCondominio().getConCod());
+    }
+
+    
+    private void internalCheckPermissionToManageFinance(Integer condominioId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) return;
+        if (hasAuthority(authentication, "ROLE_SINDICO_" + condominioId)) return;
+        if (hasAuthority(authentication, "ROLE_ADMIN_" + condominioId)) return;
+
+        Condominio condominio = condominioRepository.findById(condominioId)
+                .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado."));
+
+        if (condominio.getAdministradora() != null && 
+            hasAuthority(authentication, "ROLE_GERENTE_ADMINISTRADORA_" + condominio.getAdministradora().getAdmCod())) {
+            return;
+        }
+
+        throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar finanças neste condomínio.");
+    }
+
 
     private void checkPermissionToViewFinance(FinanceiroDespesa despesa) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

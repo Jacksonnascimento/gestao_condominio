@@ -50,7 +50,7 @@ public class FinanceiroDespesaController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN') or " +
-                  "@financeiroDespesaService.hasPermissionToManageFinanceByCondominioId(#despesaAtualizada.condominio.conCod)")
+                  "@financeiroDespesaService.hasPermissionToManageFinanceByDespesaId(#id)") // CORREÇÃO AQUI: Passando o ID da despesa
     public ResponseEntity<FinanceiroDespesa> atualizarDespesa(@PathVariable Integer id, @RequestBody FinanceiroDespesa despesaAtualizada) {
         FinanceiroDespesa despesaSalva = financeiroDespesaService.atualizarDespesa(id, despesaAtualizada);
         return new ResponseEntity<>(despesaSalva, HttpStatus.OK);
@@ -58,9 +58,9 @@ public class FinanceiroDespesaController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN') or " +
-                  "@financeiroDespesaService.hasPermissionToManageFinanceByDespesaId(#id)")
-    public ResponseEntity<Void> deletarDespesa(@PathVariable Integer id) { // <<-- CORREÇÃO AQUI: Assinatura do método e abertura de chaves
+                  "@financeiroDespesaService.hasPermissionToManageFinanceByDespesaId(#id)") 
+    public ResponseEntity<Void> deletarDespesa(@PathVariable Integer id) {
         financeiroDespesaService.deletarDespesa(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    } 
+    }
 }

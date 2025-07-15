@@ -7,12 +7,11 @@ import java.time.LocalDate;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record FinanceiroCobrancaRequestDTO(
-    Integer undCod, 
-    Integer tcoCod, 
+    Integer uniCod, 
+    Integer ticCod, 
     BigDecimal ficValorTaxa,
-    LocalDate ficDtVencimento, 
+    LocalDate ficDtVencimento,
     CobrancaStatus ficStatusPagamento,
     LocalDate ficDtPagamento,
     BigDecimal ficValorPago
-   
 ) {}

@@ -16,6 +16,7 @@ public interface FinanceiroCobrancaRepository extends JpaRepository<FinanceiroCo
 
         List<FinanceiroCobranca> findByUnidadeIn(List<Unidade> unidades);
 
+        
         List<FinanceiroCobranca> findByUnidadeAndTipoCobrancaAndFicDtVencimentoBetween(
                         Unidade unidade,
                         TipoCobranca tipoCobranca,
@@ -35,9 +36,8 @@ public interface FinanceiroCobrancaRepository extends JpaRepository<FinanceiroCo
         List<FinanceiroCobranca> findByFicStatusPagamentoAndFicDtVencimentoBefore(CobrancaStatus status,
                         LocalDate data);
 
-    
         List<FinanceiroCobranca> findByUnidade_CondominioAndFicStatusPagamentoAndFicDtPagamentoBetween(
                         Condominio condominio, CobrancaStatus status, LocalDate dataInicio, LocalDate dataFim);
-   
+                        
         List<FinanceiroCobranca> findByUnidade_CondominioIn(List<Condominio> condominios);
 }

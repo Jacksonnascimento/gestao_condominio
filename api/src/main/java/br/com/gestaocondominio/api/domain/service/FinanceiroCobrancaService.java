@@ -1,3 +1,4 @@
+// src/main/java/br/com/gestaocondominio/api/domain/service/FinanceiroCobrancaService.java
 package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.controller.dto.FinanceiroCobrancaRequestDTO;
@@ -19,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime; 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -48,34 +49,32 @@ public class FinanceiroCobrancaService {
 
     @Transactional
     public FinanceiroCobranca cadastrarCobranca(FinanceiroCobrancaRequestDTO requestDTO) {
-        if (requestDTO.undCod() == null) {
+        if (requestDTO.uniCod() == null) {
             throw new IllegalArgumentException("ID da Unidade deve ser informado para a cobrança.");
         }
-        Unidade unidade = unidadeRepository.findById(requestDTO.undCod())
-                .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + requestDTO.undCod()));
+        Unidade unidade = unidadeRepository.findById(requestDTO.uniCod())
+                .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + requestDTO.uniCod()));
 
-        if (requestDTO.tcoCod() == null) {
+        if (requestDTO.ticCod() == null) { // ATUALIZADO: de tcoCod para ticCod
             throw new IllegalArgumentException("ID do Tipo de Cobrança deve ser informado para a cobrança.");
         }
-        TipoCobranca tipoCobranca = tipoCobrancaRepository.findById(requestDTO.tcoCod())
-                .orElseThrow(() -> new IllegalArgumentException("Tipo de cobrança não encontrado com o ID: " + requestDTO.tcoCod()));
+        TipoCobranca tipoCobranca = tipoCobrancaRepository.findById(requestDTO.ticCod()) // ATUALIZADO: de tcoCod para ticCod
+                .orElseThrow(() -> new IllegalArgumentException("Tipo de cobrança não encontrado com o ID: " + requestDTO.ticCod())); // ATUALIZADO
 
         internalCheckPermissionToManageCobranca(unidade.getCondominio().getConCod());
 
         FinanceiroCobranca cobranca = new FinanceiroCobranca();
         cobranca.setUnidade(unidade);
         cobranca.setTipoCobranca(tipoCobranca);
-    
-        cobranca.setFicValorTaxa(requestDTO.ficValorTaxa()); 
+        cobranca.setFicValorTaxa(requestDTO.ficValorTaxa());
         cobranca.setFicDtVencimento(requestDTO.ficDtVencimento());
         cobranca.setFicStatusPagamento(requestDTO.ficStatusPagamento() != null ? requestDTO.ficStatusPagamento() : CobrancaStatus.A_VENCER);
         cobranca.setFicDtPagamento(requestDTO.ficDtPagamento());
         cobranca.setFicValorPago(requestDTO.ficValorPago());
-        cobranca.setFicDtCadastro(LocalDateTime.now()); 
-        cobranca.setFicDtAtualizacao(LocalDateTime.now()); 
+        cobranca.setFicDtCadastro(LocalDateTime.now());
+        cobranca.setFicDtAtualizacao(LocalDateTime.now());
 
 
-      
         if (cobranca.getFicValorTaxa() == null || cobranca.getFicValorTaxa().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Valor da taxa da cobrança deve ser maior que zero.");
         }
@@ -131,7 +130,7 @@ public class FinanceiroCobrancaService {
         Stream<FinanceiroCobranca> filteredStream = cobrancasFiltradas.stream();
 
         if (unidadeId != null) {
-            filteredStream = filteredStream.filter(c -> c.getUnidade().getUndCod().equals(unidadeId));
+            filteredStream = filteredStream.filter(c -> c.getUnidade().getUniCod().equals(unidadeId)); // ATUALIZADO
         }
         if (status != null && !status.isEmpty()) {
             try {
@@ -161,9 +160,9 @@ public class FinanceiroCobrancaService {
         
         internalCheckPermissionToManageCobranca(cobrancaExistente.getUnidade().getCondominio().getConCod());
 
-        
-        if (requestDTO.undCod() != null && !requestDTO.undCod().equals(cobrancaExistente.getUnidade().getUndCod()) ||
-            requestDTO.tcoCod() != null && !requestDTO.tcoCod().equals(cobrancaExistente.getTipoCobranca().getTcoCod())) {
+        // Não permite alterar unidade ou tipo de cobrança de um registro existente
+        if (requestDTO.uniCod() != null && !requestDTO.uniCod().equals(cobrancaExistente.getUnidade().getUniCod()) || // ATUALIZADO
+            requestDTO.ticCod() != null && !requestDTO.ticCod().equals(cobrancaExistente.getTipoCobranca().getTicCod())) { // ATUALIZADO: de getTcoCod() para getTicCod()
              throw new IllegalArgumentException("Não é permitido alterar a Unidade ou o Tipo de Cobrança de uma cobrança existente.");
         }
 
@@ -186,9 +185,8 @@ public class FinanceiroCobrancaService {
             cobrancaExistente.setFicValorPago(requestDTO.ficValorPago());
         }
 
-        cobrancaExistente.setFicDtAtualizacao(LocalDateTime.now()); 
+        cobrancaExistente.setFicDtAtualizacao(LocalDateTime.now());
 
-        
         if (cobrancaExistente.getFicStatusPagamento() == CobrancaStatus.PAGA) {
             if (cobrancaExistente.getFicDtPagamento() == null) {
                 throw new IllegalArgumentException("Data de pagamento deve ser informada para cobranças pagas.");
@@ -208,7 +206,6 @@ public class FinanceiroCobrancaService {
         
         internalCheckPermissionToManageCobranca(cobranca.getUnidade().getCondominio().getConCod());
 
-        
         if (cobranca.getFicStatusPagamento() == CobrancaStatus.PAGA || cobranca.getFicStatusPagamento() == CobrancaStatus.CANCELADA) {
             throw new IllegalArgumentException("Não é possível excluir uma cobrança que já foi PAGA ou CANCELADA.");
         }
@@ -217,12 +214,12 @@ public class FinanceiroCobrancaService {
     }
 
     
+
     public boolean hasPermissionToManageCobrancaByUnidadeId(Integer unidadeId) {
         Unidade unidade = unidadeRepository.findById(unidadeId)
                 .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + unidadeId));
         return hasPermissionToManageCobrancaByCondominioId(unidade.getCondominio().getConCod());
     }
-
 
     public boolean hasPermissionToManageCobrancaByCobrancaId(Integer cobrancaId) {
         FinanceiroCobranca cobranca = financeiroCobrancaRepository.findById(cobrancaId)
@@ -230,7 +227,6 @@ public class FinanceiroCobrancaService {
         return hasPermissionToManageCobrancaByCondominioId(cobranca.getUnidade().getCondominio().getConCod());
     }
 
-    
     public boolean hasPermissionToManageCobrancaByCondominioId(Integer condominioId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) return true;
@@ -248,7 +244,6 @@ public class FinanceiroCobrancaService {
         return false;
     }
 
-    
     private void internalCheckPermissionToManageCobranca(Integer condominioId) {
         if (!hasPermissionToManageCobrancaByCondominioId(condominioId)) {
             throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar cobranças neste condomínio.");

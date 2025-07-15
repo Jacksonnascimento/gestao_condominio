@@ -1,5 +1,6 @@
 package br.com.gestaocondominio.api.domain.repository;
 
+import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.entity.FinanceiroCobranca;
 import br.com.gestaocondominio.api.domain.entity.TipoCobranca;
 import br.com.gestaocondominio.api.domain.entity.Unidade;
@@ -13,23 +14,28 @@ import java.util.List;
 @Repository
 public interface FinanceiroCobrancaRepository extends JpaRepository<FinanceiroCobranca, Integer> {
 
-    List<FinanceiroCobranca> findByUnidadeIn(List<Unidade> unidades);
+        List<FinanceiroCobranca> findByUnidadeIn(List<Unidade> unidades);
 
-    List<FinanceiroCobranca> findByUnidadeAndTipoCobrancaAndFicDtVencimentoBetween(
-            Unidade unidade,
-            TipoCobranca tipoCobranca,
-            LocalDate startOfMonth,
-            LocalDate endOfMonth);
+        List<FinanceiroCobranca> findByUnidadeAndTipoCobrancaAndFicDtVencimentoBetween(
+                        Unidade unidade,
+                        TipoCobranca tipoCobranca,
+                        LocalDate startOfMonth,
+                        LocalDate endOfMonth);
 
-    List<FinanceiroCobranca> findByTipoCobranca(TipoCobranca tipoCobranca);
+        List<FinanceiroCobranca> findByTipoCobranca(TipoCobranca tipoCobranca);
 
-    List<FinanceiroCobranca> findByTipoCobrancaAndFicStatusPagamentoNotIn(
-            TipoCobranca tipoCobranca,
-            List<CobrancaStatus> ficStatusPagamento);
+        List<FinanceiroCobranca> findByTipoCobrancaAndFicStatusPagamentoNotIn(
+                        TipoCobranca tipoCobranca,
+                        List<CobrancaStatus> ficStatusPagamento);
 
-    List<FinanceiroCobranca> findByUnidadeAndFicStatusPagamentoNotIn(
-            Unidade unidade,
-            List<CobrancaStatus> ficStatusPagamento);
+        List<FinanceiroCobranca> findByUnidadeAndFicStatusPagamentoNotIn(
+                        Unidade unidade,
+                        List<CobrancaStatus> ficStatusPagamento);
 
-    List<FinanceiroCobranca> findByFicStatusPagamentoAndFicDtVencimentoBefore(CobrancaStatus status, LocalDate data);
+        List<FinanceiroCobranca> findByFicStatusPagamentoAndFicDtVencimentoBefore(CobrancaStatus status,
+                        LocalDate data);
+
+        
+        List<FinanceiroCobranca> findByUnidade_CondominioAndFicStatusPagamentoAndFicDtPagamentoBetween(
+                        Condominio condominio, CobrancaStatus status, LocalDate dataInicio, LocalDate dataFim);
 }

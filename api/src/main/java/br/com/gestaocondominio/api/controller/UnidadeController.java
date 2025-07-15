@@ -1,10 +1,11 @@
 package br.com.gestaocondominio.api.controller;
 
+import br.com.gestaocondominio.api.controller.dto.UnidadeRequestDTO;
 import br.com.gestaocondominio.api.domain.entity.Unidade;
 import br.com.gestaocondominio.api.domain.service.UnidadeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize; 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,15 +21,13 @@ public class UnidadeController {
         this.unidadeService = unidadeService;
     }
 
-    
     @PostMapping
-    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN') or hasAnyAuthority('ROLE_SINDICO_' + #unidade.condominio.conCod, 'ROLE_ADMIN_' + #unidade.condominio.conCod)")
-    public ResponseEntity<Unidade> cadastrarUnidade(@RequestBody Unidade unidade) {
-        Unidade novaUnidade = unidadeService.cadastrarUnidade(unidade);
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN') or hasAnyAuthority('ROLE_SINDICO_' + #dto.conCod, 'ROLE_ADMIN_' + #dto.conCod)")
+    public ResponseEntity<Unidade> cadastrarUnidade(@RequestBody UnidadeRequestDTO dto) {
+        Unidade novaUnidade = unidadeService.cadastrarUnidade(dto);
         return new ResponseEntity<>(novaUnidade, HttpStatus.CREATED);
     }
     
-
     @GetMapping("/{id}")
     public ResponseEntity<Unidade> buscarUnidadePorId(@PathVariable Integer id) {
         Optional<Unidade> unidade = unidadeService.buscarUnidadePorId(id);

@@ -1,4 +1,3 @@
-// src/main/java/br/com/gestaocondominio/api/domain/service/FinanceiroDespesaService.java
 package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.domain.entity.Condominio;

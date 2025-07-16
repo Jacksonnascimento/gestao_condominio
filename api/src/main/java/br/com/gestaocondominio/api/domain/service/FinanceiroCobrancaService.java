@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections; // Adicionado import para Collections
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -135,6 +136,12 @@ public class FinanceiroCobrancaService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         List<Condominio> condominiosAcessiveis;
 
+        // Adicionado null check para authentication e suas authorities
+        if (authentication == null || authentication.getAuthorities() == null) {
+            return List.of(); 
+        }
+
+        // Usando a string "ROLE_GLOBAL_ADMIN" para a permissão global
         if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) {
             condominiosAcessiveis = condominioRepository.findAll();
         } else {
@@ -242,7 +249,14 @@ public class FinanceiroCobrancaService {
 
     public boolean hasPermissionToManageCobrancaByCondominioId(Integer condominioId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        // Se a autenticação for nula ou não tiver autoridades, retorne falso imediatamente para evitar NullPointerException.
+        if (authentication == null || authentication.getAuthorities() == null) {
+            return false;
+        }
+
+        // A role "ROLE_GLOBAL_ADMIN" concede permissão global
         if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) return true;
+        
         if (hasAuthority(authentication, "ROLE_SINDICO_" + condominioId)) return true;
         if (hasAuthority(authentication, "ROLE_ADMIN_" + condominioId)) return true;
 
@@ -265,7 +279,8 @@ public class FinanceiroCobrancaService {
 
     private void checkPermissionToViewCobranca(FinanceiroCobranca cobranca) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) return;
+        // A role "ROLE_GLOBAL_ADMIN" concede permissão global para visualização
+        if (authentication != null && hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) return;
 
         Integer condominioId = cobranca.getUnidade().getCondominio().getConCod();
         boolean hasAccess = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_", "ROLE_MORADOR_", "ROLE_FUNCIONARIO_ADM_", "ROLE_PORTEIRO_")
@@ -277,10 +292,17 @@ public class FinanceiroCobrancaService {
     }
 
     private boolean hasAuthority(Authentication auth, String authority) {
+        
+        if (auth == null || auth.getAuthorities() == null) {
+            return false;
+        }
         return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals(authority));
     }
 
     private Set<Integer> getCondoIdsFromRoles(Authentication auth, String... prefixes) {
+        if (auth == null || auth.getAuthorities() == null) { 
+            return Collections.emptySet();
+        }
         return auth.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .filter(authString -> Arrays.stream(prefixes).anyMatch(authString::startsWith))

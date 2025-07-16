@@ -3,7 +3,6 @@ package br.com.gestaocondominio.api.scheduler;
 import br.com.gestaocondominio.api.controller.dto.GerarCobrancaLoteRequestDTO;
 import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.entity.TipoCobranca;
-import br.com.gestaocondominio.api.domain.enums.UserRole;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.TipoCobrancaRepository;
 import br.com.gestaocondominio.api.domain.service.FinanceiroCobrancaService;
@@ -51,10 +50,11 @@ public class CobrancaAgendadaScheduler {
             return;
         }
 
+        // Configura um contexto de segurança para o scheduler com a role GLOBAL_ADMIN
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
             "system_scheduler",
             null,
-            Collections.singletonList(new SimpleGrantedAuthority(UserRole.ADMIN.name()))
+            Collections.singletonList(new SimpleGrantedAuthority("ROLE_GLOBAL_ADMIN")) 
         );
         SecurityContextHolder.getContext().setAuthentication(authToken);
 

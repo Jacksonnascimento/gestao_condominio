@@ -17,7 +17,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.Collections; // Adicionado import para Collections
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -86,11 +86,16 @@ public class FinanceiroCobrancaService {
         LocalDate inicioMes = dataCompetencia.withDayOfMonth(1);
         LocalDate fimMes = dataCompetencia.withDayOfMonth(dataCompetencia.lengthOfMonth());
         
-        Optional<FinanceiroCobranca> cobrancaExistente = financeiroCobrancaRepository.findByCompetencia(
+        // Alterado para retornar uma lista para lidar com múltiplos resultados
+        List<FinanceiroCobranca> cobrancasExistentes = financeiroCobrancaRepository.findByCompetencia(
             unidadeId, tipoCobrancaId, inicioMes, fimMes
         );
 
-        if (cobrancaExistente.isPresent() && cobrancaExistente.get().getFicStatusPagamento() != CobrancaStatus.CANCELADA) {
+        // Verifica se existe alguma cobrança não cancelada na lista de resultados
+        boolean hasNonCancelledDuplicate = cobrancasExistentes.stream()
+            .anyMatch(cobranca -> cobranca.getFicStatusPagamento() != CobrancaStatus.CANCELADA);
+
+        if (hasNonCancelledDuplicate) {
             throw new IllegalStateException("Cobrança duplicada (não cancelada) já existe para esta unidade e competência.");
         }
     }
@@ -292,7 +297,7 @@ public class FinanceiroCobrancaService {
     }
 
     private boolean hasAuthority(Authentication auth, String authority) {
-        
+        // Adicionado null check para auth e suas authorities
         if (auth == null || auth.getAuthorities() == null) {
             return false;
         }

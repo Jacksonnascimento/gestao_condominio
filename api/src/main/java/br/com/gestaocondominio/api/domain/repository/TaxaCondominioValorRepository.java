@@ -13,4 +13,6 @@ public interface TaxaCondominioValorRepository extends JpaRepository<TaxaCondomi
 
     Optional<TaxaCondominioValor> findByUnidadeTipoAndTipoCobranca(UnidadeTipo unidadeTipo, TipoCobranca tipoCobranca);
 
+    Optional<TaxaCondominioValor> findByUnidadeTipoUtiCodAndTipoCobrancaTicCod(Integer utiCod, Integer ticCod);
+
 }

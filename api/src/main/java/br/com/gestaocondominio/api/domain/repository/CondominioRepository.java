@@ -14,7 +14,7 @@ public interface CondominioRepository extends JpaRepository<Condominio, Integer>
     Optional<Condominio> findByConNome(String conNome);
     
     List<Condominio> findByAdministradora(Administradora administradora);
-
+     List<Condominio> findByConGeracaoAutoAtivaIsTrueAndConDiaGeracaoCobranca(int diaDoMes);
     
     List<Condominio> findByAdministradoraIn(List<Administradora> administradoras);
     

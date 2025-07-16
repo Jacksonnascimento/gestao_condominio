@@ -269,7 +269,7 @@ public class FinanceiroCobrancaService {
 
         Integer condominioId = cobranca.getUnidade().getCondominio().getConCod();
         boolean hasAccess = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_", "ROLE_MORADOR_", "ROLE_FUNCIONARIO_ADM_", "ROLE_PORTEIRO_")
-                             .contains(condominioId);
+                                     .contains(condominioId);
         
         if (!hasAccess) {
             throw new AccessDeniedException("Acesso negado para visualizar esta cobrança.");
@@ -293,5 +293,20 @@ public class FinanceiroCobrancaService {
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
+    }
+
+    
+    @Transactional
+    public void verificarEAtualizarCobrancasVencidas() {
+        LocalDate dataAtual = LocalDate.now();
+        List<FinanceiroCobranca> cobrancasParaAtualizar = financeiroCobrancaRepository.findAllByFicStatusPagamento(CobrancaStatus.A_VENCER);
+
+        for (FinanceiroCobranca cobranca : cobrancasParaAtualizar) {
+            if (cobranca.getFicDtVencimento().isBefore(dataAtual)) {
+                cobranca.setFicStatusPagamento(CobrancaStatus.VENCIDA);
+                cobranca.setFicDtAtualizacao(LocalDateTime.now());
+                financeiroCobrancaRepository.save(cobranca);
+            }
+        }
     }
 }

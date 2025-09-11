@@ -3,6 +3,7 @@ package br.com.gestaocondominio.api.domain.entity;
 import br.com.gestaocondominio.api.domain.enums.UnidadeStatusOcupacao;
 import jakarta.persistence.*;
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "uniCod")
-@ToString(of = {"uniCod", "uniNumero"})
+@ToString(of = {"uniCod", "uniNumero", "bloco", "andar"})
 @Entity
 @Table(name = "gc_unidade")
 public class Unidade {
@@ -22,10 +23,26 @@ public class Unidade {
 
     @Column(name = "UNI_NUMERO", nullable = false, length = 10)
     private String uniNumero;
+    
+    @Column(name = "UNI_BLOCO", length = 50)
+    private String bloco;
+
+    @Column(name = "UNI_ANDAR", length = 50)
+    private String andar;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "UNI_STATUS_OCUPACAO", length = 50)
     private UnidadeStatusOcupacao uniStatusOcupacao;
+
+    @Column(name = "UNI_FRACAO_IDEAL", precision = 5, scale = 4)
+    private BigDecimal fracaoIdeal;
+
+    @Column(name = "UNI_AREA_PRIVADA", precision = 10, scale = 2)
+    private BigDecimal areaPrivada;
+    
+    @Lob
+    @Column(name = "UNI_OBSERVACAO")
+    private String observacao;
 
     @Column(name = "UNI_DT_CADASTRO", nullable = false)
     private LocalDateTime uniDtCadastro;

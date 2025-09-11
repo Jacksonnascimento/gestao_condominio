@@ -75,7 +75,12 @@ public class UnidadeServiceImpl implements UnidadeService {
         unidade.setCondominio(condominio);
         unidade.setUnidadeTipo(unidadeTipo);
         unidade.setUniNumero(dto.getUniNumero());
-        unidade.setUniStatusOcupacao(dto.getUniStatusOcupacao() == null ? UnidadeStatusOcupacao.DESOCUPADO : dto.getUniStatusOcupacao());
+        unidade.setBloco(dto.getBloco());
+        unidade.setAndar(dto.getAndar());
+        unidade.setFracaoIdeal(dto.getFracaoIdeal());
+        unidade.setAreaPrivada(dto.getAreaPrivada());
+        unidade.setObservacao(dto.getObservacao());
+        unidade.setUniStatusOcupacao(dto.getUniStatusOcupacao() == null ? UnidadeStatusOcupacao.VAZIA : dto.getUniStatusOcupacao());
         unidade.setUniDtCadastro(LocalDateTime.now());
         unidade.setUniDtAtualizacao(LocalDateTime.now());
         unidade.setUniAtiva(dto.getUniAtiva() != null ? dto.getUniAtiva() : true);
@@ -135,7 +140,24 @@ public class UnidadeServiceImpl implements UnidadeService {
         if (unidadeAtualizada.getUniStatusOcupacao() != null) {
             unidadeExistente.setUniStatusOcupacao(unidadeAtualizada.getUniStatusOcupacao());
         }
-        
+        if (unidadeAtualizada.getBloco() != null) {
+            unidadeExistente.setBloco(unidadeAtualizada.getBloco());
+        }
+        if (unidadeAtualizada.getAndar() != null) {
+            unidadeExistente.setAndar(unidadeAtualizada.getAndar());
+        }
+        if (unidadeAtualizada.getFracaoIdeal() != null) {
+            unidadeExistente.setFracaoIdeal(unidadeAtualizada.getFracaoIdeal());
+        }
+        if (unidadeAtualizada.getAreaPrivada() != null) {
+            unidadeExistente.setAreaPrivada(unidadeAtualizada.getAreaPrivada());
+        }
+        if (unidadeAtualizada.getObservacao() != null) {
+            unidadeExistente.setObservacao(unidadeAtualizada.getObservacao());
+        }
+        if (unidadeAtualizada.getUnidadeTipo() != null) {
+            unidadeExistente.setUnidadeTipo(unidadeAtualizada.getUnidadeTipo());
+        }
         if (unidadeAtualizada.getUniAtiva() != null) {
             unidadeExistente.setUniAtiva(unidadeAtualizada.getUniAtiva());
         }

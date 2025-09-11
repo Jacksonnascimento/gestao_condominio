@@ -41,7 +41,7 @@ public class Unidade {
     private BigDecimal areaPrivada;
     
     @Lob
-    @Column(name = "UNI_OBSERVACAO")
+    @Column(name = "UNI_OBSERVACAO", columnDefinition = "TEXT")
     private String observacao;
 
     @Column(name = "UNI_DT_CADASTRO", nullable = false)

@@ -3,6 +3,7 @@ package br.com.gestaocondominio.api.domain.repository;
 import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.entity.Unidade;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -21,4 +22,9 @@ public interface UnidadeRepository extends JpaRepository<Unidade, Integer> {
 
     List<Unidade> findByCondominioConCodAndUniAtivaTrue(Integer conCod);
     
+    @Query("SELECT u FROM Unidade u JOIN FETCH u.condominio WHERE u.uniAtiva = true")
+    List<Unidade> findAllAtivasWithCondominio();
+
+    @Query("SELECT u FROM Unidade u JOIN FETCH u.condominio")
+    List<Unidade> findAllWithCondominio();
 }

@@ -8,6 +8,8 @@ import br.com.gestaocondominio.api.domain.enums.UnidadeTipo;
 import br.com.gestaocondominio.api.domain.service.CondominioService;
 import br.com.gestaocondominio.api.domain.service.UnidadeService;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -19,10 +21,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Controller
 @RequestMapping("/unidades")
 public class UnidadeViewController {
+
+    private static final Logger logger = LoggerFactory.getLogger(UnidadeViewController.class);
 
     @Autowired
     private UnidadeService unidadeService;
@@ -42,37 +47,56 @@ public class UnidadeViewController {
             @RequestParam(required = false, defaultValue = "Todos") String status,
             @RequestParam(required = false, defaultValue = "") String busca,
             Model model) {
+        
+        long startTime = System.currentTimeMillis();
+        logger.info("Iniciando o carregamento da página de Unidades...");
 
         addUserDetailsToModel(model);
         
-        List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
+        List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(true);
         model.addAttribute("isMultiCondo", condominiosDisponiveis.size() > 1);
 
-        List<Unidade> todasUnidadesAtivas = unidadeService.listarTodasUnidades(false, "Todos", null);
+        List<Unidade> todasUnidadesAutorizadas = unidadeService.listarTodasUnidades(false, "Todos", null);
         
-        Map<UnidadeStatusOcupacao, Long> contagemStatus = todasUnidadesAtivas.stream()
+        Map<UnidadeStatusOcupacao, Long> contagemStatus = todasUnidadesAutorizadas.stream()
                 .filter(u -> u.getUniStatusOcupacao() != null)
                 .collect(Collectors.groupingBy(Unidade::getUniStatusOcupacao, Collectors.counting()));
 
-        model.addAttribute("totalUnidades", todasUnidadesAtivas.size());
+        model.addAttribute("totalUnidades", todasUnidadesAutorizadas.size());
         model.addAttribute("totalOcupadas", contagemStatus.getOrDefault(UnidadeStatusOcupacao.OCUPADA, 0L));
         model.addAttribute("totalVazias", contagemStatus.getOrDefault(UnidadeStatusOcupacao.VAZIA, 0L));
         model.addAttribute("totalMultipropriedade", contagemStatus.getOrDefault(UnidadeStatusOcupacao.MULTIPROPRIEDADE, 0L));
         model.addAttribute("totalEmReforma", contagemStatus.getOrDefault(UnidadeStatusOcupacao.EM_REFORMA, 0L));
         
-        List<Unidade> unidadesFiltradas = unidadeService.listarTodasUnidades(false, status, busca);
+        Stream<Unidade> streamFiltrado = todasUnidadesAutorizadas.stream();
 
-        model.addAttribute("unidades", unidadesFiltradas);
+        if (status != null && !status.isBlank() && !status.equalsIgnoreCase("Todos")) {
+            UnidadeStatusOcupacao statusEnum = UnidadeStatusOcupacao.valueOf(status.toUpperCase());
+            streamFiltrado = streamFiltrado.filter(u -> u.getUniStatusOcupacao() == statusEnum);
+        }
+
+        if (busca != null && !busca.isBlank()) {
+            String buscaLower = busca.toLowerCase();
+            streamFiltrado = streamFiltrado.filter(u -> 
+                (u.getUniNumero() != null && u.getUniNumero().toLowerCase().contains(buscaLower)) ||
+                (u.getBloco() != null && u.getBloco().toLowerCase().contains(buscaLower))
+            );
+        }
+
+        model.addAttribute("unidades", streamFiltrado.collect(Collectors.toList()));
         model.addAttribute("statusFiltro", status);
         model.addAttribute("buscaFiltro", busca);
         model.addAttribute("currentPage", "unidades");
+        
+        long endTime = System.currentTimeMillis();
+        logger.info("Página de Unidades carregada em {} ms", (endTime - startTime));
         
         return "unidades";
     }
 
     @GetMapping("/novo")
     public String getFormularioNovaUnidade(Model model) {
-        List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
+        List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(true);
 
         model.addAttribute("unidadeDTO", new UnidadeRequestDTO());
         model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);

@@ -2,6 +2,7 @@ package br.com.gestaocondominio.api.domain.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -32,11 +33,11 @@ public class Administradora {
     @Column(name = "ADM_COD")
     private Integer admCod;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PES_COD", nullable = false)
     private Pessoa dadosEmpresa;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ADM_RESPONSAVEL", nullable = false)
     private Pessoa responsavel;
 

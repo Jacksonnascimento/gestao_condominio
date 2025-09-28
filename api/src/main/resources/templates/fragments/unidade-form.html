@@ -1,61 +1,57 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <body>
-
     <div th:fragment="form-modal-content">
         <div class="modal-header">
-            <h2 th:text="${unidadeId != null ? 'Editar Unidade ' + unidadeDTO.uniNumero : 'Nova Unidade'}">Título do
-                Modal</h2>
+            <h2 th:text="${unidadeId != null ? 'Editar Unidade ' + unidadeDTO.uniNumero : 'Nova Unidade'}">Título do Modal</h2>
             <button class="close-btn" onclick="closeModal()">&times;</button>
         </div>
-
-        <form class="modal-form" th:object="${unidadeDTO}"
-            th:action="${unidadeId != null ? '/unidades/editar/' + unidadeId : '/unidades/salvar'}" method="post">
-
-            <div class="form-group">
-                <label for="uniNumero">Número da Unidade *</label>
-                <input type="text" id="uniNumero" th:field="*{uniNumero}" required>
-            </div>
-
+        
+        <form class="modal-form" th:object="${unidadeDTO}" 
+              th:action="${unidadeId != null ? '/unidades/editar/' + unidadeId : '/unidades/salvar'}" 
+              method="post">
+            
             <div class="form-row">
+                <div class="form-group">
+                    <label for="uniNumero">Número da Unidade *</label>
+                    <input type="text" id="uniNumero" th:field="*{uniNumero}" required>
+                </div>
                 <div class="form-group">
                     <label for="bloco">Bloco</label>
                     <input type="text" id="bloco" th:field="*{bloco}">
                 </div>
+            </div>
+
+            <div class="form-row">
                 <div class="form-group">
                     <label for="andar">Andar</label>
                     <input type="text" id="andar" th:field="*{andar}">
                 </div>
-            </div>
-
-            <div class="form-row">
                 <div class="form-group">
                     <label for="fracaoIdeal">Fração Ideal *</label>
                     <input type="number" id="fracaoIdeal" step="0.0001" th:field="*{fracaoIdeal}" required>
                 </div>
-                <div class="form-group">
-                    <label for="areaPrivada">Área Privativa (m²)</label>
-                    <input type="number" id="areaPrivada" step="0.01" th:field="*{areaPrivada}">
-                </div>
             </div>
 
             <div class="form-row">
+                 <div class="form-group">
+                    <label for="areaPrivada">Área Privativa (m²)</label>
+                    <input type="number" id="areaPrivada" step="0.01" th:field="*{areaPrivada}">
+                </div>
                 <div class="form-group">
-                    <label for="utiCod">Tipo da Unidade</label>
-                    <select id="utiCod" th:field="*{utiCod}">
+                    <label for="unidadeTipo">Tipo da Unidade</label>
+                    <select id="unidadeTipo" th:field="*{unidadeTipo}">
                         <option value="">Selecione...</option>
-                        <option th:each="tipo : ${tiposUnidade}" th:value="${tipo.utiCod}"
-                            th:text="${tipo.utiDescricao}"></option>
+                        <option th:each="tipo : ${tiposUnidade}" th:value="${tipo}" th:text="${tipo.getDescricao()}"></option>
                     </select>
                 </div>
-
-                <div class="form-group">
-                    <label for="statusOcupacao">Status</label>
-                    <select id="statusOcupacao" th:field="*{uniStatusOcupacao}">
-                        <option th:each="s : ${statusOcupacao}" th:value="${s}" th:text="${s.getDescricao()}"></option>
-                    </select>
-                </div>
+            </div>
+           
+            <div class="form-group">
+                <label for="statusOcupacao">Status</label>
+                <select id="statusOcupacao" th:field="*{uniStatusOcupacao}">
+                    <option th:each="s : ${statusOcupacao}" th:value="${s}" th:text="${s.getDescricao()}"></option>
+                </select>
             </div>
 
             <div class="form-group">
@@ -67,12 +63,9 @@
 
             <div class="modal-footer">
                 <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
-                <button type="submit" class="btn-primary"
-                    th:text="${unidadeId != null ? 'Salvar Alterações' : 'Salvar'}">Salvar</button>
+                <button type="submit" class="btn-primary" th:text="${unidadeId != null ? 'Salvar Alterações' : 'Salvar'}">Salvar</button>
             </div>
         </form>
     </div>
-
 </body>
-
 </html>

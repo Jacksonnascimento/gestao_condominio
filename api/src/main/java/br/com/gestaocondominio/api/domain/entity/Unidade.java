@@ -1,6 +1,7 @@
 package br.com.gestaocondominio.api.domain.entity;
 
 import br.com.gestaocondominio.api.domain.enums.UnidadeStatusOcupacao;
+import br.com.gestaocondominio.api.domain.enums.UnidadeTipo;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -57,7 +58,7 @@ public class Unidade {
     @Column(name = "UNI_ATIVA")
     private Boolean uniAtiva;
 
-    @ManyToOne
-    @JoinColumn(name = "UTI_COD")
+     @Enumerated(EnumType.STRING)
+    @Column(name = "UNI_TIPO", length = 50) // Nova coluna para armazenar o Enum como texto
     private UnidadeTipo unidadeTipo;
 }

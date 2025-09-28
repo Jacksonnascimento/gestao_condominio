@@ -90,3 +90,14 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: var(--font-family
 .modal-form label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem; }
 .modal-form input, .modal-form select, .modal-form textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
 .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding-top: 20px; border-top: 1px solid var(--border-color); margin-top: 20px; }
+
+/* ESTILOS DO FOOTER DA SIDEBAR */
+.sidebar-footer .user-info {
+    padding: 10px 20px;
+    text-align: center;
+    font-weight: 500;
+    color: var(--text-color);
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 15px;
+}

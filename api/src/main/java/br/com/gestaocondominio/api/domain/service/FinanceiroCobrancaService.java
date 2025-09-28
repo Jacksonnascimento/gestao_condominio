@@ -32,18 +32,15 @@ public class FinanceiroCobrancaService {
     private final UnidadeRepository unidadeRepository;
     private final TipoCobrancaRepository tipoCobrancaRepository;
     private final CondominioRepository condominioRepository;
-    private final TaxaCondominioValorRepository taxaCondominioValorRepository;
 
     public FinanceiroCobrancaService(FinanceiroCobrancaRepository financeiroCobrancaRepository,
                                      UnidadeRepository unidadeRepository,
                                      TipoCobrancaRepository tipoCobrancaRepository,
-                                     CondominioRepository condominioRepository,
-                                     TaxaCondominioValorRepository taxaCondominioValorRepository) {
+                                     CondominioRepository condominioRepository) {
         this.financeiroCobrancaRepository = financeiroCobrancaRepository;
         this.unidadeRepository = unidadeRepository;
         this.tipoCobrancaRepository = tipoCobrancaRepository;
         this.condominioRepository = condominioRepository;
-        this.taxaCondominioValorRepository = taxaCondominioValorRepository;
     }
 
     @Transactional
@@ -58,7 +55,7 @@ public class FinanceiroCobrancaService {
 
         verificarCobrancaDuplicada(unidade.getUniCod(), tipoCobranca.getTicCod(), request.getDataVencimento());
 
-        BigDecimal valorFinal = calcularValorCobranca(unidade, tipoCobranca, Optional.ofNullable(request.getValorOpcional()));
+        BigDecimal valorFinal = calcularValorCobranca(tipoCobranca, Optional.ofNullable(request.getValorOpcional()));
         
         return criarRegistroDeCobranca(unidade, tipoCobranca, valorFinal, request.getDataVencimento());
     }
@@ -74,7 +71,7 @@ public class FinanceiroCobrancaService {
         for (Unidade unidade : unidadesAtivas) {
             try {
                 verificarCobrancaDuplicada(unidade.getUniCod(), tipoCobranca.getTicCod(), request.getDataVencimento());
-                BigDecimal valorFinal = calcularValorCobranca(unidade, tipoCobranca, Optional.empty());
+                BigDecimal valorFinal = calcularValorCobranca(tipoCobranca, Optional.empty());
                 criarRegistroDeCobranca(unidade, tipoCobranca, valorFinal, request.getDataVencimento());
             } catch (IllegalStateException e) {
                 System.err.println("INFO: Cobrança ignorada para a unidade " + unidade.getUniCod() + ". Motivo: " + e.getMessage());
@@ -86,12 +83,10 @@ public class FinanceiroCobrancaService {
         LocalDate inicioMes = dataCompetencia.withDayOfMonth(1);
         LocalDate fimMes = dataCompetencia.withDayOfMonth(dataCompetencia.lengthOfMonth());
         
-        // Alterado para retornar uma lista para lidar com múltiplos resultados
         List<FinanceiroCobranca> cobrancasExistentes = financeiroCobrancaRepository.findByCompetencia(
             unidadeId, tipoCobrancaId, inicioMes, fimMes
         );
 
-        // Verifica se existe alguma cobrança não cancelada na lista de resultados
         boolean hasNonCancelledDuplicate = cobrancasExistentes.stream()
             .anyMatch(cobranca -> cobranca.getFicStatusPagamento() != CobrancaStatus.CANCELADA);
 
@@ -100,17 +95,8 @@ public class FinanceiroCobrancaService {
         }
     }
 
-    private BigDecimal calcularValorCobranca(Unidade unidade, TipoCobranca tipoCobranca, Optional<BigDecimal> valorOpcional) {
-        if (Boolean.TRUE.equals(tipoCobranca.getTicIsTaxaPrincipal())) {
-            if (unidade.getUnidadeTipo() == null) {
-                throw new IllegalStateException("A unidade não possui um 'Tipo de Unidade' definido.");
-            }
-            return taxaCondominioValorRepository.findByUnidadeTipoUtiCodAndTipoCobrancaTicCod(unidade.getUnidadeTipo().getUtiCod(), tipoCobranca.getTicCod())
-                    .map(TaxaCondominioValor::getTcvValor)
-                    .orElse(tipoCobranca.getTicValor());
-        } else {
-            return valorOpcional.orElse(tipoCobranca.getTicValor());
-        }
+    private BigDecimal calcularValorCobranca(TipoCobranca tipoCobranca, Optional<BigDecimal> valorOpcional) {
+        return valorOpcional.orElse(tipoCobranca.getTicValor());
     }
 
     private FinanceiroCobranca criarRegistroDeCobranca(Unidade unidade, TipoCobranca tipoCobranca, BigDecimal valor, LocalDate dataVencimento) {
@@ -141,12 +127,10 @@ public class FinanceiroCobrancaService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         List<Condominio> condominiosAcessiveis;
 
-        // Adicionado null check para authentication e suas authorities
         if (authentication == null || authentication.getAuthorities() == null) {
             return List.of(); 
         }
 
-        // Usando a string "ROLE_GLOBAL_ADMIN" para a permissão global
         if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) {
             condominiosAcessiveis = condominioRepository.findAll();
         } else {
@@ -254,12 +238,10 @@ public class FinanceiroCobrancaService {
 
     public boolean hasPermissionToManageCobrancaByCondominioId(Integer condominioId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        // Se a autenticação for nula ou não tiver autoridades, retorne falso imediatamente para evitar NullPointerException.
         if (authentication == null || authentication.getAuthorities() == null) {
             return false;
         }
 
-        // A role "ROLE_GLOBAL_ADMIN" concede permissão global
         if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) return true;
         
         if (hasAuthority(authentication, "ROLE_SINDICO_" + condominioId)) return true;
@@ -284,7 +266,6 @@ public class FinanceiroCobrancaService {
 
     private void checkPermissionToViewCobranca(FinanceiroCobranca cobranca) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        // A role "ROLE_GLOBAL_ADMIN" concede permissão global para visualização
         if (authentication != null && hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) return;
 
         Integer condominioId = cobranca.getUnidade().getCondominio().getConCod();
@@ -297,7 +278,6 @@ public class FinanceiroCobrancaService {
     }
 
     private boolean hasAuthority(Authentication auth, String authority) {
-        // Adicionado null check para auth e suas authorities
         if (auth == null || auth.getAuthorities() == null) {
             return false;
         }

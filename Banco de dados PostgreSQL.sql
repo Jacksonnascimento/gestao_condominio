@@ -355,7 +355,15 @@ ADD COLUMN UNI_FRACAO_IDEAL DECIMAL(5, 4),
 ADD COLUMN UNI_AREA_PRIVADA DECIMAL(10, 2),
 ADD COLUMN UNI_OBSERVACAO TEXT;
 
--- Comentário: O campo UNI_STATUS_OCUPACAO foi atualizado na aplicação para os seguintes valores:
--- 'OCUPADA', 'VAZIA', 'EM_REFORMA', 'MULTIPROPRIEDADE'
--- Se houver dados existentes, será necessário um script de migração para ajustar os valores antigos.
--- Exemplo: UPDATE GC_UNIDADE SET UNI_STATUS_OCUPACAO = 'OCUPADA' WHERE UNI_STATUS_OCUPACAO = 'OCUPADO';
+
+ALTER TABLE gc_unidade DROP COLUMN uti_cod;
+
+
+DROP TABLE gc_taxa_condominio_valor;
+DROP TABLE gc_unidade_tipo;
+
+
+ALTER TABLE gc_unidade DROP CONSTRAINT gc_unidade_uni_tipo_check;
+
+
+ALTER TABLE gc_unidade ADD CONSTRAINT gc_unidade_uni_tipo_check CHECK (uni_tipo IN ('APARTAMENTO', 'COMERCIAL', 'GARAGEM', 'DEPOSITO', 'OUTROS'));

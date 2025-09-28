@@ -3,14 +3,16 @@ package br.com.gestaocondominio.api.controller;
 import br.com.gestaocondominio.api.controller.dto.UnidadeRequestDTO;
 import br.com.gestaocondominio.api.domain.entity.Unidade;
 import br.com.gestaocondominio.api.domain.enums.UnidadeStatusOcupacao;
-import br.com.gestaocondominio.api.domain.repository.UnidadeTipoRepository;
+import br.com.gestaocondominio.api.domain.enums.UnidadeTipo;
 import br.com.gestaocondominio.api.domain.service.UnidadeService;
+import br.com.gestaocondominio.api.security.UserDetailsImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
 
 import java.util.List;
 import java.util.Map;
@@ -23,9 +25,11 @@ public class UnidadeViewController {
     @Autowired
     private UnidadeService unidadeService;
 
-    @Autowired
-    private UnidadeTipoRepository unidadeTipoRepository;
-
+    private void addUserDetailsToModel(Model model) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        model.addAttribute("nomeUsuarioLogado", userDetails.getPessoa().getPesNome());
+    }
 
     @GetMapping
     public String getUnidadesPage(
@@ -33,6 +37,7 @@ public class UnidadeViewController {
             @RequestParam(required = false, defaultValue = "") String busca,
             Model model) {
 
+        addUserDetailsToModel(model);
         List<Unidade> todasUnidadesAtivas = unidadeService.listarTodasUnidades(false, "Todos", null);
         
         Map<UnidadeStatusOcupacao, Long> contagemStatus = todasUnidadesAtivas.stream()
@@ -50,6 +55,7 @@ public class UnidadeViewController {
         model.addAttribute("unidades", unidadesFiltradas);
         model.addAttribute("statusFiltro", status);
         model.addAttribute("buscaFiltro", busca);
+        model.addAttribute("currentPage", "unidades");
         
         return "unidades";
     }
@@ -57,7 +63,7 @@ public class UnidadeViewController {
     @GetMapping("/novo")
     public String getFormularioNovaUnidade(Model model) {
         model.addAttribute("unidadeDTO", new UnidadeRequestDTO());
-        model.addAttribute("tiposUnidade", unidadeTipoRepository.findAll());
+        model.addAttribute("tiposUnidade", UnidadeTipo.values());
         model.addAttribute("statusOcupacao", UnidadeStatusOcupacao.values());
         return "fragments/unidade-form :: form-modal-content";
     }
@@ -69,13 +75,10 @@ public class UnidadeViewController {
         
         UnidadeRequestDTO dto = new UnidadeRequestDTO();
         BeanUtils.copyProperties(unidade, dto);
-        if (unidade.getUnidadeTipo() != null) {
-            dto.setUtiCod(unidade.getUnidadeTipo().getUtiCod());
-        }
         
         model.addAttribute("unidadeDTO", dto);
         model.addAttribute("unidadeId", id);
-        model.addAttribute("tiposUnidade", unidadeTipoRepository.findAll());
+        model.addAttribute("tiposUnidade", UnidadeTipo.values());
         model.addAttribute("statusOcupacao", UnidadeStatusOcupacao.values());
         return "fragments/unidade-form :: form-modal-content";
     }

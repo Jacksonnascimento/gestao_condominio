@@ -14,7 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // IMPORTANTE ADICIONAR ESTE IMPORT
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -29,7 +29,6 @@ public class UnidadeServiceImpl implements UnidadeService {
 
     private final UnidadeRepository unidadeRepository;
     private final CondominioRepository condominioRepository;
-    private final UnidadeTipoRepository unidadeTipoRepository;
     private final MoradorRepository moradorRepository;
     private final FinanceiroCobrancaRepository financeiroCobrancaRepository;
     private final ReservaAreaComumRepository reservaAreaComumRepository;
@@ -37,14 +36,12 @@ public class UnidadeServiceImpl implements UnidadeService {
 
     public UnidadeServiceImpl(UnidadeRepository unidadeRepository,
                               CondominioRepository condominioRepository,
-                              UnidadeTipoRepository unidadeTipoRepository,
                               MoradorRepository moradorRepository,
                               FinanceiroCobrancaRepository financeiroCobrancaRepository,
                               ReservaAreaComumRepository reservaAreaComumRepository,
                               SolicitacaoManutencaoRepository solicitacaoManutencaoRepository) {
         this.unidadeRepository = unidadeRepository;
         this.condominioRepository = condominioRepository;
-        this.unidadeTipoRepository = unidadeTipoRepository;
         this.moradorRepository = moradorRepository;
         this.financeiroCobrancaRepository = financeiroCobrancaRepository;
         this.reservaAreaComumRepository = reservaAreaComumRepository;
@@ -67,15 +64,9 @@ public class UnidadeServiceImpl implements UnidadeService {
             throw new IllegalArgumentException("Já existe uma unidade com este número para o condomínio informado: " + u.getUniNumero());
         });
         
-        UnidadeTipo unidadeTipo = null;
-        if (dto.getUtiCod() != null) {
-            unidadeTipo = unidadeTipoRepository.findById(dto.getUtiCod())
-                    .orElseThrow(() -> new EntityNotFoundException("Tipo de Unidade não encontrado com o ID: " + dto.getUtiCod()));
-        }
-
         Unidade unidade = new Unidade();
         unidade.setCondominio(condominio);
-        unidade.setUnidadeTipo(unidadeTipo);
+        unidade.setUnidadeTipo(dto.getUnidadeTipo());
         unidade.setUniNumero(dto.getUniNumero());
         unidade.setBloco(dto.getBloco());
         unidade.setAndar(dto.getAndar());
@@ -90,7 +81,7 @@ public class UnidadeServiceImpl implements UnidadeService {
         return unidadeRepository.save(unidade);
     }
     
-   @Override
+    @Override
     @Transactional(readOnly = true)
     public List<Unidade> listarTodasUnidades(boolean incluirInativas, String statusOcupacao, String busca) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -98,12 +89,12 @@ public class UnidadeServiceImpl implements UnidadeService {
         List<Unidade> unidadesAutorizadas;
 
         if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) {
-            unidadesAutorizadas = incluirInativas ? unidadeRepository.findAllFetchTipo() : unidadeRepository.findByUniAtivaFetchTipo(true);
+            unidadesAutorizadas = incluirInativas ? unidadeRepository.findAll() : unidadeRepository.findByUniAtiva(true);
         } else {
             Set<Integer> condoIdsComAcessoAdmin = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_");
             if (!condoIdsComAcessoAdmin.isEmpty()) {
                 List<Condominio> condominiosGerenciados = condominioRepository.findAllById(condoIdsComAcessoAdmin);
-                unidadesAutorizadas = unidadeRepository.findByCondominioInFetchTipo(condominiosGerenciados);
+                unidadesAutorizadas = unidadeRepository.findByCondominioIn(condominiosGerenciados);
             } else {
                 UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
                 Pessoa pessoaLogada = userDetails.getPessoa();
@@ -141,7 +132,7 @@ public class UnidadeServiceImpl implements UnidadeService {
         return unidadeOpt;
     }
 
-  @Override
+    @Override
     public Unidade atualizarUnidade(Integer id, UnidadeRequestDTO dto) {
         Unidade unidadeExistente = unidadeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + id));
@@ -156,12 +147,7 @@ public class UnidadeServiceImpl implements UnidadeService {
             unidadeExistente.setUniNumero(dto.getUniNumero());
         }
 
-        if (dto.getUtiCod() != null) {
-            UnidadeTipo unidadeTipo = unidadeTipoRepository.findById(dto.getUtiCod())
-                    .orElseThrow(() -> new EntityNotFoundException("Tipo de Unidade não encontrado com o ID: " + dto.getUtiCod()));
-            unidadeExistente.setUnidadeTipo(unidadeTipo);
-        }
-
+        unidadeExistente.setUnidadeTipo(dto.getUnidadeTipo());
         unidadeExistente.setUniStatusOcupacao(dto.getUniStatusOcupacao());
         unidadeExistente.setBloco(dto.getBloco());
         unidadeExistente.setAndar(dto.getAndar());
@@ -176,6 +162,7 @@ public class UnidadeServiceImpl implements UnidadeService {
         unidadeExistente.setUniDtAtualizacao(LocalDateTime.now());
         return unidadeRepository.save(unidadeExistente);
     }
+
     @Override
     public Unidade inativarUnidade(Integer id) {
         Unidade unidade = unidadeRepository.findById(id)

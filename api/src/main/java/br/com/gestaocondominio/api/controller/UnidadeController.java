@@ -36,14 +36,17 @@ public class UnidadeController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Unidade>> listarTodasUnidades(@RequestParam(required = false, defaultValue = "true") boolean ativas) {
-        List<Unidade> unidades = unidadeService.listarTodasUnidades(ativas);
+    public ResponseEntity<List<Unidade>> listarTodasUnidades(
+            @RequestParam(required = false, defaultValue = "false") boolean incluirInativas,
+            @RequestParam(required = false) String statusOcupacao,
+            @RequestParam(required = false) String busca) {
+        List<Unidade> unidades = unidadeService.listarTodasUnidades(incluirInativas, statusOcupacao, busca);
         return new ResponseEntity<>(unidades, HttpStatus.OK);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Unidade> atualizarUnidade(@PathVariable Integer id, @RequestBody Unidade unidadeAtualizada) {
-        Unidade unidadeSalva = unidadeService.atualizarUnidade(id, unidadeAtualizada);
+    public ResponseEntity<Unidade> atualizarUnidade(@PathVariable Integer id, @RequestBody UnidadeRequestDTO dto) {
+        Unidade unidadeSalva = unidadeService.atualizarUnidade(id, dto);
         return new ResponseEntity<>(unidadeSalva, HttpStatus.OK);
     }
 

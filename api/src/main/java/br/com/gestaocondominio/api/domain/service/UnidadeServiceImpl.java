@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional; // IMPORTANTE ADICIONAR ESTE IMPORT
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class UnidadeServiceImpl implements UnidadeService {
@@ -88,32 +90,48 @@ public class UnidadeServiceImpl implements UnidadeService {
         return unidadeRepository.save(unidade);
     }
     
-    @Override
-    public List<Unidade> listarTodasUnidades(boolean incluirInativas) {
+   @Override
+    @Transactional(readOnly = true)
+    public List<Unidade> listarTodasUnidades(boolean incluirInativas, String statusOcupacao, String busca) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        Pessoa pessoaLogada = userDetails.getPessoa();
+        
+        List<Unidade> unidadesAutorizadas;
 
         if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) {
-            return incluirInativas ? unidadeRepository.findAll() : unidadeRepository.findByUniAtiva(true);
-        }
-
-        Set<Integer> condoIdsComAcessoAdmin = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_");
-        if (!condoIdsComAcessoAdmin.isEmpty()) {
-            List<Condominio> condominiosGerenciados = condominioRepository.findAllById(condoIdsComAcessoAdmin);
-            List<Unidade> unidades = unidadeRepository.findByCondominioIn(condominiosGerenciados);
-            if (!incluirInativas) {
-                return unidades.stream().filter(u -> u.getUniAtiva() != null && u.getUniAtiva()).collect(Collectors.toList());
+            unidadesAutorizadas = incluirInativas ? unidadeRepository.findAllFetchTipo() : unidadeRepository.findByUniAtivaFetchTipo(true);
+        } else {
+            Set<Integer> condoIdsComAcessoAdmin = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_");
+            if (!condoIdsComAcessoAdmin.isEmpty()) {
+                List<Condominio> condominiosGerenciados = condominioRepository.findAllById(condoIdsComAcessoAdmin);
+                unidadesAutorizadas = unidadeRepository.findByCondominioInFetchTipo(condominiosGerenciados);
+            } else {
+                UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+                Pessoa pessoaLogada = userDetails.getPessoa();
+                List<Morador> vinculosMorador = moradorRepository.findByPessoa(pessoaLogada);
+                unidadesAutorizadas = vinculosMorador.stream().map(Morador::getUnidade).collect(Collectors.toList());
             }
-            return unidades;
+
+            if (!incluirInativas) {
+                unidadesAutorizadas = unidadesAutorizadas.stream().filter(u -> u.getUniAtiva() != null && u.getUniAtiva()).collect(Collectors.toList());
+            }
         }
 
-        List<Morador> vinculosMorador = moradorRepository.findByPessoa(pessoaLogada);
-        List<Unidade> unidadesDoMorador = vinculosMorador.stream().map(Morador::getUnidade).collect(Collectors.toList());
-        if (!incluirInativas) {
-            return unidadesDoMorador.stream().filter(u -> u.getUniAtiva() != null && u.getUniAtiva()).collect(Collectors.toList());
+        Stream<Unidade> stream = unidadesAutorizadas.stream();
+
+        if (statusOcupacao != null && !statusOcupacao.isBlank() && !statusOcupacao.equalsIgnoreCase("Todos")) {
+            UnidadeStatusOcupacao statusEnum = UnidadeStatusOcupacao.valueOf(statusOcupacao.toUpperCase());
+            stream = stream.filter(u -> u.getUniStatusOcupacao() == statusEnum);
         }
-        return unidadesDoMorador;
+
+        if (busca != null && !busca.isBlank()) {
+            String buscaLower = busca.toLowerCase();
+            stream = stream.filter(u -> 
+                (u.getUniNumero() != null && u.getUniNumero().toLowerCase().contains(buscaLower)) ||
+                (u.getBloco() != null && u.getBloco().toLowerCase().contains(buscaLower))
+            );
+        }
+
+        return stream.collect(Collectors.toList());
     }
 
     @Override
@@ -123,48 +141,41 @@ public class UnidadeServiceImpl implements UnidadeService {
         return unidadeOpt;
     }
 
-    @Override
-    public Unidade atualizarUnidade(Integer id, Unidade unidadeAtualizada) {
+  @Override
+    public Unidade atualizarUnidade(Integer id, UnidadeRequestDTO dto) {
         Unidade unidadeExistente = unidadeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + id));
 
         checkAdminOrSindicoPermission(unidadeExistente.getCondominio().getConCod());
         
-        if (unidadeAtualizada.getUniNumero() != null && !unidadeAtualizada.getUniNumero().equalsIgnoreCase(unidadeExistente.getUniNumero())) {
-            unidadeRepository.findByUniNumeroAndCondominio(unidadeAtualizada.getUniNumero(), unidadeExistente.getCondominio()).ifPresent(u -> {
+        if (dto.getUniNumero() != null && !dto.getUniNumero().equalsIgnoreCase(unidadeExistente.getUniNumero())) {
+            unidadeRepository.findByUniNumeroAndCondominio(dto.getUniNumero(), unidadeExistente.getCondominio()).ifPresent(u -> {
                 if (!u.getUniCod().equals(id))
                     throw new IllegalArgumentException("Novo número de unidade já cadastrado para o condomínio: " + u.getUniNumero());
             });
-            unidadeExistente.setUniNumero(unidadeAtualizada.getUniNumero());
+            unidadeExistente.setUniNumero(dto.getUniNumero());
         }
-        if (unidadeAtualizada.getUniStatusOcupacao() != null) {
-            unidadeExistente.setUniStatusOcupacao(unidadeAtualizada.getUniStatusOcupacao());
+
+        if (dto.getUtiCod() != null) {
+            UnidadeTipo unidadeTipo = unidadeTipoRepository.findById(dto.getUtiCod())
+                    .orElseThrow(() -> new EntityNotFoundException("Tipo de Unidade não encontrado com o ID: " + dto.getUtiCod()));
+            unidadeExistente.setUnidadeTipo(unidadeTipo);
         }
-        if (unidadeAtualizada.getBloco() != null) {
-            unidadeExistente.setBloco(unidadeAtualizada.getBloco());
+
+        unidadeExistente.setUniStatusOcupacao(dto.getUniStatusOcupacao());
+        unidadeExistente.setBloco(dto.getBloco());
+        unidadeExistente.setAndar(dto.getAndar());
+        unidadeExistente.setFracaoIdeal(dto.getFracaoIdeal());
+        unidadeExistente.setAreaPrivada(dto.getAreaPrivada());
+        unidadeExistente.setObservacao(dto.getObservacao());
+        
+        if (dto.getUniAtiva() != null) {
+            unidadeExistente.setUniAtiva(dto.getUniAtiva());
         }
-        if (unidadeAtualizada.getAndar() != null) {
-            unidadeExistente.setAndar(unidadeAtualizada.getAndar());
-        }
-        if (unidadeAtualizada.getFracaoIdeal() != null) {
-            unidadeExistente.setFracaoIdeal(unidadeAtualizada.getFracaoIdeal());
-        }
-        if (unidadeAtualizada.getAreaPrivada() != null) {
-            unidadeExistente.setAreaPrivada(unidadeAtualizada.getAreaPrivada());
-        }
-        if (unidadeAtualizada.getObservacao() != null) {
-            unidadeExistente.setObservacao(unidadeAtualizada.getObservacao());
-        }
-        if (unidadeAtualizada.getUnidadeTipo() != null) {
-            unidadeExistente.setUnidadeTipo(unidadeAtualizada.getUnidadeTipo());
-        }
-        if (unidadeAtualizada.getUniAtiva() != null) {
-            unidadeExistente.setUniAtiva(unidadeAtualizada.getUniAtiva());
-        }
+        
         unidadeExistente.setUniDtAtualizacao(LocalDateTime.now());
         return unidadeRepository.save(unidadeExistente);
     }
-
     @Override
     public Unidade inativarUnidade(Integer id) {
         Unidade unidade = unidadeRepository.findById(id)

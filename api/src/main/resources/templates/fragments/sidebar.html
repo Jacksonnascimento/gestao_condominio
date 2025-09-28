@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+    <div class="sidebar" th:fragment="sidebar">
+        <div class="sidebar-logo-area">
+            <img th:src="@{/images/logo.png}" alt="CondoFlow Logo" class="sidebar-logo">
+            <span class="sidebar-title">CONDOFLOW</span>
+        </div>
+        
+        <div class="sidebar-subtitle">
+            <span>Sistema Condominial</span>
+        </div>
+
+        <nav>
+            <ul>
+                <li th:classappend="${currentPage == 'dashboard' ? 'active' : ''}">
+                    <a th:href="@{/dashboard}">Dashboard</a>
+                </li>
+                <li th:classappend="${currentPage == 'unidades' ? 'active' : ''}">
+                    <a th:href="@{/unidades}">Unidades</a>
+                </li>
+                <li><a href="#">Ocupantes</a></li>
+                <li><a href="#">Funcionários</a></li>
+                <li><a href="#">Comunicados</a></li>
+                <li><a href="#">Assembleias</a></li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="logout-btn">Sair</button>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>

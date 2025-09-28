@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONDOFLOW - Login</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/css/login-style.css}">
+</head>
+<body>
+    <div class="login-container">
+        <div class="form-section">
+            <div class="login-box">
+                <h1>CONDOFLOW</h1>
+                <p>Bem-vindo(a) de volta! Faça login para continuar.</p>
+
+                <div th:if="${param.error}" class="alert-error">
+                    <span>Email ou senha inválidos.</span>
+                </div>
+
+                <form th:action="@{/login}" method="post">
+                    <div class="form-group">
+                        <label for="username">Email</label>
+                        <input type="email" id="username" name="username" placeholder="seuemail@exemplo.com" required autofocus>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Senha</label>
+                        <input type="password" id="password" name="password" placeholder="Sua senha" required>
+                    </div>
+                    <div class="form-options">
+                        <div>
+                            <input type="checkbox" id="remember-me" name="remember-me">
+                            <label for="remember-me">Lembrar-me</label>
+                        </div>
+                        <a href="#">Esqueci minha senha</a>
+                    </div>
+                    <button type="submit">LOGIN</button>
+                </form>
+            </div>
+        </div>
+        <div class="image-section">
+        </div>
+    </div>
+</body>
+</html>

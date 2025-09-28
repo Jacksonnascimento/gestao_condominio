@@ -5,6 +5,7 @@ import br.com.gestaocondominio.api.controller.dto.LoginResponse;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.security.JwtService;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -27,7 +28,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
-    public LoginResponse authenticate(@RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> authenticate(@RequestBody LoginRequest request) {
         
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -41,6 +42,6 @@ public class AuthenticationController {
         
         Pessoa pessoa = ((UserDetailsImpl) userDetails).getPessoa();
 
-        return new LoginResponse(token, pessoa);
+        return ResponseEntity.ok(new LoginResponse(token, pessoa));
     }
 }

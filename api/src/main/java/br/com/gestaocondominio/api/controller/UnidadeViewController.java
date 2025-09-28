@@ -1,9 +1,11 @@
 package br.com.gestaocondominio.api.controller;
 
 import br.com.gestaocondominio.api.controller.dto.UnidadeRequestDTO;
+import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.entity.Unidade;
 import br.com.gestaocondominio.api.domain.enums.UnidadeStatusOcupacao;
 import br.com.gestaocondominio.api.domain.enums.UnidadeTipo;
+import br.com.gestaocondominio.api.domain.service.CondominioService;
 import br.com.gestaocondominio.api.domain.service.UnidadeService;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
 import org.springframework.beans.BeanUtils;
@@ -25,6 +27,10 @@ public class UnidadeViewController {
     @Autowired
     private UnidadeService unidadeService;
 
+    @Autowired
+    private CondominioService condominioService;
+
+
     private void addUserDetailsToModel(Model model) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
@@ -38,6 +44,10 @@ public class UnidadeViewController {
             Model model) {
 
         addUserDetailsToModel(model);
+        
+        List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
+        model.addAttribute("isMultiCondo", condominiosDisponiveis.size() > 1);
+
         List<Unidade> todasUnidadesAtivas = unidadeService.listarTodasUnidades(false, "Todos", null);
         
         Map<UnidadeStatusOcupacao, Long> contagemStatus = todasUnidadesAtivas.stream()
@@ -62,7 +72,10 @@ public class UnidadeViewController {
 
     @GetMapping("/novo")
     public String getFormularioNovaUnidade(Model model) {
+        List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
+
         model.addAttribute("unidadeDTO", new UnidadeRequestDTO());
+        model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
         model.addAttribute("tiposUnidade", UnidadeTipo.values());
         model.addAttribute("statusOcupacao", UnidadeStatusOcupacao.values());
         return "fragments/unidade-form :: form-modal-content";

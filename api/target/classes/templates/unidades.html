@@ -50,7 +50,10 @@
             <div class="units-grid">
                 <div class="unit-card" th:each="unidade : ${unidades}">
                     <div class="card-header">
-                        <h3 th:text="'Unidade ' + ${unidade.uniNumero}"></h3>
+                        <div>
+                            <div th:if="${isMultiCondo}" class="condo-badge" th:text="${unidade.condominio.conNome}"></div>
+                            <h3 th:text="'Unidade ' + ${unidade.uniNumero}"></h3>
+                        </div>
                         <span class="status" th:if="${unidade.uniStatusOcupacao != null}" th:text="${unidade.uniStatusOcupacao.getDescricao()}" th:classappend="${'status-' + unidade.uniStatusOcupacao.toString().toLowerCase()}"></span>
                     </div>
                     <div class="card-body">

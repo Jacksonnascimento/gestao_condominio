@@ -101,7 +101,6 @@ br.com.gestaocondominio.api.domain.service.TipoSolicitacaoManutencaoService=org.
 br.com.gestaocondominio.api.domain.service.UnidadeServiceImpl=org.springframework.stereotype.Component
 br.com.gestaocondominio.api.domain.service.UsuarioCondominioService=org.springframework.stereotype.Component
 br.com.gestaocondominio.api.exception.GlobalExceptionHandler=org.springframework.stereotype.Component
-br.com.gestaocondominio.api.scheduler.CobrancaAgendadaScheduler=org.springframework.stereotype.Component
 br.com.gestaocondominio.api.security.JwtAuthenticationFilter=org.springframework.stereotype.Component
 br.com.gestaocondominio.api.security.JwtService=org.springframework.stereotype.Component
 br.com.gestaocondominio.api.security.SecurityConfig=org.springframework.stereotype.Component

@@ -1,4 +1,3 @@
-// src/main/java/br/com/gestaocondominio/api/domain/service/DespesaCategoriaService.java
 package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.domain.entity.Condominio;
@@ -39,7 +38,6 @@ public class DespesaCategoriaService {
         }
         Condominio condominio = condominioRepository.findById(categoria.getCondominio().getConCod())
                 .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado com o ID: " + categoria.getCondominio().getConCod()));
-        
         
         hasPermissionToManageCategory(condominio.getConCod());
 
@@ -94,7 +92,6 @@ public class DespesaCategoriaService {
         DespesaCategoria categoriaExistente = despesaCategoriaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Categoria de despesa não encontrada com o ID: " + id));
         
-        
         hasPermissionToManageCategory(categoriaExistente.getCondominio().getConCod());
 
         if (categoriaAtualizada.getDcaDescricao() == null || categoriaAtualizada.getDcaDescricao().trim().isEmpty()) {
@@ -123,7 +120,6 @@ public class DespesaCategoriaService {
         DespesaCategoria categoria = despesaCategoriaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Categoria de despesa não encontrada com o ID: " + id));
         
-        
         hasPermissionToManageCategory(categoria.getCondominio().getConCod());
 
         categoria.setDcaAtiva(false);
@@ -135,28 +131,17 @@ public class DespesaCategoriaService {
         DespesaCategoria categoria = despesaCategoriaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Categoria de despesa não encontrada com o ID: " + id));
         
-        
         hasPermissionToManageCategory(categoria.getCondominio().getConCod());
         
         categoria.setDcaAtiva(true);
         return despesaCategoriaRepository.save(categoria);
     }
 
-    
     public boolean hasPermissionToManageCategory(Integer condominioId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) return true;
         if (hasAuthority(authentication, "ROLE_SINDICO_" + condominioId)) return true;
         if (hasAuthority(authentication, "ROLE_ADMIN_" + condominioId)) return true;
-
-        Condominio condominio = condominioRepository.findById(condominioId)
-                .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado."));
-
-        if (condominio.getAdministradora() != null && 
-            hasAuthority(authentication, "ROLE_GERENTE_ADMINISTRADORA_" + condominio.getAdministradora().getAdmCod())) {
-            return true;
-        }
-
         return false;
     }
 

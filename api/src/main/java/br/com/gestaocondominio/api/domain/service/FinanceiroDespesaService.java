@@ -188,14 +188,6 @@ public class FinanceiroDespesaService {
         if (hasAuthority(authentication, "ROLE_SINDICO_" + condominioId)) return true;
         if (hasAuthority(authentication, "ROLE_ADMIN_" + condominioId)) return true;
 
-        Condominio condominio = condominioRepository.findById(condominioId)
-                .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado."));
-
-        if (condominio.getAdministradora() != null && 
-            hasAuthority(authentication, "ROLE_GERENTE_ADMINISTRADORA_" + condominio.getAdministradora().getAdmCod())) {
-            return true;
-        }
-
         return false;
     }
 
@@ -212,14 +204,6 @@ public class FinanceiroDespesaService {
         if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) return;
         if (hasAuthority(authentication, "ROLE_SINDICO_" + condominioId)) return;
         if (hasAuthority(authentication, "ROLE_ADMIN_" + condominioId)) return;
-
-        Condominio condominio = condominioRepository.findById(condominioId)
-                .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado."));
-
-        if (condominio.getAdministradora() != null && 
-            hasAuthority(authentication, "ROLE_GERENTE_ADMINISTRADORA_" + condominio.getAdministradora().getAdmCod())) {
-            return;
-        }
 
         throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar finanças neste condomínio.");
     }

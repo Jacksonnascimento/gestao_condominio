@@ -66,10 +66,6 @@ public class Condominio {
     @Column(name = "CON_DT_ATUALIZACAO")
     private LocalDateTime conDtAtualizacao;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ADM_COD")
-    private Administradora administradora;
-
     @Column(name = "CON_ATIVO")
     private Boolean conAtivo;
 

@@ -1,6 +1,5 @@
 package br.com.gestaocondominio.api.domain.repository;
 
-import br.com.gestaocondominio.api.domain.entity.Administradora;
 import br.com.gestaocondominio.api.domain.entity.Condominio;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -13,10 +12,7 @@ public interface CondominioRepository extends JpaRepository<Condominio, Integer>
     
     Optional<Condominio> findByConNome(String conNome);
     
-    List<Condominio> findByAdministradora(Administradora administradora);
-     List<Condominio> findByConGeracaoAutoAtivaIsTrueAndConDiaGeracaoCobranca(int diaDoMes);
-    
-    List<Condominio> findByAdministradoraIn(List<Administradora> administradoras);
+    List<Condominio> findByConGeracaoAutoAtivaIsTrueAndConDiaGeracaoCobranca(int diaDoMes);
     
     List<Condominio> findByConAtivo(Boolean conAtivo);
 }

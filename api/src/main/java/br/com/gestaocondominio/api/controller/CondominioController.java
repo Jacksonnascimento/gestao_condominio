@@ -21,8 +21,7 @@ public class CondominioController {
     }
 
     @PostMapping
-   
-    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN') or hasAuthority('ROLE_GERENTE_ADMINISTRADORA_' + #condominio.administradora.admCod)")
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')")
     public ResponseEntity<Condominio> cadastrarCondominio(@RequestBody Condominio condominio) {
         Condominio novoCondominio = condominioService.cadastrarCondominio(condominio);
         return new ResponseEntity<>(novoCondominio, HttpStatus.CREATED);

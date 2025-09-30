@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 public class CondominioService {
 
     private final CondominioRepository condominioRepository;
-    private final AdministradoraRepository administradoraRepository;
     private final UnidadeRepository unidadeRepository;
     private final GestaoComunicacaoRepository gestaoComunicacaoRepository;
     private final AssembleiaRepository assembleiaRepository;
@@ -29,7 +28,6 @@ public class CondominioService {
     private final DocumentoRepository documentoRepository;
 
     public CondominioService(CondominioRepository condominioRepository,
-                             AdministradoraRepository administradoraRepository,
                              UnidadeRepository unidadeRepository,
                              GestaoComunicacaoRepository gestaoComunicacaoRepository,
                              AssembleiaRepository assembleiaRepository,
@@ -38,7 +36,6 @@ public class CondominioService {
                              UsuarioCondominioRepository usuarioCondominioRepository,
                              DocumentoRepository documentoRepository) {
         this.condominioRepository = condominioRepository;
-        this.administradoraRepository = administradoraRepository;
         this.unidadeRepository = unidadeRepository;
         this.gestaoComunicacaoRepository = gestaoComunicacaoRepository;
         this.assembleiaRepository = assembleiaRepository;
@@ -75,12 +72,6 @@ public class CondominioService {
     }
 
     public Condominio cadastrarCondominio(Condominio condominio) {
-        if (condominio.getAdministradora() == null || condominio.getAdministradora().getAdmCod() == null) {
-            throw new IllegalArgumentException("Administradora deve ser informada para o condomínio.");
-        }
-        administradoraRepository.findById(condominio.getAdministradora().getAdmCod())
-                .orElseThrow(() -> new IllegalArgumentException("Administradora não encontrada com o ID: " + condominio.getAdministradora().getAdmCod()));
-
         if (condominio.getConPais() == null || condominio.getConPais().trim().isEmpty()) {
             condominio.setConPais("Brasil");
         }
@@ -107,12 +98,6 @@ public class CondominioService {
 
         checkPermissionToManageCondo(condominioExistente);
 
-        if (condominioAtualizado.getAdministradora() != null &&
-            (condominioExistente.getAdministradora() == null || !condominioAtualizado.getAdministradora().getAdmCod().equals(condominioExistente.getAdministradora().getAdmCod()))) {
-            administradoraRepository.findById(condominioAtualizado.getAdministradora().getAdmCod())
-                    .orElseThrow(() -> new IllegalArgumentException("Nova Administradora não encontrada com o ID: " + condominioAtualizado.getAdministradora().getAdmCod()));
-            condominioExistente.setAdministradora(condominioAtualizado.getAdministradora());
-        }
         if (condominioAtualizado.getConNome() != null) {
             condominioExistente.setConNome(condominioAtualizado.getConNome());
         }
@@ -213,11 +198,7 @@ public class CondominioService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) return;
         if (hasAuthority(authentication, "ROLE_SINDICO_" + condominio.getConCod())) return;
-        if (condominio.getAdministradora() != null) {
-            if (hasAuthority(authentication, "ROLE_GERENTE_ADMINISTRADORA_" + condominio.getAdministradora().getAdmCod())) {
-                return;
-            }
-        }
+        
         throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar este condomínio.");
     }
 

@@ -1,9 +1,7 @@
 package br.com.gestaocondominio.api.security;
 
-import br.com.gestaocondominio.api.domain.entity.AdministradoraUsuario;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.entity.UsuarioCondominio;
-import br.com.gestaocondominio.api.domain.repository.AdministradoraUsuarioRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
 import br.com.gestaocondominio.api.domain.repository.UsuarioCondominioRepository;
 import org.springframework.security.core.GrantedAuthority;
@@ -21,14 +19,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final PessoaRepository pessoaRepository;
     private final UsuarioCondominioRepository usuarioCondominioRepository;
-    private final AdministradoraUsuarioRepository administradoraUsuarioRepository;
 
     public UserDetailsServiceImpl(PessoaRepository pessoaRepository,
-            UsuarioCondominioRepository usuarioCondominioRepository,
-            AdministradoraUsuarioRepository administradoraUsuarioRepository) {
+            UsuarioCondominioRepository usuarioCondominioRepository) {
         this.pessoaRepository = pessoaRepository;
         this.usuarioCondominioRepository = usuarioCondominioRepository;
-        this.administradoraUsuarioRepository = administradoraUsuarioRepository;
     }
 
     @Override
@@ -46,15 +41,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         for (UsuarioCondominio uc : rolesCondominio) {
             if (uc.getUscAtivoAssociacao()) {
                 String authorityString = "ROLE_" + uc.getUscPapel().name() + "_" + uc.getConCod();
-                authorities.add(new SimpleGrantedAuthority(authorityString));
-            }
-        }
-
-        List<AdministradoraUsuario> rolesAdministradora = administradoraUsuarioRepository.findByPessoa(pessoa);
-        for (AdministradoraUsuario au : rolesAdministradora) {
-            if (au.getAduAtivo()) {
-                String authorityString = "ROLE_" + au.getAduPapel().name() + "_ADMINISTRADORA_"
-                        + au.getAdministradora().getAdmCod();
                 authorities.add(new SimpleGrantedAuthority(authorityString));
             }
         }

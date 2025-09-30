@@ -117,13 +117,6 @@ public class DocumentoService {
         if (isGestorCondominio) {
             return true;
         }
-        
-        if (documento.getCondominio().getAdministradora() != null) {
-            Integer admCod = documento.getCondominio().getAdministradora().getAdmCod();
-            if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_GERENTE_ADMINISTRADORA_" + admCod))) {
-                return true;
-            }
-        }
 
         return false;
     }

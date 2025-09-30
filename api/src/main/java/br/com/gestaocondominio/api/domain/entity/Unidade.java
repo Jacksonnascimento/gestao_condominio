@@ -51,14 +51,14 @@ public class Unidade {
     @Column(name = "UNI_DT_ATUALIZACAO")
     private LocalDateTime uniDtAtualizacao;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CON_COD", nullable = false)
     private Condominio condominio;
 
     @Column(name = "UNI_ATIVA")
     private Boolean uniAtiva;
 
-     @Enumerated(EnumType.STRING)
-    @Column(name = "UNI_TIPO", length = 50) // Nova coluna para armazenar o Enum como texto
+    @Enumerated(EnumType.STRING)
+    @Column(name = "UNI_TIPO", length = 50)
     private UnidadeTipo unidadeTipo;
 }

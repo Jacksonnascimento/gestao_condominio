@@ -89,12 +89,12 @@ public class UnidadeServiceImpl implements UnidadeService {
         List<Unidade> unidadesAutorizadas;
 
         if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) {
-            unidadesAutorizadas = incluirInativas ? unidadeRepository.findAllWithCondominio() : unidadeRepository.findAllAtivasWithCondominio();
+            unidadesAutorizadas = incluirInativas ? unidadeRepository.findAllWithCondominio() : unidadeRepository.findByUniAtivaWithCondominio(true);
         } else {
             Set<Integer> condoIdsComAcessoAdmin = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_");
             if (!condoIdsComAcessoAdmin.isEmpty()) {
                 List<Condominio> condominiosGerenciados = condominioRepository.findAllById(condoIdsComAcessoAdmin);
-                unidadesAutorizadas = unidadeRepository.findByCondominioIn(condominiosGerenciados);
+                unidadesAutorizadas = unidadeRepository.findByCondominioInWithCondominio(condominiosGerenciados);
             } else {
                 UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
                 Pessoa pessoaLogada = userDetails.getPessoa();

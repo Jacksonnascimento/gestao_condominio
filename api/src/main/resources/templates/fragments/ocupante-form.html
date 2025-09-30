@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <div th:fragment="form-modal-content">
+        <div class="modal-header">
+            <h2 th:text="${ocupanteId != null ? 'Editar Ocupante' : 'Novo Ocupante'}"></h2>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+        </div>
+        
+        <form class="modal-form" th:object="${ocupanteRequestDTO}" 
+              th:action="${ocupanteId != null ? '/ocupantes/editar/' + ocupanteId : '/ocupantes/salvar'}" 
+              method="post">
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="pesCpfCnpj">CPF/CNPJ *</label>
+                    <input type="text" id="pesCpfCnpj" th:field="*{pesCpfCnpj}" required onblur="buscarPessoaPorCpf()" th:readonly="${ocupanteId != null}">
+                </div>
+                <div class="form-group">
+                    <label for="pesNome">Nome Completo *</label>
+                    <input type="text" id="pesNome" th:field="*{pesNome}" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="pesEmail">Email *</label>
+                    <input type="email" id="pesEmail" th:field="*{pesEmail}" required>
+                </div>
+                 <div class="form-group">
+                    <label for="pesTelefone">Telefone</label>
+                    <input type="text" id="pesTelefone" th:field="*{pesTelefone}">
+                </div>
+                 <div class="form-group" th:if="${ocupanteId == null}">
+                    <label for="pesTipo">Tipo</label>
+                     <select id="pesTipo" th:field="*{pesTipo}">
+                        <option value="F">Física</option>
+                        <option value="J">Jurídica</option>
+                    </select>
+                </div>
+            </div>
+            
+            <hr style="margin: 20px 0;">
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="unidadeId">Unidade *</label>
+                    <select id="unidadeId" th:field="*{unidadeId}" required th:disabled="${ocupanteId != null}">
+                        <option value="">Selecione...</option>
+                        <option th:each="unidade : ${unidadesDisponiveis}" th:value="${unidade.uniCod}" th:text="${unidade.uniNumero}"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="vinculo">Vínculo *</label>
+                    <select id="vinculo" th:field="*{vinculo}" required onchange="toggleMultipropriedadeFields()">
+                        <option value="">Selecione...</option>
+                        <option th:each="v : ${vinculosDisponiveis}" th:value="${v.name()}" th:text="${v.getDescricao()}"></option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="inicioOcupacao">Início da Ocupação *</label>
+                    <input type="date" id="inicioOcupacao" th:field="*{inicioOcupacao}" required>
+                </div>
+                <div class="form-group">
+                    <label for="fimOcupacao">Fim da Ocupação (opcional)</label>
+                    <input type="date" id="fimOcupacao" th:field="*{fimOcupacao}">
+                </div>
+            </div>
+           
+            <div id="multipropriedade-fields" style="display:none;">
+                 <div class="form-row">
+                    <div class="form-group">
+                        <label for="periodoUso">Período de Uso</label>
+                        <input type="text" id="periodoUso" th:field="*{periodoUso}" placeholder="Ex: Semana 1-4, Janeiro">
+                    </div>
+                    <div class="form-group">
+                        <label for="tipoPeriodo">Tipo do Período</label>
+                        <select id="tipoPeriodo" th:field="*{tipoPeriodo}">
+                            <option value="">Selecione...</option>
+                            <option th:each="t : ${tiposPeriodoDisponiveis}" th:value="${t.name()}" th:text="${t.getDescricao()}"></option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
+                <button type="submit" class="btn-primary" th:text="${ocupanteId != null ? 'Salvar Alterações' : 'Salvar Ocupante'}"></button>
+            </div>
+        </form>
+        <script>
+            async function buscarPessoaPorCpf() {
+                const cpfInput = document.getElementById('pesCpfCnpj');
+                const cpf = cpfInput.value;
+
+                // Não busca se estiver no modo de edição
+                if (document.querySelector('h2').textContent.startsWith('Editar')) {
+                    return;
+                }
+
+                if (cpf && cpf.length >= 11) {
+                    try {
+                        const response = await fetch(`/api/pessoas/por-cpf/${cpf}`);
+                        const nomeInput = document.getElementById('pesNome');
+                        const emailInput = document.getElementById('pesEmail');
+                        const telefoneInput = document.getElementById('pesTelefone');
+                        
+                        if (response.ok) {
+                            const pessoa = await response.json();
+                            nomeInput.value = pessoa.pesNome;
+                            emailInput.value = pessoa.pesEmail;
+                            telefoneInput.value = pessoa.pesTelefone;
+                            
+                            nomeInput.readOnly = true;
+                            emailInput.readOnly = true;
+                            telefoneInput.readOnly = true;
+                        } else {
+                            nomeInput.value = '';
+                            emailInput.value = '';
+                            telefoneInput.value = '';
+                            
+                            nomeInput.readOnly = false;
+                            emailInput.readOnly = false;
+                            telefoneInput.readOnly = false;
+                        }
+                    } catch (error) {
+                        console.error('Erro ao buscar pessoa:', error);
+                    }
+                }
+            }
+
+            function toggleMultipropriedadeFields() {
+                var vinculo = document.getElementById('vinculo').value;
+                var fields = document.getElementById('multipropriedade-fields');
+                if (fields) {
+                    fields.style.display = (vinculo === 'MULTIPROPRIETARIO') ? 'block' : 'none';
+                }
+            }
+            
+            
+            document.addEventListener('DOMContentLoaded', toggleMultipropriedadeFields);
+        </script>
+    </div>
+</body>
+</html>

@@ -24,23 +24,31 @@ public class PessoaController {
         this.pessoaService = pessoaService;
     }
 
+    @GetMapping("/por-cpf/{cpfCnpj}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Pessoa> buscarPessoaPorCpfCnpj(@PathVariable String cpfCnpj) {
+        return pessoaService.buscarPorCpfCnpj(cpfCnpj)
+                .map(pessoa -> new ResponseEntity<>(pessoa, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
     @PostMapping
     public ResponseEntity<Pessoa> cadastrarPessoa(@RequestBody Pessoa pessoa) {
         Pessoa novaPessoa = pessoaService.cadastrarPessoa(pessoa);
         return new ResponseEntity<>(novaPessoa, HttpStatus.CREATED);
     }
 
-    
     @PatchMapping("/{id}")
     @PreAuthorize("#id.equals(authentication.principal.pessoa.pesCod) or hasAuthority('ROLE_GLOBAL_ADMIN')")
-    public ResponseEntity<Pessoa> atualizarPessoa(@PathVariable Integer id, @RequestBody PessoaUpdateRequest dadosParaAtualizar) {
+    public ResponseEntity<Pessoa> atualizarPessoa(@PathVariable Integer id,
+            @RequestBody PessoaUpdateRequest dadosParaAtualizar) {
         Pessoa pessoaSalva = pessoaService.atualizarPessoa(id, dadosParaAtualizar);
         return new ResponseEntity<>(pessoaSalva, HttpStatus.OK);
     }
-   
+
     @GetMapping("/{id}")
     public ResponseEntity<Pessoa> buscarPessoaPorId(@PathVariable Integer id) {
-        
+
         Optional<Pessoa> pessoa = pessoaService.buscarPessoaPorId(id);
         return pessoa.map(p -> new ResponseEntity<>(p, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
@@ -48,7 +56,7 @@ public class PessoaController {
 
     @GetMapping
     public ResponseEntity<List<Pessoa>> listarTodasPessoas() {
-        
+
         List<Pessoa> pessoas = pessoaService.listarPessoasAutorizadas();
         return new ResponseEntity<>(pessoas, HttpStatus.OK);
     }
@@ -58,7 +66,7 @@ public class PessoaController {
         byte[] imagem = pessoaService.buscarImagemPorId(id);
         if (imagem != null && imagem.length > 0) {
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.IMAGE_JPEG); 
+            headers.setContentType(MediaType.IMAGE_JPEG);
             return new ResponseEntity<>(imagem, headers, HttpStatus.OK);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -73,7 +81,7 @@ public class PessoaController {
     }
 
     @PutMapping("/{id}/ativar")
-    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')") 
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')")
     public ResponseEntity<Pessoa> ativarPessoa(@PathVariable Integer id) {
         Pessoa pessoaAtivada = pessoaService.ativarPessoa(id);
         return new ResponseEntity<>(pessoaAtivada, HttpStatus.OK);

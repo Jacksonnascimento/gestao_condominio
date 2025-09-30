@@ -154,3 +154,65 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: var(--font-family
     display: block;
     margin-top: 4px;
 }
+
+/* --- ESTILOS PARA A PÁGINA DE OCUPANTES (INCLUI CORREÇÃO DE OVERFLOW) --- */
+
+/* Cores para as tags de Vínculo (RA 3) */
+.status-proprietario { background-color: #3b82f6; /* Azul */ }
+.status-locatario { background-color: #22c55e; /* Verde */ }
+.status-promitente_comprador { background-color: #eab308; color: #333; /* Amarelo */ }
+.status-cessionario { background-color: #64748b; /* Cinza */ }
+.status-multiproprietario { background-color: #ef4444; /* Vermelho */ }
+.status-conjuge { background-color: #34495e; /* Azul Escuro */ }
+.status-dependente { background-color: #14b8a6; /* Verde Água */ }
+
+/* Cores para os ícones dos cards de resumo */
+.icon-proprietario { background-color: #dbeafe; color: #3b82f6; }
+.icon-locatario { background-color: #dcfce7; color: #22c55e; }
+.icon-promitente { background-color: #fef9c3; color: #eab308; }
+.icon-cessionario { background-color: #e2e8f0; color: #64748b; }
+.icon-multiproprietario { background-color: #fee2e2; color: #ef4444; }
+
+/* Container para a barra de filtros */
+.filter-container {
+    background-color: var(--card-bg-color);
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+}
+
+.filter-container .search-form {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+    align-items: center;
+}
+
+.filter-container .search-form input,
+.filter-container .search-form select {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    flex-grow: 1;
+}
+
+.filter-container .search-form button {
+    flex-grow: 0;
+    padding: 10px 20px;
+}
+
+/* Ajustes nos botões dos cards de ocupante */
+.unit-card .card-footer .btn-edit,
+.unit-card .card-footer .btn-delete {
+    color: var(--text-light-color);
+    border-color: #d1d5db;
+}
+
+/* Correção para quebra de texto em strings longas (como emails) */
+.info-item span {
+    word-wrap: break-word;      /* Para navegadores antigos */
+    overflow-wrap: break-word;  /* Padrão moderno */
+    word-break: break-all;      /* Força a quebra em qualquer ponto se necessário */
+    min-width: 0;               /* Ajuda flexbox a calcular a quebra corretamente */
+}

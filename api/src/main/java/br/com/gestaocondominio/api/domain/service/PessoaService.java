@@ -25,6 +25,11 @@ public class PessoaService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    @Transactional(readOnly = true)
+    public Optional<Pessoa> buscarPorCpfCnpj(String cpfCnpj) {
+        return pessoaRepository.findByPesCpfCnpj(cpfCnpj);
+    }
+
     public Pessoa cadastrarPessoa(Pessoa pessoa) {
         if (!ValidadorDocumento.isValid(pessoa.getPesCpfCnpj())) {
             throw new IllegalArgumentException("O CPF/CNPJ informado é inválido.");
@@ -59,22 +64,20 @@ public class PessoaService {
         return pessoaRepository.save(pessoa);
     }
 
-    
     public List<Pessoa> listarPessoasAutorizadas() {
         return pessoaRepository.findAll();
     }
-    
-    
+
     public Optional<Pessoa> buscarPessoaPorId(Integer id) {
         return pessoaRepository.findById(id);
     }
-    
+
     public byte[] buscarImagemPorId(Integer id) {
         Pessoa pessoa = pessoaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + id));
         return pessoa.getPesImagem();
     }
-   
+
     @Transactional
     public Pessoa atualizarPessoa(Integer id, PessoaUpdateRequest dadosParaAtualizar) {
         Pessoa pessoaNoBanco = pessoaRepository.findById(id)
@@ -93,18 +96,22 @@ public class PessoaService {
             pessoaNoBanco.setPesTelefone2(dadosParaAtualizar.pesTelefone2());
         }
 
-        if (dadosParaAtualizar.pesCpfCnpj() != null && !pessoaNoBanco.getPesCpfCnpj().equals(dadosParaAtualizar.pesCpfCnpj())) {
+        if (dadosParaAtualizar.pesCpfCnpj() != null
+                && !pessoaNoBanco.getPesCpfCnpj().equals(dadosParaAtualizar.pesCpfCnpj())) {
             if (!ValidadorDocumento.isValid(dadosParaAtualizar.pesCpfCnpj())) {
                 throw new IllegalArgumentException("O novo CPF/CNPJ informado é inválido.");
             }
             pessoaRepository.findByPesCpfCnpj(dadosParaAtualizar.pesCpfCnpj()).ifPresent(p -> {
-                if (!p.getPesCod().equals(id)) throw new IllegalArgumentException("Novo CPF/CNPJ já cadastrado para outra pessoa.");
+                if (!p.getPesCod().equals(id))
+                    throw new IllegalArgumentException("Novo CPF/CNPJ já cadastrado para outra pessoa.");
             });
             pessoaNoBanco.setPesCpfCnpj(dadosParaAtualizar.pesCpfCnpj());
         }
 
-        Character tipoPessoaFinal = (dadosParaAtualizar.pesTipo() != null) ? dadosParaAtualizar.pesTipo() : pessoaNoBanco.getPesTipo();
-        String documentoFinal = (dadosParaAtualizar.pesCpfCnpj() != null) ? dadosParaAtualizar.pesCpfCnpj() : pessoaNoBanco.getPesCpfCnpj();
+        Character tipoPessoaFinal = (dadosParaAtualizar.pesTipo() != null) ? dadosParaAtualizar.pesTipo()
+                : pessoaNoBanco.getPesTipo();
+        String documentoFinal = (dadosParaAtualizar.pesCpfCnpj() != null) ? dadosParaAtualizar.pesCpfCnpj()
+                : pessoaNoBanco.getPesCpfCnpj();
         String documentoNumerico = documentoFinal.replaceAll("[^0-9]", "");
 
         if (tipoPessoaFinal == 'F' && documentoNumerico.length() == 14) {
@@ -114,9 +121,11 @@ public class PessoaService {
             throw new IllegalArgumentException("CPF não pode ser cadastrado para Pessoa Jurídica.");
         }
 
-        if (dadosParaAtualizar.pesEmail() != null && !pessoaNoBanco.getPesEmail().equals(dadosParaAtualizar.pesEmail())) {
+        if (dadosParaAtualizar.pesEmail() != null
+                && !pessoaNoBanco.getPesEmail().equals(dadosParaAtualizar.pesEmail())) {
             pessoaRepository.findByPesEmail(dadosParaAtualizar.pesEmail()).ifPresent(p -> {
-                if (!p.getPesCod().equals(id)) throw new IllegalArgumentException("Novo E-mail já cadastrado para outra pessoa.");
+                if (!p.getPesCod().equals(id))
+                    throw new IllegalArgumentException("Novo E-mail já cadastrado para outra pessoa.");
             });
             pessoaNoBanco.setPesEmail(dadosParaAtualizar.pesEmail());
         }
@@ -132,7 +141,7 @@ public class PessoaService {
         pessoaNoBanco.setPesDtAtualizacao(LocalDateTime.now());
         return pessoaRepository.save(pessoaNoBanco);
     }
-    
+
     public Pessoa inativarPessoa(Integer id) {
         Pessoa pessoa = pessoaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + id));

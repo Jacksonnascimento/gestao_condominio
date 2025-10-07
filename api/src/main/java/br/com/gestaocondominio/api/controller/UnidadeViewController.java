@@ -5,136 +5,141 @@ import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.entity.Unidade;
 import br.com.gestaocondominio.api.domain.enums.UnidadeStatusOcupacao;
 import br.com.gestaocondominio.api.domain.enums.UnidadeTipo;
-import br.com.gestaocondominio.api.domain.service.CondominioService;
+import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.service.UnidadeService;
-import br.com.gestaocondominio.api.security.UserDetailsImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/unidades")
 public class UnidadeViewController {
 
-    private static final Logger logger = LoggerFactory.getLogger(UnidadeViewController.class);
+    private final UnidadeService unidadeService;
+    private final CondominioRepository condominioRepository;
 
-    @Autowired
-    private UnidadeService unidadeService;
-
-    @Autowired
-    private CondominioService condominioService;
-
-
-    private void addUserDetailsToModel(Model model) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        model.addAttribute("nomeUsuarioLogado", userDetails.getPessoa().getPesNome());
+    public UnidadeViewController(@Qualifier("unidadeServiceImpl") UnidadeService unidadeService, 
+                                 CondominioRepository condominioRepository) {
+        this.unidadeService = unidadeService;
+        this.condominioRepository = condominioRepository;
     }
 
     @GetMapping
-    public String getUnidadesPage(
-            @RequestParam(required = false, defaultValue = "Todos") String status,
-            @RequestParam(required = false, defaultValue = "") String busca,
-            Model model) {
-        
-        long startTime = System.currentTimeMillis();
-        logger.info("Iniciando o carregamento da página de Unidades...");
-
-        addUserDetailsToModel(model);
-        
-        List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(true);
-        model.addAttribute("isMultiCondo", condominiosDisponiveis.size() > 1);
-
-        List<Unidade> todasUnidadesAutorizadas = unidadeService.listarTodasUnidades(false, "Todos", null);
-        
-        Map<UnidadeStatusOcupacao, Long> contagemStatus = todasUnidadesAutorizadas.stream()
-                .filter(u -> u.getUniStatusOcupacao() != null)
-                .collect(Collectors.groupingBy(Unidade::getUniStatusOcupacao, Collectors.counting()));
-
-        model.addAttribute("totalUnidades", todasUnidadesAutorizadas.size());
-        model.addAttribute("totalOcupadas", contagemStatus.getOrDefault(UnidadeStatusOcupacao.OCUPADA, 0L));
-        model.addAttribute("totalVazias", contagemStatus.getOrDefault(UnidadeStatusOcupacao.VAZIA, 0L));
-        model.addAttribute("totalMultipropriedade", contagemStatus.getOrDefault(UnidadeStatusOcupacao.MULTIPROPRIEDADE, 0L));
-        model.addAttribute("totalEmReforma", contagemStatus.getOrDefault(UnidadeStatusOcupacao.EM_REFORMA, 0L));
-        
-        Stream<Unidade> streamFiltrado = todasUnidadesAutorizadas.stream();
-
-        if (status != null && !status.isBlank() && !status.equalsIgnoreCase("Todos")) {
-            UnidadeStatusOcupacao statusEnum = UnidadeStatusOcupacao.valueOf(status.toUpperCase());
-            streamFiltrado = streamFiltrado.filter(u -> u.getUniStatusOcupacao() == statusEnum);
+    public String redirecionarParaPrimeiroCondominio() {
+        List<Condominio> condominios = condominioRepository.findAll();
+        if (condominios.isEmpty()) {
+            return "redirect:/";
         }
+        return "redirect:/unidades/" + condominios.get(0).getConCod();
+    }
 
-        if (busca != null && !busca.isBlank()) {
-            String buscaLower = busca.toLowerCase();
-            streamFiltrado = streamFiltrado.filter(u -> 
-                (u.getUniNumero() != null && u.getUniNumero().toLowerCase().contains(buscaLower)) ||
-                (u.getBloco() != null && u.getBloco().toLowerCase().contains(buscaLower))
-            );
-        }
-
-        model.addAttribute("unidades", streamFiltrado.collect(Collectors.toList()));
-        model.addAttribute("statusFiltro", status);
-        model.addAttribute("buscaFiltro", busca);
-        model.addAttribute("currentPage", "unidades");
+    @GetMapping("/{condominioId}")
+    public String getUnidadesPorCondominio(@PathVariable Integer condominioId, Model model) {
+        List<Unidade> unidades = unidadeService.findByCondominioId(condominioId);
+        List<Condominio> condominios = condominioRepository.findAll();
         
-        long endTime = System.currentTimeMillis();
-        logger.info("Página de Unidades carregada em {} ms", (endTime - startTime));
+        model.addAttribute("unidades", unidades);
+        model.addAttribute("condominioId", condominioId);
+        model.addAttribute("condominiosDisponiveis", condominios);
+        model.addAttribute("unidadeDTO", new UnidadeRequestDTO());
+        model.addAttribute("tiposUnidade", UnidadeTipo.values());
+        model.addAttribute("statusOcupacao", UnidadeStatusOcupacao.values());
+
+        model.addAttribute("totalUnidades", unidades.size());
+        model.addAttribute("totalOcupadas", unidades.stream().filter(u -> u.getUniStatusOcupacao() == UnidadeStatusOcupacao.OCUPADA).count());
+        model.addAttribute("totalVazias", unidades.stream().filter(u -> u.getUniStatusOcupacao() == UnidadeStatusOcupacao.VAZIA).count());
+        model.addAttribute("totalMultipropriedade", unidades.stream().filter(u -> u.getUniStatusOcupacao() == UnidadeStatusOcupacao.MULTIPROPRIEDADE).count());
+        model.addAttribute("totalEmReforma", unidades.stream().filter(u -> u.getUniStatusOcupacao() == UnidadeStatusOcupacao.EM_REFORMA).count());
         
         return "unidades";
     }
-
+    
     @GetMapping("/novo")
-    public String getFormularioNovaUnidade(Model model) {
-        List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(true);
-
-        model.addAttribute("unidadeDTO", new UnidadeRequestDTO());
-        model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
+    public String exibirFormularioNovaUnidade(@RequestParam(value = "condominioId", required = false) Integer condominioId, Model model) {
+        UnidadeRequestDTO dto = new UnidadeRequestDTO();
+        if (condominioId != null) {
+            dto.setConCod(condominioId);
+        }
+        model.addAttribute("unidadeDTO", dto);
+        model.addAttribute("condominiosDisponiveis", condominioRepository.findAll());
         model.addAttribute("tiposUnidade", UnidadeTipo.values());
         model.addAttribute("statusOcupacao", UnidadeStatusOcupacao.values());
         return "fragments/unidade-form :: form-modal-content";
     }
 
     @GetMapping("/editar/{id}")
-    public String getFormularioEditarUnidade(@PathVariable Integer id, Model model) {
-        Unidade unidade = unidadeService.buscarUnidadePorId(id)
-                .orElseThrow(() -> new IllegalArgumentException("ID da Unidade inválido:" + id));
-        
-        UnidadeRequestDTO dto = new UnidadeRequestDTO();
-        BeanUtils.copyProperties(unidade, dto);
-        
-        model.addAttribute("unidadeDTO", dto);
-        model.addAttribute("unidadeId", id);
-        model.addAttribute("tiposUnidade", UnidadeTipo.values());
-        model.addAttribute("statusOcupacao", UnidadeStatusOcupacao.values());
-        return "fragments/unidade-form :: form-modal-content";
+    public String exibirFormularioEditarUnidade(@PathVariable("id") Integer id, Model model) {
+        Optional<Unidade> unidadeOpt = unidadeService.buscarUnidadePorId(id);
+        if (unidadeOpt.isPresent()) {
+            Unidade unidade = unidadeOpt.get();
+            UnidadeRequestDTO dto = new UnidadeRequestDTO();
+            dto.setUniNumero(unidade.getUniNumero());
+            dto.setBloco(unidade.getBloco());
+            dto.setAndar(unidade.getAndar());
+            dto.setFracaoIdeal(unidade.getFracaoIdeal());
+            dto.setAreaPrivada(unidade.getAreaPrivada());
+            dto.setUnidadeTipo(unidade.getUnidadeTipo());
+            dto.setUniStatusOcupacao(unidade.getUniStatusOcupacao());
+            dto.setObservacao(unidade.getObservacao());
+            dto.setConCod(unidade.getCondominio().getConCod());
+            
+            model.addAttribute("unidadeId", id);
+            model.addAttribute("unidadeDTO", dto);
+            model.addAttribute("condominiosDisponiveis", condominioRepository.findAll());
+            model.addAttribute("tiposUnidade", UnidadeTipo.values());
+            model.addAttribute("statusOcupacao", UnidadeStatusOcupacao.values());
+            return "fragments/unidade-form :: form-modal-content";
+        }
+        return "error";
     }
 
     @PostMapping("/salvar")
-    public String salvarUnidade(UnidadeRequestDTO unidadeDTO) {
-        unidadeService.cadastrarUnidade(unidadeDTO);
-        return "redirect:/unidades";
+    public String salvarUnidade(@ModelAttribute("unidadeDTO") UnidadeRequestDTO dto, RedirectAttributes redirectAttributes) {
+        try {
+            unidadeService.cadastrarUnidade(dto);
+            redirectAttributes.addFlashAttribute("successMessage", "Unidade salva com sucesso!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Erro ao salvar unidade: " + e.getMessage());
+        }
+        return "redirect:/unidades/" + dto.getConCod();
     }
-
+    
     @PostMapping("/editar/{id}")
-    public String atualizarUnidade(@PathVariable Integer id, UnidadeRequestDTO unidadeDTO) {
-        unidadeService.atualizarUnidade(id, unidadeDTO);
-        return "redirect:/unidades";
+    public String atualizarUnidade(@PathVariable("id") Integer id, @ModelAttribute("unidadeDTO") UnidadeRequestDTO dto, RedirectAttributes redirectAttributes) {
+        try {
+            unidadeService.atualizarUnidade(id, dto);
+            redirectAttributes.addFlashAttribute("successMessage", "Unidade atualizada com sucesso!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Erro ao atualizar unidade: " + e.getMessage());
+        }
+        return "redirect:/unidades/" + dto.getConCod();
     }
 
     @PostMapping("/excluir/{id}")
-    public String excluirUnidade(@PathVariable Integer id) {
-        unidadeService.inativarUnidade(id);
-        return "redirect:/unidades";
+    public String inativarUnidade(@PathVariable("id") Integer id, RedirectAttributes redirectAttributes) {
+        Integer condominioId = null;
+        try {
+            Optional<Unidade> unidadeOpt = unidadeService.buscarUnidadePorId(id);
+            if (unidadeOpt.isPresent()) {
+                condominioId = unidadeOpt.get().getCondominio().getConCod();
+                unidadeService.inativarUnidade(id);
+                redirectAttributes.addFlashAttribute("successMessage", "Unidade desativada com sucesso!");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Erro: Unidade não encontrada.");
+                return "redirect:/unidades";
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Erro ao desativar unidade: " + e.getMessage());
+            if (condominioId != null) {
+                return "redirect:/unidades/" + condominioId;
+            }
+            return "redirect:/unidades";
+        }
+        return "redirect:/unidades/" + condominioId;
     }
 }

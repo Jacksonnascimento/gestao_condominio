@@ -8,48 +8,17 @@ import br.com.gestaocondominio.api.domain.enums.CobrancaStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 
-
-@Repository
 public interface FinanceiroCobrancaRepository extends JpaRepository<FinanceiroCobranca, Integer> {
-
-    List<FinanceiroCobranca> findByUnidadeIn(List<Unidade> unidades);
-
-    List<FinanceiroCobranca> findByUnidadeAndTipoCobrancaAndFicDtVencimentoBetween(
-            Unidade unidade,
-            TipoCobranca tipoCobranca,
-            LocalDate startOfMonth,
-            LocalDate endOfMonth);
-
-    List<FinanceiroCobranca> findByTipoCobranca(TipoCobranca tipoCobranca);
-
-    List<FinanceiroCobranca> findByTipoCobrancaAndFicStatusPagamentoNotIn(
-            TipoCobranca tipoCobranca,
-            List<CobrancaStatus> ficStatusPagamento);
-
-    List<FinanceiroCobranca> findByUnidadeAndFicStatusPagamentoNotIn(
-            Unidade unidade,
-            List<CobrancaStatus> ficStatusPagamento);
-
-    List<FinanceiroCobranca> findByFicStatusPagamentoAndFicDtVencimentoBefore(CobrancaStatus status,
-            LocalDate data);
-
-    List<FinanceiroCobranca> findByUnidade_CondominioAndFicStatusPagamentoAndFicDtPagamentoBetween(
-            Condominio condominio, CobrancaStatus status, LocalDate dataInicio, LocalDate dataFim);
-
+    List<FinanceiroCobranca> findByUnidade_CondominioAndFicStatusPagamentoAndFicDtPagamentoBetween(Condominio condominio, CobrancaStatus status, LocalDate dataInicio, LocalDate dataFim);
+    List<FinanceiroCobranca> findByTipoCobrancaAndFicStatusPagamentoNotIn(TipoCobranca tipoCobranca, Collection<CobrancaStatus> status);
+    List<FinanceiroCobranca> findByUnidadeAndFicStatusPagamentoNotIn(Unidade unidade, Collection<CobrancaStatus> ficStatusPagamento);
+    @Query("SELECT f FROM FinanceiroCobranca f WHERE f.unidade.uniCod = :unidadeId AND f.tipoCobranca.ticCod = :tipoCobrancaId AND f.ficDtVencimento BETWEEN :inicioMes AND :fimMes")
+    List<FinanceiroCobranca> findByCompetencia(@Param("unidadeId") Integer unidadeId, @Param("tipoCobrancaId") Integer tipoCobrancaId, @Param("inicioMes") LocalDate inicioMes, @Param("fimMes") LocalDate fimMes);
     List<FinanceiroCobranca> findByUnidade_CondominioIn(List<Condominio> condominios);
-
-  
-    @Query("SELECT fc FROM FinanceiroCobranca fc WHERE fc.unidade.uniCod = :unidadeId AND fc.tipoCobranca.ticCod = :tipoCobrancaId AND fc.ficDtVencimento BETWEEN :inicioMes AND :fimMes")
-    List<FinanceiroCobranca> findByCompetencia( 
-            @Param("unidadeId") Integer unidadeId,
-            @Param("tipoCobrancaId") Integer tipoCobrancaId,
-            @Param("inicioMes") LocalDate inicioMes,
-            @Param("fimMes") LocalDate fimMes);
-
-    List<FinanceiroCobranca> findAllByFicStatusPagamento(CobrancaStatus status);
+    List<FinanceiroCobranca> findAllByFicStatusPagamento(CobrancaStatus ficStatusPagamento);
 }

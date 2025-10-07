@@ -11,13 +11,15 @@
               th:action="${unidadeId != null ? '/unidades/editar/' + unidadeId : '/unidades/salvar'}" 
               method="post">
             
+            <input type="hidden" th:if="${unidadeId != null}" th:field="*{conCod}" />
+
             <div class="form-group" th:if="${unidadeId == null}">
                 <label for="conCod">Condomínio *</label>
-                <div th:if="${condominiosDisponiveis.size() == 1}">
+                <div th:if="${condominiosDisponiveis != null and condominiosDisponiveis.size() == 1}">
                     <input type="text" th:value="${condominiosDisponiveis[0].conNome}" disabled>
                     <input type="hidden" th:field="*{conCod}" th:value="${condominiosDisponiveis[0].conCod}">
                 </div>
-                <div th:if="${condominiosDisponiveis.size() > 1}">
+                <div th:if="${condominiosDisponiveis != null and condominiosDisponiveis.size() > 1}">
                     <select id="conCod" th:field="*{conCod}" required>
                         <option value="">Selecione o Condomínio...</option>
                         <option th:each="condo : ${condominiosDisponiveis}" th:value="${condo.conCod}" th:text="${condo.conNome}"></option>
@@ -60,7 +62,7 @@
                     </select>
                 </div>
             </div>
-           
+            
             <div class="form-group">
                 <label for="statusOcupacao">Status</label>
                 <select id="statusOcupacao" th:field="*{uniStatusOcupacao}">

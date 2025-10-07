@@ -29,23 +29,29 @@ public class UnidadeServiceImpl implements UnidadeService {
 
     private final UnidadeRepository unidadeRepository;
     private final CondominioRepository condominioRepository;
-    private final OcupanteRepository ocupanteRepository; // <-- ALTERADO AQUI
+    private final OcupanteRepository ocupanteRepository;
     private final FinanceiroCobrancaRepository financeiroCobrancaRepository;
     private final ReservaAreaComumRepository reservaAreaComumRepository;
     private final SolicitacaoManutencaoRepository solicitacaoManutencaoRepository;
 
     public UnidadeServiceImpl(UnidadeRepository unidadeRepository,
                               CondominioRepository condominioRepository,
-                              OcupanteRepository ocupanteRepository, // <-- ALTERADO AQUI
+                              OcupanteRepository ocupanteRepository,
                               FinanceiroCobrancaRepository financeiroCobrancaRepository,
                               ReservaAreaComumRepository reservaAreaComumRepository,
                               SolicitacaoManutencaoRepository solicitacaoManutencaoRepository) {
         this.unidadeRepository = unidadeRepository;
         this.condominioRepository = condominioRepository;
-        this.ocupanteRepository = ocupanteRepository; // <-- ALTERADO AQUI
+        this.ocupanteRepository = ocupanteRepository;
         this.financeiroCobrancaRepository = financeiroCobrancaRepository;
         this.reservaAreaComumRepository = reservaAreaComumRepository;
         this.solicitacaoManutencaoRepository = solicitacaoManutencaoRepository;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Unidade> findByCondominioId(Integer condominioId) {
+        return unidadeRepository.findByCondominioConCodAndUniAtivaTrue(condominioId);
     }
 
     @Override
@@ -98,8 +104,8 @@ public class UnidadeServiceImpl implements UnidadeService {
             } else {
                 UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
                 Pessoa pessoaLogada = userDetails.getPessoa();
-                List<Ocupante> vinculosOcupante = ocupanteRepository.findByPessoa(pessoaLogada); // <-- ALTERADO AQUI
-                unidadesAutorizadas = vinculosOcupante.stream().map(Ocupante::getUnidade).collect(Collectors.toList()); // <-- ALTERADO AQUI
+                List<Ocupante> vinculosOcupante = ocupanteRepository.findByPessoa(pessoaLogada);
+                unidadesAutorizadas = vinculosOcupante.stream().map(Ocupante::getUnidade).collect(Collectors.toList());
             }
 
             if (!incluirInativas) {
@@ -170,7 +176,7 @@ public class UnidadeServiceImpl implements UnidadeService {
         
         checkAdminOrSindicoPermission(unidade.getCondominio().getConCod());
 
-        if (!ocupanteRepository.findByUnidade(unidade).isEmpty()) { // <-- ALTERADO AQUI
+        if (!ocupanteRepository.findByUnidade(unidade).isEmpty()) {
             throw new IllegalArgumentException("Não é possível inativar a unidade, pois existem ocupantes vinculados a ela.");
         }
         if (!financeiroCobrancaRepository.findByUnidadeAndFicStatusPagamentoNotIn(unidade, Arrays.asList(CobrancaStatus.PAGA, CobrancaStatus.CANCELADA)).isEmpty()) {
@@ -210,7 +216,7 @@ public class UnidadeServiceImpl implements UnidadeService {
             return;
         }
         
-        boolean isMoradorDaUnidade = ocupanteRepository.findByPessoaAndUnidade(userDetails.getPessoa(), unidade).isPresent(); // <-- ALTERADO AQUI
+        boolean isMoradorDaUnidade = ocupanteRepository.findByPessoaAndUnidade(userDetails.getPessoa(), unidade).isPresent();
         if (isMoradorDaUnidade) {
             return;
         }
@@ -218,13 +224,13 @@ public class UnidadeServiceImpl implements UnidadeService {
         throw new AccessDeniedException("Acesso negado. Você não tem permissão para visualizar esta unidade.");
     }
 
-    public void checkAdminOrSindicoPermission(Integer unidadeId) { // Alterado para publico
+    public void checkAdminOrSindicoPermission(Integer unidadeId) {
         Unidade unidade = unidadeRepository.findById(unidadeId).orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada"));
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         
         boolean hasPermission = hasAuthority(authentication, "ROLE_GLOBAL_ADMIN") ||
-                                  hasAuthority(authentication, "ROLE_SINDICO_" + unidade.getCondominio().getConCod()) ||
-                                  hasAuthority(authentication, "ROLE_ADMIN_" + unidade.getCondominio().getConCod());
+                                hasAuthority(authentication, "ROLE_SINDICO_" + unidade.getCondominio().getConCod()) ||
+                                hasAuthority(authentication, "ROLE_ADMIN_" + unidade.getCondominio().getConCod());
 
         if (!hasPermission) {
             throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar unidades neste condomínio.");

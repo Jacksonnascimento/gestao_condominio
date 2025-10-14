@@ -3,29 +3,22 @@
 <body>
     <div th:fragment="form-modal-content">
         <div class="modal-header">
-            <h2 th:text="${unidadeId != null ? 'Editar Unidade ' + unidadeDTO.uniNumero : 'Nova Unidade'}">Título do Modal</h2>
+            <h2 th:text="${unidadeId != null ? 'Editar Unidade ' + unidade.uniNumero : 'Nova Unidade'}">Título do Modal</h2>
             <button class="close-btn" onclick="closeModal()">&times;</button>
         </div>
         
-        <form class="modal-form" th:object="${unidadeDTO}" 
+        <form id="unidadeForm" class="modal-form" th:object="${unidade}" 
               th:action="${unidadeId != null ? '/unidades/editar/' + unidadeId : '/unidades/salvar'}" 
               method="post">
             
-            <input type="hidden" th:if="${unidadeId != null}" th:field="*{conCod}" />
-
-            <div class="form-group" th:if="${unidadeId == null}">
+            <div class="form-group" th:if="${isMultiCondo}">
                 <label for="conCod">Condomínio *</label>
-                <div th:if="${condominiosDisponiveis != null and condominiosDisponiveis.size() == 1}">
-                    <input type="text" th:value="${condominiosDisponiveis[0].conNome}" disabled>
-                    <input type="hidden" th:field="*{conCod}" th:value="${condominiosDisponiveis[0].conCod}">
-                </div>
-                <div th:if="${condominiosDisponiveis != null and condominiosDisponiveis.size() > 1}">
-                    <select id="conCod" th:field="*{conCod}" required>
-                        <option value="">Selecione o Condomínio...</option>
-                        <option th:each="condo : ${condominiosDisponiveis}" th:value="${condo.conCod}" th:text="${condo.conNome}"></option>
-                    </select>
-                </div>
+                <select id="conCod" th:field="*{conCod}" required>
+                    <option value="">Selecione o Condomínio...</option>
+                    <option th:each="condo : ${condominiosDisponiveis}" th:value="${condo.conCod}" th:text="${condo.nome}"></option>
+                </select>
             </div>
+            <input type="hidden" th:if="${!isMultiCondo}" th:field="*{conCod}" />
 
             <div class="form-row">
                 <div class="form-group">
@@ -44,8 +37,8 @@
                     <input type="text" id="andar" th:field="*{andar}">
                 </div>
                 <div class="form-group">
-                    <label for="fracaoIdeal">Fração Ideal *</label>
-                    <input type="number" id="fracaoIdeal" step="0.0001" th:field="*{fracaoIdeal}" required>
+                    <label for="fracaoIdeal">Fração Ideal</label>
+                    <input type="number" id="fracaoIdeal" step="0.0001" th:field="*{fracaoIdeal}">
                 </div>
             </div>
 
@@ -55,8 +48,8 @@
                     <input type="number" id="areaPrivada" step="0.01" th:field="*{areaPrivada}">
                 </div>
                 <div class="form-group">
-                    <label for="unidadeTipo">Tipo da Unidade</label>
-                    <select id="unidadeTipo" th:field="*{unidadeTipo}">
+                    <label for="unidadeTipo">Tipo da Unidade *</label>
+                    <select id="unidadeTipo" th:field="*{unidadeTipo}" required>
                         <option value="">Selecione...</option>
                         <option th:each="tipo : ${tiposUnidade}" th:value="${tipo}" th:text="${tipo.getDescricao()}"></option>
                     </select>
@@ -64,8 +57,8 @@
             </div>
             
             <div class="form-group">
-                <label for="statusOcupacao">Status</label>
-                <select id="statusOcupacao" th:field="*{uniStatusOcupacao}">
+                <label for="uniStatusOcupacao">Status *</label>
+                <select id="uniStatusOcupacao" th:field="*{uniStatusOcupacao}" required>
                     <option th:each="s : ${statusOcupacao}" th:value="${s}" th:text="${s.getDescricao()}"></option>
                 </select>
             </div>

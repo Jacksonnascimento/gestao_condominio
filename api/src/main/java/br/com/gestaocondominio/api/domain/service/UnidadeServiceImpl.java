@@ -56,11 +56,28 @@ public class UnidadeServiceImpl implements UnidadeService {
 
     @Override
     public Unidade cadastrarUnidade(UnidadeRequestDTO dto) {
-        if (dto.getConCod() == null) {
-            throw new IllegalArgumentException("Condomínio deve ser informado para a unidade.");
+        Integer condominioId = dto.getConCod();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        // Se o condomínio não foi informado no DTO, tenta inferir com base nas permissões do usuário
+        if (condominioId == null) {
+            Set<Integer> condoIdsComAcesso = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_");
+            
+            if (condoIdsComAcesso.size() == 1) {
+                condominioId = condoIdsComAcesso.iterator().next();
+                dto.setConCod(condominioId); // Atualiza o DTO para o redirect funcionar corretamente
+            } else {
+                 // Se o usuário é GLOBAL_ADMIN ou tem acesso a múltiplos condomínios, a seleção é obrigatória no formulário.
+                 throw new IllegalArgumentException("Condomínio deve ser informado para a unidade.");
+            }
         }
-        Condominio condominio = condominioRepository.findById(dto.getConCod())
-                .orElseThrow(() -> new EntityNotFoundException("Condomínio não encontrado com o ID: " + dto.getConCod()));
+
+        // Checa se o usuário tem permissão para o condomínio (selecionado ou inferido)
+        checkAdminOrSindicoPermissionForCondominio(condominioId);
+        
+        final Integer finalCondominioId = condominioId;
+        Condominio condominio = condominioRepository.findById(finalCondominioId)
+                .orElseThrow(() -> new EntityNotFoundException("Condomínio não encontrado com o ID: " + finalCondominioId));
 
         if (dto.getUniNumero() == null || dto.getUniNumero().trim().isEmpty()) {
             throw new IllegalArgumentException("Número da unidade não pode ser vazio.");
@@ -143,7 +160,7 @@ public class UnidadeServiceImpl implements UnidadeService {
         Unidade unidadeExistente = unidadeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + id));
 
-        checkAdminOrSindicoPermission(unidadeExistente.getCondominio().getConCod());
+        checkAdminOrSindicoPermissionForCondominio(unidadeExistente.getCondominio().getConCod());
         
         if (dto.getUniNumero() != null && !dto.getUniNumero().equalsIgnoreCase(unidadeExistente.getUniNumero())) {
             unidadeRepository.findByUniNumeroAndCondominio(dto.getUniNumero(), unidadeExistente.getCondominio()).ifPresent(u -> {
@@ -174,7 +191,7 @@ public class UnidadeServiceImpl implements UnidadeService {
         Unidade unidade = unidadeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + id));
         
-        checkAdminOrSindicoPermission(unidade.getCondominio().getConCod());
+        checkAdminOrSindicoPermissionForCondominio(unidade.getCondominio().getConCod());
 
         if (!ocupanteRepository.findByUnidade(unidade).isEmpty()) {
             throw new IllegalArgumentException("Não é possível inativar a unidade, pois existem ocupantes vinculados a ela.");
@@ -199,7 +216,7 @@ public class UnidadeServiceImpl implements UnidadeService {
         Unidade unidade = unidadeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + id));
         
-        checkAdminOrSindicoPermission(unidade.getCondominio().getConCod());
+        checkAdminOrSindicoPermissionForCondominio(unidade.getCondominio().getConCod());
 
         unidade.setUniAtiva(true);
         unidade.setUniDtAtualizacao(LocalDateTime.now());
@@ -224,13 +241,12 @@ public class UnidadeServiceImpl implements UnidadeService {
         throw new AccessDeniedException("Acesso negado. Você não tem permissão para visualizar esta unidade.");
     }
 
-    public void checkAdminOrSindicoPermission(Integer unidadeId) {
-        Unidade unidade = unidadeRepository.findById(unidadeId).orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada"));
+    private void checkAdminOrSindicoPermissionForCondominio(Integer condominioId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         
         boolean hasPermission = hasAuthority(authentication, "ROLE_GLOBAL_ADMIN") ||
-                                hasAuthority(authentication, "ROLE_SINDICO_" + unidade.getCondominio().getConCod()) ||
-                                hasAuthority(authentication, "ROLE_ADMIN_" + unidade.getCondominio().getConCod());
+                                hasAuthority(authentication, "ROLE_SINDICO_" + condominioId) ||
+                                hasAuthority(authentication, "ROLE_ADMIN_" + condominioId);
 
         if (!hasPermission) {
             throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar unidades neste condomínio.");
@@ -247,5 +263,12 @@ public class UnidadeServiceImpl implements UnidadeService {
                 .filter(authString -> Arrays.stream(prefixes).anyMatch(authString::startsWith))
                 .map(authString -> Integer.parseInt(authString.substring(authString.lastIndexOf('_') + 1)))
                 .collect(Collectors.toSet());
+    }
+    
+    // Este método foi descontinuado em favor de checkAdminOrSindicoPermissionForCondominio
+    @Deprecated
+    public void checkAdminOrSindicoPermission(Integer unidadeId) {
+        Unidade unidade = unidadeRepository.findById(unidadeId).orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada"));
+        checkAdminOrSindicoPermissionForCondominio(unidade.getCondominio().getConCod());
     }
 }

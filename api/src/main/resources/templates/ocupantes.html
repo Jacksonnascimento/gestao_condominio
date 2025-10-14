@@ -58,13 +58,10 @@
                         <span class="status" th:text="${ocupante.vinculo.getDescricao()}" th:classappend="${'status-' + #strings.toLowerCase(ocupante.vinculo.name())}"></span>
                     </div>
                     <div class="card-body">
-                        <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2.5 5.5A2.5 2.5 0 0 1 5 3h10a2.5 2.5 0 0 1 2.5 2.5v10A2.5 2.5 0 0 1 15 18H5a2.5 2.5 0 0 1-2.5-2.5v-10Z" /><path d="M5 4.5a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5v-10a.5.5 0 0 0-.5-.5H5Z" /></svg><strong>Unidade:</strong> <span th:text="${ocupante.unidadeNumero} + (${ocupante.unidadeBloco != null ? ' / ' + ocupante.unidadeBloco : ''})"></span></p>
+                         <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2.5 5.5A2.5 2.5 0 0 1 5 3h10a2.5 2.5 0 0 1 2.5 2.5v10A2.5 2.5 0 0 1 15 18H5a2.5 2.5 0 0 1-2.5-2.5v-10Z" /><path d="M5 4.5a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5v-10a.5.5 0 0 0-.5-.5H5Z" /></svg><strong>Unidade:</strong> <span th:text="${ocupante.unidadeNumero} + (${ocupante.unidadeBloco != null ? ' / ' + ocupante.unidadeBloco : ''})"></span></p>
                         <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a2 2 0 0 0-2 2v1.161l8.441 4.221a1.25 1.25 0 0 0 1.118 0L19 7.162V6a2 2 0 0 0-2-2H3Z" /><path d="M19 8.839l-7.77 3.885a2.75 2.75 0 0 1-2.46 0L1 8.839V14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.839Z" /></svg><strong>Email:</strong> <span th:text="${ocupante.email}"></span></p>
-                        <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 3.5A1.5 1.5 0 0 1 3.5 2h1.148a1.5 1.5 0 0 1 1.465 1.175l.716 3.223a1.5 1.5 0 0 1-1.052 1.767l-.933.267c-.41.117-.643.555-.48.95a11.542 11.542 0 0 0 6.254 6.254c.395.163.833-.07.95-.48l.267-.933a1.5 1.5 0 0 1 1.767-1.052l3.223.716A1.5 1.5 0 0 1 18 15.352V16.5a1.5 1.5 0 0 1-1.5 1.5h-2.148a1.5 1.5 0 0 1-1.465-1.175l-.716-3.223a1.5 1.5 0 0 1 1.052-1.767l.933-.267c.41-.117.643-.555.48-.95A11.542 11.542 0 0 0 9.048 3.95c-.395-.163-.833.07-.95.48l-.267.933a1.5 1.5 0 0 1-1.767 1.052l-3.223-.716A1.5 1.5 0 0 1 2 4.648V3.5Z" clip-rule="evenodd" /></svg><strong>Telefone:</strong> <span th:text="${ocupante.telefone}"></span></p>
+                        <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 3.5A1.5 1.5 0 0 1 3.5 2h1.148a1.5 1.5 0 0 1 1.465 1.175l.716 3.223a1.5 1.5 0 0 1-1.052 1.767l-.933.267c-.41.117-.643.555-.48.95a11.542 11.542 0 0 0 6.254 6.254c.395.163.833-.07.95-.48l.267-.933a1.5 1.5 0 0 1 1.767-1.052l3.223.716A1.5 1.5 0 0 1 18 15.352V16.5a1.5 1.5 0 0 1-1.5 1.5h-2.148a1.5 1.5 0 0 1-1.465-1.175l-.716-3.223a1.5 1.5 0 0 1 1.052-1.767l.933-.267c.41-.117.643.555.48-.95A11.542 11.542 0 0 0 9.048 3.95c-.395-.163-.833.07-.95.48l-.267.933a1.5 1.5 0 0 1-1.767 1.052l-3.223-.716A1.5 1.5 0 0 1 2 4.648V3.5Z" clip-rule="evenodd" /></svg><strong>Telefone:</strong> <span th:text="${ocupante.telefone}"></span></p>
                         <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5a.75.75 0 0 0 0 1.5h10.5a.75.75 0 0 0 0-1.5H4.75Z" clip-rule="evenodd" /></svg><strong>Início:</strong> <span th:text="${#temporals.format(ocupante.inicioOcupacao, 'dd/MM/yyyy')}"></span></p>
-                        <p class="info-item" th:if="${ocupante.fimOcupacao != null}"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5a.75.75 0 0 0 0 1.5h10.5a.75.75 0 0 0 0-1.5H4.75Z" clip-rule="evenodd" /></svg><strong>Fim:</strong> <span th:text="${#temporals.format(ocupante.fimOcupacao, 'dd/MM/yyyy')}"></span></p>
-                        <p class="info-item" th:if="${ocupante.periodoUso != null}"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 4.25A2.25 2.25 0 0 1 4.25 2h11.5A2.25 2.25 0 0 1 18 4.25v8.5A2.25 2.25 0 0 1 15.75 15H4.25A2.25 2.25 0 0 1 2 12.75v-8.5ZM16.5 4.25c0-.414-.336-.75-.75-.75H4.25c-.414 0-.75.336-.75.75v8.5c0 .414.336.75.75.75h11.5c.414 0 .75-.336.75-.75v-8.5Z" clip-rule="evenodd" /></svg><strong>Período de Uso:</strong> <span th:text="${ocupante.periodoUso}"></span></p>
-                        <p class="info-item" th:if="${ocupante.tipoPeriodo != null}"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M5.433 13.917l1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" /><path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" /></svg><strong>Tipo:</strong> <span th:text="${ocupante.tipoPeriodo.getDescricao()}"></span></p>
                     </div>
                     <div class="card-footer">
                         <button class="btn-edit" th:onclick="'openForm(\'/ocupantes/editar/' + ${ocupante.id} + '\')'"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon-sm"><path d="m2.695 14.762-1.262 3.155a.5.5 0 0 0 .65.65l3.155-1.262a4 4 0 0 0 1.343-.885l11.516-11.515a2.5 2.5 0 0 0-3.536-3.536L3.58 13.42a4 4 0 0 0-.885 1.343Z" /></svg>Editar</button>
@@ -84,13 +81,14 @@
     <script>
         const modal = document.getElementById('formModal');
         const modalContent = document.getElementById('modalContent');
+
         async function openForm(url) {
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('Falha ao carregar o formulário.');
                 modalContent.innerHTML = await response.text();
                 modal.style.display = 'flex';
-                // Garante que a função de toggle seja chamada após o conteúdo ser carregado
+                // Roda a função de toggle assim que o formulário é inserido na página
                 toggleMultipropriedadeFields();
             } catch (error) {
                 console.error('Erro:', error);
@@ -99,29 +97,102 @@
         }
 
         function closeModal() {
-            document.getElementById('formModal').style.display = 'none';
-            document.getElementById('modalContent').innerHTML = '';
+            modal.style.display = 'none';
+            modalContent.innerHTML = '';
         }
         
         window.onclick = function(event) {
-            if (event.target == document.getElementById('formModal')) {
+            if (event.target == modal) {
                 closeModal();
             }
         }
-        
-        function toggleMultipropriedadeFields() {
-            var vinculoSelect = document.getElementById('vinculo');
-            var fieldsDiv = document.getElementById('multipropriedade-fields');
-            if (vinculoSelect && fieldsDiv) {
-                fieldsDiv.style.display = vinculoSelect.value === 'MULTIPROPRIETARIO' ? 'block' : 'none';
+
+        // --- LÓGICA DO FORMULÁRIO CENTRALIZADA AQUI ---
+
+        // Escuta o evento de 'submit' que acontece dentro do modalContent
+        modalContent.addEventListener('submit', async function(event) {
+            // Verifica se o evento veio do nosso formulário específico
+            if (event.target.id === 'ocupanteForm') {
+                event.preventDefault(); // Impede o envio padrão que trava a tela
+
+                const form = event.target;
+                const formData = new FormData(form);
+                const url = form.action;
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: new URLSearchParams(formData)
+                    });
+
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        const errorData = await response.json();
+                        alert(errorData.message);
+                    }
+                } catch (error) {
+                    console.error('Erro ao enviar formulário:', error);
+                    alert('Não foi possível comunicar com o servidor.');
+                }
             }
-        }
-        
-        document.body.addEventListener('change', function(event) {
+        });
+
+        // Escuta o evento de 'blur' (perda de foco) no campo de CPF
+        modalContent.addEventListener('blur', function(event) {
+            if (event.target.id === 'pesCpfCnpj') {
+                buscarPessoaPorCpf(event.target);
+            }
+        }, true); // O 'true' ajuda a capturar o evento de forma mais confiável
+
+        // Escuta o evento de 'change' no seletor de Vínculo
+        modalContent.addEventListener('change', function(event) {
             if (event.target.id === 'vinculo') {
                 toggleMultipropriedadeFields();
             }
         });
+        
+        async function buscarPessoaPorCpf(cpfInput) {
+            const cpf = cpfInput.value;
+            const h2 = modalContent.querySelector('h2');
+
+            if ((h2 && h2.textContent.startsWith('Editar')) || !cpf || cpf.length < 11) {
+                return;
+            }
+            try {
+                const response = await fetch(`/api/pessoas/por-cpf/${cpf}`);
+                const nomeInput = document.getElementById('pesNome');
+                const emailInput = document.getElementById('pesEmail');
+                const telefoneInput = document.getElementById('pesTelefone');
+                
+                if (response.ok) {
+                    const pessoa = await response.json();
+                    nomeInput.value = pessoa.pesNome;
+                    emailInput.value = pessoa.pesEmail;
+                    telefoneInput.value = pessoa.pesTelefone;
+                    nomeInput.readOnly = true;
+                    emailInput.readOnly = true;
+                    telefoneInput.readOnly = true;
+                } else {
+                    nomeInput.value = '';
+                    emailInput.value = '';
+                    telefoneInput.value = '';
+                    nomeInput.readOnly = false;
+                    emailInput.readOnly = false;
+                    telefoneInput.readOnly = false;
+                }
+            } catch (error) {
+                console.error('Erro ao buscar pessoa:', error);
+            }
+        }
+
+        function toggleMultipropriedadeFields() {
+            const vinculoSelect = document.getElementById('vinculo');
+            const fields = document.getElementById('multipropriedade-fields');
+            if (vinculoSelect && fields) {
+                fields.style.display = (vinculoSelect.value === 'MULTIPROPRIETARIO') ? 'block' : 'none';
+            }
+        }
     </script>
 </body>
 </html>

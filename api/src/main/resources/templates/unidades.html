@@ -33,28 +33,28 @@
             </div>
             
             <div class="toolbar">
-                 <form th:action="@{/unidades}" method="get" class="search-form">
+                 <form th:action="@{'/unidades/' + ${condominioId}}" method="get" class="search-form">
                     <input type="search" name="busca" placeholder="Buscar por número ou bloco..." th:value="${buscaFiltro}">
                     <button type="submit" class="btn-secondary">Filtrar</button>
                 </form>
             </div>
 
             <div class="filter-tabs">
-                <a th:href="@{/unidades(busca=${buscaFiltro})}" th:classappend="${statusFiltro == 'Todos' ? 'active' : ''}">Todos</a>
-                <a th:href="@{/unidades(status='OCUPADA', busca=${buscaFiltro})}" th:classappend="${statusFiltro == 'OCUPADA' ? 'active' : ''}">Ocupada</a>
-                <a th:href="@{/unidades(status='VAZIA', busca=${buscaFiltro})}" th:classappend="${statusFiltro == 'VAZIA' ? 'active' : ''}">Vazia</a>
-                <a th:href="@{/unidades(status='EM_REFORMA', busca=${buscaFiltro})}" th:classappend="${statusFiltro == 'EM_REFORMA' ? 'active' : ''}">Em Reforma</a>
-                <a th:href="@{/unidades(status='MULTIPROPRIEDADE', busca=${buscaFiltro})}" th:classappend="${statusFiltro == 'MULTIPROPRIEDADE' ? 'active' : ''}">Multipropriedade</a>
+                <a th:href="@{'/unidades/' + ${condominioId}(busca=${buscaFiltro})}" th:classappend="${statusFiltro == null ? 'active' : ''}">Todos</a>
+                <a th:href="@{'/unidades/' + ${condominioId}(status='OCUPADA', busca=${buscaFiltro})}" th:classappend="${statusFiltro == 'OCUPADA' ? 'active' : ''}">Ocupada</a>
+                <a th:href="@{'/unidades/' + ${condominioId}(status='VAZIA', busca=${buscaFiltro})}" th:classappend="${statusFiltro == 'VAZIA' ? 'active' : ''}">Vazia</a>
+                <a th:href="@{'/unidades/' + ${condominioId}(status='EM_REFORMA', busca=${buscaFiltro})}" th:classappend="${statusFiltro == 'EM_REFORMA' ? 'active' : ''}">Em Reforma</a>
+                <a th:href="@{'/unidades/' + ${condominioId}(status='MULTIPROPRIEDADE', busca=${buscaFiltro})}" th:classappend="${statusFiltro == 'MULTIPROPRIEDADE' ? 'active' : ''}">Multipropriedade</a>
             </div>
 
             <div class="units-grid">
                 <div class="unit-card" th:each="unidade : ${unidades}">
                     <div class="card-header">
                         <div>
-                            <div th:if="${isMultiCondo}" class="condo-badge" th:text="${unidade.condominio.conNome}"></div>
+                            <div th:if="${isMultiCondo}" class="condo-badge" th:text="${unidade.condominio.nome}"></div>
                             <h3 th:text="'Unidade ' + ${unidade.uniNumero}"></h3>
                         </div>
-                        <span class="status" th:if="${unidade.uniStatusOcupacao != null}" th:text="${unidade.uniStatusOcupacao.getDescricao()}" th:classappend="${'status-' + unidade.uniStatusOcupacao.toString().toLowerCase()}"></span>
+                        <span class="status" th:if="${unidade.uniStatusOcupacao != null}" th:text="${unidade.uniStatusOcupacao.getDescricao()}" th:classappend="${'status-' + #strings.toLowerCase(unidade.uniStatusOcupacao.name())}"></span>
                     </div>
                     <div class="card-body">
                         <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5ZM10 8a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75v-.008c0-.414.336-.75.75-.75h.008ZM10 13.5a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75v-.008Z" clip-rule="evenodd" /></svg><strong>Bloco:</strong> <span th:text="${unidade.bloco}"></span></p>
@@ -64,7 +64,7 @@
                     </div>
                     <div class="card-footer">
                         <button class="btn-edit" th:onclick="'openForm(\'/unidades/editar/' + ${unidade.uniCod} + '\')'"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon-sm"><path d="m2.695 14.762-1.262 3.155a.5.5 0 0 0 .65.65l3.155-1.262a4 4 0 0 0 1.343-.885l11.516-11.515a2.5 2.5 0 0 0-3.536-3.536L3.58 13.42a4 4 0 0 0-.885 1.343Z" /></svg>Editar</button>
-                        <form th:action="@{/unidades/excluir/{id}(id=${unidade.uniCod})}" method="post" style="display:inline;"><button type="submit" class="btn-delete" onclick="return confirm('Tem certeza que deseja desativar esta unidade?');"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon-sm"><path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.58.22-2.365.468a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" /></svg>Excluir</button></form>
+                        <form th:action="@{'/unidades/excluir/' + ${unidade.uniCod}}" method="post" style="display:inline;"><button type="submit" class="btn-delete" onclick="return confirm('Deseja excluir esta unidade?');"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon-sm"><path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.58.22-2.365.468a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" /></svg>Excluir</button></form>
                     </div>
                 </div>
             </div>
@@ -78,16 +78,60 @@
     <script>
         const modal = document.getElementById('formModal');
         const modalContent = document.getElementById('modalContent');
+
         async function openForm(url) {
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('Falha ao carregar o formulário.');
                 modalContent.innerHTML = await response.text();
                 modal.style.display = 'flex';
-            } catch (error) { console.error('Erro:', error); alert('Não foi possível carregar o formulário.'); }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Não foi possível carregar o formulário.');
+            }
         }
-        function closeModal() { modal.style.display = 'none'; modalContent.innerHTML = ''; }
-        window.onclick = function(event) { if (event.target == modal) closeModal(); }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            modalContent.innerHTML = '';
+        }
+        
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        modalContent.addEventListener('submit', async function(event) {
+            if (event.target.id === 'unidadeForm') {
+                event.preventDefault(); 
+                const form = event.target;
+                const formData = new FormData(form);
+                const url = form.action;
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: new URLSearchParams(formData)
+                    });
+
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        const contentType = response.headers.get("content-type");
+                        if (contentType && contentType.indexOf("application/json") !== -1) {
+                            const errorData = await response.json();
+                            alert(errorData.message || 'Ocorreu um erro ao processar a solicitação.');
+                        } else {
+                            alert('Ocorreu um erro no servidor. Verifique os dados e tente novamente.');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erro ao enviar formulário:', error);
+                    alert('Não foi possível comunicar com o servidor.');
+                }
+            }
+        });
     </script>
 </body>
 </html>

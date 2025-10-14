@@ -8,13 +8,20 @@ import br.com.gestaocondominio.api.domain.enums.UnidadeTipo;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.service.UnidadeService;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/unidades")
@@ -23,34 +30,66 @@ public class UnidadeViewController {
     private final UnidadeService unidadeService;
     private final CondominioRepository condominioRepository;
 
-    public UnidadeViewController(@Qualifier("unidadeServiceImpl") UnidadeService unidadeService, 
+    public UnidadeViewController(@Qualifier("unidadeServiceImpl") UnidadeService unidadeService,
                                  CondominioRepository condominioRepository) {
         this.unidadeService = unidadeService;
         this.condominioRepository = condominioRepository;
     }
 
+    private List<Condominio> getCondominiosAcessiveis(Authentication auth) {
+        if (hasAuthority(auth, "ROLE_GLOBAL_ADMIN")) {
+            return condominioRepository.findAll();
+        }
+        Set<Integer> condoIds = getCondoIdsFromRoles(auth, "ROLE_SINDICO_", "ROLE_ADMIN_");
+        if (condoIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return condominioRepository.findAllById(condoIds);
+    }
+
+    private void preencherModelComListas(Model model, List<Condominio> condominiosAcessiveis) {
+        model.addAttribute("condominiosDisponiveis", condominiosAcessiveis);
+        model.addAttribute("tiposUnidade", UnidadeTipo.values());
+        model.addAttribute("statusOcupacao", UnidadeStatusOcupacao.values());
+        model.addAttribute("isMultiCondo", condominiosAcessiveis.size() > 1);
+    }
+
     @GetMapping
-    public String redirecionarParaPrimeiroCondominio() {
-        List<Condominio> condominios = condominioRepository.findAll();
+    public String redirecionarParaCondominioPrincipal() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        List<Condominio> condominios = getCondominiosAcessiveis(authentication);
         if (condominios.isEmpty()) {
-            return "redirect:/";
+            return "redirect:/dashboard"; 
         }
         return "redirect:/unidades/" + condominios.get(0).getConCod();
     }
 
     @GetMapping("/{condominioId}")
-    public String getUnidadesPorCondominio(@PathVariable Integer condominioId, Model model) {
-        List<Unidade> unidades = unidadeService.findByCondominioId(condominioId);
-        List<Condominio> condominios = condominioRepository.findAll();
+    public String getUnidadesPorCondominio(@PathVariable Integer condominioId, 
+                                           @RequestParam(value = "busca", required = false) String busca, 
+                                           @RequestParam(value = "status", required = false) String statusFiltro,
+                                           Model model) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        List<Condominio> condominiosAcessiveis = getCondominiosAcessiveis(authentication);
+        
+        if (condominiosAcessiveis.stream().noneMatch(c -> c.getConCod().equals(condominioId))) {
+             throw new SecurityException("Acesso negado a este condomínio.");
+        }
+
+        List<Unidade> unidades = unidadeService.listarTodasUnidades(false, statusFiltro, busca)
+                                    .stream()
+                                    .filter(u -> u.getCondominio().getConCod().equals(condominioId))
+                                    .collect(Collectors.toList());
         
         model.addAttribute("unidades", unidades);
         model.addAttribute("condominioId", condominioId);
-        model.addAttribute("condominiosDisponiveis", condominios);
-        model.addAttribute("unidadeDTO", new UnidadeRequestDTO());
-        model.addAttribute("tiposUnidade", UnidadeTipo.values());
-        model.addAttribute("statusOcupacao", UnidadeStatusOcupacao.values());
-
-        model.addAttribute("totalUnidades", unidades.size());
+        model.addAttribute("buscaFiltro", busca);
+        model.addAttribute("statusFiltro", statusFiltro);
+        
+        preencherModelComListas(model, condominiosAcessiveis);
+        
+        long totalUnidades = unidadeService.findByCondominioId(condominioId).size();
+        model.addAttribute("totalUnidades", totalUnidades);
         model.addAttribute("totalOcupadas", unidades.stream().filter(u -> u.getUniStatusOcupacao() == UnidadeStatusOcupacao.OCUPADA).count());
         model.addAttribute("totalVazias", unidades.stream().filter(u -> u.getUniStatusOcupacao() == UnidadeStatusOcupacao.VAZIA).count());
         model.addAttribute("totalMultipropriedade", unidades.stream().filter(u -> u.getUniStatusOcupacao() == UnidadeStatusOcupacao.MULTIPROPRIEDADE).count());
@@ -60,24 +99,33 @@ public class UnidadeViewController {
     }
     
     @GetMapping("/novo")
-    public String exibirFormularioNovaUnidade(@RequestParam(value = "condominioId", required = false) Integer condominioId, Model model) {
+    public String mostrarFormularioNovaUnidade(@RequestParam(value = "condominioId", required = false) Integer condominioId, Model model) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        List<Condominio> condominiosAcessiveis = getCondominiosAcessiveis(authentication);
+        
         UnidadeRequestDTO dto = new UnidadeRequestDTO();
-        if (condominioId != null) {
+        if (condominiosAcessiveis.size() == 1) {
+            dto.setConCod(condominiosAcessiveis.get(0).getConCod());
+        } else if (condominioId != null) {
             dto.setConCod(condominioId);
         }
-        model.addAttribute("unidadeDTO", dto);
-        model.addAttribute("condominiosDisponiveis", condominioRepository.findAll());
-        model.addAttribute("tiposUnidade", UnidadeTipo.values());
-        model.addAttribute("statusOcupacao", UnidadeStatusOcupacao.values());
+
+        model.addAttribute("unidade", dto);
+        model.addAttribute("unidadeId", null);
+        preencherModelComListas(model, condominiosAcessiveis);
         return "fragments/unidade-form :: form-modal-content";
     }
 
     @GetMapping("/editar/{id}")
-    public String exibirFormularioEditarUnidade(@PathVariable("id") Integer id, Model model) {
+    public String mostrarFormularioEditarUnidade(@PathVariable("id") Integer id, Model model) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        List<Condominio> condominiosAcessiveis = getCondominiosAcessiveis(authentication);
+        
         Optional<Unidade> unidadeOpt = unidadeService.buscarUnidadePorId(id);
         if (unidadeOpt.isPresent()) {
             Unidade unidade = unidadeOpt.get();
             UnidadeRequestDTO dto = new UnidadeRequestDTO();
+            
             dto.setUniNumero(unidade.getUniNumero());
             dto.setBloco(unidade.getBloco());
             dto.setAndar(unidade.getAndar());
@@ -89,35 +137,41 @@ public class UnidadeViewController {
             dto.setConCod(unidade.getCondominio().getConCod());
             
             model.addAttribute("unidadeId", id);
-            model.addAttribute("unidadeDTO", dto);
-            model.addAttribute("condominiosDisponiveis", condominioRepository.findAll());
-            model.addAttribute("tiposUnidade", UnidadeTipo.values());
-            model.addAttribute("statusOcupacao", UnidadeStatusOcupacao.values());
+            model.addAttribute("unidade", dto);
+            preencherModelComListas(model, condominiosAcessiveis);
             return "fragments/unidade-form :: form-modal-content";
         }
         return "error";
     }
 
     @PostMapping("/salvar")
-    public String salvarUnidade(@ModelAttribute("unidadeDTO") UnidadeRequestDTO dto, RedirectAttributes redirectAttributes) {
+    public String salvarUnidade(@ModelAttribute("unidade") UnidadeRequestDTO dto, RedirectAttributes redirectAttributes) {
         try {
-            unidadeService.cadastrarUnidade(dto);
+            Unidade unidadeSalva = unidadeService.cadastrarUnidade(dto);
             redirectAttributes.addFlashAttribute("successMessage", "Unidade salva com sucesso!");
+            return "redirect:/unidades/" + unidadeSalva.getCondominio().getConCod();
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Erro ao salvar unidade: " + e.getMessage());
+            if (dto.getConCod() != null) {
+                return "redirect:/unidades/" + dto.getConCod();
+            }
+            return "redirect:/unidades";
         }
-        return "redirect:/unidades/" + dto.getConCod();
     }
     
     @PostMapping("/editar/{id}")
-    public String atualizarUnidade(@PathVariable("id") Integer id, @ModelAttribute("unidadeDTO") UnidadeRequestDTO dto, RedirectAttributes redirectAttributes) {
+    public String atualizarUnidade(@PathVariable("id") Integer id, @ModelAttribute("unidade") UnidadeRequestDTO dto, RedirectAttributes redirectAttributes) {
         try {
-            unidadeService.atualizarUnidade(id, dto);
+            Unidade unidadeAtualizada = unidadeService.atualizarUnidade(id, dto);
             redirectAttributes.addFlashAttribute("successMessage", "Unidade atualizada com sucesso!");
+            return "redirect:/unidades/" + unidadeAtualizada.getCondominio().getConCod();
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Erro ao atualizar unidade: " + e.getMessage());
+            if (dto.getConCod() != null) {
+                return "redirect:/unidades/" + dto.getConCod();
+            }
+            return "redirect:/unidades";
         }
-        return "redirect:/unidades/" + dto.getConCod();
     }
 
     @PostMapping("/excluir/{id}")
@@ -131,15 +185,26 @@ public class UnidadeViewController {
                 redirectAttributes.addFlashAttribute("successMessage", "Unidade desativada com sucesso!");
             } else {
                 redirectAttributes.addFlashAttribute("errorMessage", "Erro: Unidade não encontrada.");
-                return "redirect:/unidades";
             }
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Erro ao desativar unidade: " + e.getMessage());
-            if (condominioId != null) {
-                return "redirect:/unidades/" + condominioId;
-            }
-            return "redirect:/unidades";
         }
-        return "redirect:/unidades/" + condominioId;
+
+        if (condominioId != null) {
+            return "redirect:/unidades/" + condominioId;
+        }
+        return "redirect:/unidades";
+    }
+    
+    private boolean hasAuthority(Authentication auth, String authority) {
+        return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals(authority));
+    }
+
+    private Set<Integer> getCondoIdsFromRoles(Authentication auth, String... prefixes) {
+        return auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(authString -> Arrays.stream(prefixes).anyMatch(authString::startsWith))
+                .map(authString -> Integer.parseInt(authString.substring(authString.lastIndexOf('_') + 1)))
+                .collect(Collectors.toSet());
     }
 }

@@ -1,0 +1,15 @@
+```gitignore
+# Arquivos compilados e pacotes
+/target/
+
+# Logs
+*.log
+
+# Arquivos de configuração de IDEs
+.vscode/
+.idea/
+*.iml
+
+# Arquivos de configuração sensíveis
+src/main/resources/application.properties
+```

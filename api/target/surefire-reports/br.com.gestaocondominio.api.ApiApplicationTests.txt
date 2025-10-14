@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: br.com.gestaocondominio.api.ApiApplicationTests
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 15.43 s -- in br.com.gestaocondominio.api.ApiApplicationTests
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 11.74 s -- in br.com.gestaocondominio.api.ApiApplicationTests

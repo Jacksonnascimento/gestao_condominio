@@ -1,15 +1,10 @@
-```gitignore
-# Arquivos compilados e pacotes
+# Pasta de build do Maven
 /target/
 
 # Logs
 *.log
 
-# Arquivos de configuração de IDEs
+# Arquivos de IDEs
 .vscode/
 .idea/
 *.iml
-
-# Arquivos de configuração sensíveis
-src/main/resources/application.properties
-```

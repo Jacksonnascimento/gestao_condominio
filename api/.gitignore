@@ -1,10 +1,23 @@
-# Pasta de build do Maven
-/target/
-
-# Logs
+# Ignorar arquivos de log
+logs/
 *.log
 
-# Arquivos de IDEs
-.vscode/
+# Ignorar arquivos de dependências do Maven
+target/
+*.jar
+*.war
+
+# Ignorar arquivos de configuração de IDEs
 .idea/
 *.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# Ignorar arquivos de sistema operacional
+.DS_Store
+Thumbs.db
+
+# Ignorar o arquivo de propriedades da aplicação
+api/src/main/resources/application.properties

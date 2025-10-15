@@ -4,6 +4,8 @@ import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.entity.Unidade;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -24,4 +26,7 @@ public interface UnidadeRepository extends JpaRepository<Unidade, Integer> {
     List<Unidade> findByCondominio(Condominio condominio);
     
     List<Unidade> findByCondominioConCodAndUniAtivaTrue(Integer conCod);
+
+    @Query("SELECT u FROM Unidade u JOIN FETCH u.condominio WHERE u.uniCod = :id")
+    Optional<Unidade> findByIdWithCondominio(@Param("id") Integer id);
 }

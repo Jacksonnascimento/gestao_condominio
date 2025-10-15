@@ -2,6 +2,7 @@ package br.com.gestaocondominio.api.domain.entity;
 
 import br.com.gestaocondominio.api.domain.enums.UnidadeStatusOcupacao;
 import br.com.gestaocondominio.api.domain.enums.UnidadeTipo;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 @ToString(of = {"uniCod", "uniNumero", "bloco", "andar"})
 @Entity
 @Table(name = "gc_unidade")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Unidade {
 
     @Id

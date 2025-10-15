@@ -1,9 +1,11 @@
 package br.com.gestaocondominio.api.domain.entity;
 
 import br.com.gestaocondominio.api.domain.enums.CondominioTipologia;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -74,4 +76,8 @@ public class Condominio {
 
     @Column(name = "CON_DIA_GERACAO_COBRANCA")
     private Integer conDiaGeracaoCobranca;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "condominio", fetch = FetchType.LAZY)
+    private List<Unidade> unidades;
 }

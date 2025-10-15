@@ -7,6 +7,22 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .btn-details {
+            font-size: 0.8rem; padding: 6px 12px; border-radius: 4px; border: 1px solid #3b82f6; cursor: pointer; background-color: #3b82f6; color: white;
+            display: flex; align-items: center; gap: 6px; transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+        }
+        .btn-details:hover { background-color: #2563eb; border-color: #2563eb; }
+        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
+        .details-section h3 { font-size: 1.1rem; color: #3b82f6; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; margin-top: 20px; margin-bottom: 15px;}
+        .details-section .info-item { margin-bottom: 12px; }
+        .details-section .info-item strong { min-width: 100px; display: inline-block; }
+        .ocupantes-list ul { list-style: none; padding: 0; }
+        .ocupantes-list li { background-color: #f9fafb; padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 4px solid #3b82f6; }
+        .ocupantes-list li .ocupante-header { font-size: 1rem; font-weight: 600; color: var(--text-color); }
+        .ocupantes-list li .ocupante-details { font-size: 0.85rem; color: var(--text-light-color); display: block; margin-top: 4px; }
+        .no-ocupantes { color: var(--text-light-color); font-style: italic; }
+    </style>
 </head>
 <body>
     <div class="main-container">
@@ -34,9 +50,9 @@
             
             <div class="toolbar">
                  <form th:action="@{'/unidades/' + ${condominioId}}" method="get" class="search-form">
-                    <input type="search" name="busca" placeholder="Buscar por número ou bloco..." th:value="${buscaFiltro}">
-                    <button type="submit" class="btn-secondary">Filtrar</button>
-                </form>
+                     <input type="search" name="busca" placeholder="Buscar por número ou bloco..." th:value="${buscaFiltro}">
+                     <button type="submit" class="btn-secondary">Filtrar</button>
+                 </form>
             </div>
 
             <div class="filter-tabs">
@@ -63,6 +79,10 @@
                         <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-2 0c0 .993-.241 1.929-.668 2.754l-1.524-1.525a.75.75 0 0 0-1.06 1.06l1.524 1.525A4.483 4.483 0 0 1 10 14.5a4.5 4.5 0 0 1-2.754-.668l-1.525 1.524a.75.75 0 0 0 1.06 1.06l1.525-1.524A4.483 4.483 0 0 1 5.5 10c0-.993.241-1.929.668-2.754l1.524 1.525a.75.75 0 0 0 1.06-1.06l-1.524-1.525A4.483 4.483 0 0 1 10 5.5a4.5 4.5 0 0 1 2.754.668l1.525-1.524a.75.75 0 0 0-1.06-1.06l-1.525 1.524A4.483 4.483 0 0 1 14.5 10Z" clip-rule="evenodd" /></svg><strong>Tipo:</strong> <span th:text="${unidade.unidadeTipo != null ? unidade.unidadeTipo.getDescricao() : 'Não definido'}"></span></p>
                     </div>
                     <div class="card-footer">
+                         <button class="btn-details" th:onclick="'openDetails(' + ${unidade.uniCod} + ')'">
+                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon-sm"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0ZM9.25 9.25a.75.75 0 0 0-1.5 0v4.5a.75.75 0 0 0 1.5 0v-4.5Zm1.25.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" /></svg>
+                             Detalhes
+                         </button>
                         <button class="btn-edit" th:onclick="'openForm(\'/unidades/editar/' + ${unidade.uniCod} + '\')'"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon-sm"><path d="m2.695 14.762-1.262 3.155a.5.5 0 0 0 .65.65l3.155-1.262a4 4 0 0 0 1.343-.885l11.516-11.515a2.5 2.5 0 0 0-3.536-3.536L3.58 13.42a4 4 0 0 0-.885 1.343Z" /></svg>Editar</button>
                         <form th:action="@{'/unidades/excluir/' + ${unidade.uniCod}}" method="post" style="display:inline;"><button type="submit" class="btn-delete" onclick="return confirm('Deseja excluir esta unidade?');"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon-sm"><path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.58.22-2.365.468a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" /></svg>Excluir</button></form>
                     </div>
@@ -101,6 +121,83 @@
                 closeModal();
             }
         }
+        
+        async function openDetails(unidadeId) {
+            modalContent.innerHTML = '<div class="modal-header"><h2>Carregando Detalhes...</h2></div>';
+            modal.style.display = 'flex';
+
+            const NA = 'N/A';
+
+            const formatDate = (dateString) => {
+                if (!dateString) return null;
+                const [year, month, day] = dateString.split('-');
+                return `${day}/${month}/${year}`;
+            };
+
+            try {
+                const [unidadeResponse, ocupantesResponse] = await Promise.all([
+                    fetch(`/api/unidades/${unidadeId}`),
+                    fetch(`/api/ocupantes?unidadeId=${unidadeId}`)
+                ]);
+
+                if (!unidadeResponse.ok) throw new Error(`Erro ao buscar unidade: ${unidadeResponse.statusText}`);
+                if (!ocupantesResponse.ok) throw new Error(`Erro ao buscar ocupantes: ${ocupantesResponse.statusText}`);
+
+                const unidade = await unidadeResponse.json();
+                const ocupantes = await ocupantesResponse.json();
+                
+                let ocupantesHtml = '<p class="no-ocupantes">Nenhum ocupante encontrado para esta unidade.</p>';
+                if (ocupantes.length > 0) {
+                    ocupantesHtml = '<ul>' + ocupantes.map(o => {
+                        const vinculo = o.vinculo && o.vinculo.descricao ? `(${o.vinculo.descricao})` : '';
+                        const ocupacaoFim = formatDate(o.fimOcupacao) || 'Atual';
+                        const ocupacaoInicio = formatDate(o.inicioOcupacao) || NA;
+
+                        return `
+                        <li>
+                            <span class="ocupante-header">${o.nomeCompleto || NA} ${vinculo}</span>
+                            <span class="ocupante-details">${o.email || NA} | ${o.telefone || NA}</span>
+                            <span class="ocupante-details">Ocupação: ${ocupacaoInicio} até ${ocupacaoFim}</span>
+                        </li>
+                    `}).join('') + '</ul>';
+                }
+
+                const detailsHtml = `
+                    <div class="modal-header">
+                        <h2>Detalhes da Unidade ${unidade.uniNumero || ''}</h2>
+                        <button onclick="closeModal()" class="close-btn">&times;</button>
+                    </div>
+                    <div class="details-section">
+                        <h3>Informações da Unidade</h3>
+                        <div class="details-grid">
+                            <p class="info-item"><strong>Bloco:</strong> <span>${unidade.bloco || NA}</span></p>
+                            <p class="info-item"><strong>Andar:</strong> <span>${unidade.andar || NA}</span></p>
+                            <p class="info-item"><strong>Fração Ideal:</strong> <span>${unidade.fracaoIdeal ? (unidade.fracaoIdeal * 100).toFixed(4).replace('.', ',') + '%' : NA}</span></p>
+                            <p class="info-item"><strong>Área:</strong> <span>${unidade.areaPrivada ? unidade.areaPrivada + ' m²' : NA}</span></p>
+                            <p class="info-item"><strong>Tipo:</strong> <span>${unidade.unidadeTipo ? unidade.unidadeTipo.descricao : NA}</span></p>
+                            <p class="info-item"><strong>Status:</strong> <span>${unidade.uniStatusOcupacao ? unidade.uniStatusOcupacao.descricao : NA}</span></p>
+                        </div>
+                        <p class="info-item"><strong>Observações:</strong> <span>${unidade.observacao || 'Nenhuma'}</span></p>
+                    </div>
+                    <div class="details-section ocupantes-list">
+                        <h3>Ocupantes</h3>
+                        ${ocupantesHtml}
+                    </div>
+                `;
+                
+                modalContent.innerHTML = detailsHtml;
+
+            } catch (error) {
+                console.error('Erro ao abrir detalhes:', error);
+                modalContent.innerHTML = `
+                    <div class="modal-header">
+                        <h2>Erro ao Carregar</h2>
+                        <button onclick="closeModal()" class="close-btn">&times;</button>
+                    </div>
+                    <p>Não foi possível carregar os detalhes da unidade. Por favor, tente novamente mais tarde.</p>`;
+            }
+        }
+
 
         modalContent.addEventListener('submit', async function(event) {
             if (event.target.id === 'unidadeForm') {

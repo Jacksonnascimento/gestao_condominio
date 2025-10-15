@@ -59,20 +59,17 @@ public class UnidadeServiceImpl implements UnidadeService {
         Integer condominioId = dto.getConCod();
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        // Se o condomínio não foi informado no DTO, tenta inferir com base nas permissões do usuário
         if (condominioId == null) {
             Set<Integer> condoIdsComAcesso = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_");
             
             if (condoIdsComAcesso.size() == 1) {
                 condominioId = condoIdsComAcesso.iterator().next();
-                dto.setConCod(condominioId); // Atualiza o DTO para o redirect funcionar corretamente
+                dto.setConCod(condominioId);
             } else {
-                 // Se o usuário é GLOBAL_ADMIN ou tem acesso a múltiplos condomínios, a seleção é obrigatória no formulário.
                  throw new IllegalArgumentException("Condomínio deve ser informado para a unidade.");
             }
         }
 
-        // Checa se o usuário tem permissão para o condomínio (selecionado ou inferido)
         checkAdminOrSindicoPermissionForCondominio(condominioId);
         
         final Integer finalCondominioId = condominioId;
@@ -149,8 +146,9 @@ public class UnidadeServiceImpl implements UnidadeService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<Unidade> buscarUnidadePorId(Integer id) {
-        Optional<Unidade> unidadeOpt = unidadeRepository.findById(id);
+        Optional<Unidade> unidadeOpt = unidadeRepository.findByIdWithCondominio(id);
         unidadeOpt.ifPresent(this::checkPermissionToViewUnit);
         return unidadeOpt;
     }
@@ -265,7 +263,6 @@ public class UnidadeServiceImpl implements UnidadeService {
                 .collect(Collectors.toSet());
     }
     
-    // Este método foi descontinuado em favor de checkAdminOrSindicoPermissionForCondominio
     @Deprecated
     public void checkAdminOrSindicoPermission(Integer unidadeId) {
         Unidade unidade = unidadeRepository.findById(unidadeId).orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada"));

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<body>
+<form th:fragment="contratoForm" id="contratoForm" th:action="@{${contrato.id == null} ? '/contratos/novo' : '/contratos/editar/' + ${contrato.id}}" th:object="${contrato}" method="post" class="modal-form">
+    <div class="modal-header">
+        <h2 th:text="${contrato.id == null} ? 'Novo Contrato' : 'Editar Contrato'"></h2>
+        <button type="button" class="close-btn" onclick="closeModal()">&times;</button>
+    </div>
+
+    <input type="hidden" th:field="*{id}" />
+
+    <div class="form-group" th:if="${isGlobalAdmin}">
+        <label for="condominioId">Condomínio *</label>
+        <select id="condominioId" th:field="*{condominioId}" required>
+            <option value="">Selecione um condomínio</option>
+            <option th:each="c : ${condominiosDisponiveis}" th:value="${c.conCod}" th:text="${c.conNome}"></option>
+        </select>
+    </div>
+    <input th:if="${!isGlobalAdmin}" type="hidden" th:field="*{condominioId}" />
+
+    <div class="form-row">
+        <div class="form-group" style="flex: 2;">
+            <label for="empresa">Empresa *</label>
+            <input type="text" id="empresa" th:field="*{empresa}" required>
+        </div>
+        <div class="form-group" style="flex: 1;">
+            <label for="valor">Valor (R$) *</label>
+            <input type="number" id="valor" th:field="*{valor}" step="0.01" required>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="servico">Serviço *</label>
+        <input type="text" id="servico" th:field="*{servico}" required>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label for="responsavel">Responsável</label>
+            <input type="text" id="responsavel" th:field="*{responsavel}">
+        </div>
+        <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status" th:field="*{status}" 
+                    th:disabled="${contrato.id != null and contrato.status.name() != 'ATIVO'}">
+                 <option value="ATIVO">ATIVO</option>
+                 <option value="RESCINDIDO">RESCINDIDO</option>
+            </select>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label for="dataInicio">Data Início *</label>
+            <input type="date" id="dataInicio" th:field="*{dataInicio}" required>
+        </div>
+        <div class="form-group">
+            <label for="dataFim">Data Fim *</label>
+            <input type="date" id="dataFim" th:field="*{dataFim}" required>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="observacoes">Observações</label>
+        <textarea id="observacoes" th:field="*{observacoes}" rows="3"></textarea>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
+        <button type="submit" class="btn-primary">Salvar</button>
+    </div>
+</form>
+</body>
+</html>

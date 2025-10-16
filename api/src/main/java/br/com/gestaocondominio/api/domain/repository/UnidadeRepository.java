@@ -26,6 +26,7 @@ public interface UnidadeRepository extends JpaRepository<Unidade, Integer> {
     List<Unidade> findByCondominio(Condominio condominio);
     
     List<Unidade> findByCondominioConCodAndUniAtivaTrue(Integer conCod);
+   
 
     @Query("SELECT u FROM Unidade u JOIN FETCH u.condominio WHERE u.uniCod = :id")
     Optional<Unidade> findByIdWithCondominio(@Param("id") Integer id);

@@ -216,3 +216,73 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: var(--font-family
     word-break: break-all;      /* Força a quebra em qualquer ponto se necessário */
     min-width: 0;               /* Ajuda flexbox a calcular a quebra corretamente */
 }
+
+/* --- ESTILOS ESPECÍFICOS PARA A PÁGINA DE CONTRATOS --- */
+
+/* Cores e ícones para os cards de indicadores */
+.contratos-page .card-icon.icon-total-contratos { background-color: #e0e7ff; color: #4338ca; }
+.contratos-page .card-icon.icon-ativos { background-color: #dcfce7; color: #166534; }
+.contratos-page .card-icon.icon-a-vencer { background-color: #fef9c3; color: #854d0e; }
+.contratos-page .card-icon.icon-finalizados { background-color: #f3f4f6; color: #4b5563; }
+.contratos-page .card-icon.icon-rescindidos { background-color: #fee2e2; color: #b91c1c; }
+
+/* Estilo para os cards de contrato (Ativos e A Vencer) */
+.contrato-card {
+    background-color: var(--card-bg-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.contrato-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+.contrato-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+.contrato-card .card-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+.contrato-card .status {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: white;
+    text-transform: uppercase;
+}
+.contrato-card .status-ativo { background-color: #27ae60; }
+.contrato-card .status-a_vencer { background-color: #f1c40f; color: #333; }
+.contrato-card .card-body p {
+    margin: 0 0 12px 0;
+}
+.contrato-card .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: var(--text-light-color);
+}
+.contrato-card .info-grid strong {
+    color: var(--text-color);
+}
+
+/* Ajustes para a tabela de histórico */
+.contratos-page .table .badge {
+    font-size: 0.8em;
+    padding: 0.5em 0.8em;
+}
+.contratos-page .table .text-end {
+    text-align: right;
+}
+.contratos-page .table .btn-edit,
+.contratos-page .table .btn-delete {
+    margin-left: 5px;
+}

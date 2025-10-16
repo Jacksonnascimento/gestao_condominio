@@ -1,0 +1,129 @@
+package br.com.gestaocondominio.api.controller;
+
+import br.com.gestaocondominio.api.controller.dto.ContratoRequestDTO;
+import br.com.gestaocondominio.api.domain.entity.Contrato;
+import br.com.gestaocondominio.api.domain.entity.Pessoa;
+import br.com.gestaocondominio.api.domain.enums.StatusContrato;
+import br.com.gestaocondominio.api.domain.service.CondominioService;
+import br.com.gestaocondominio.api.domain.service.ContratoService;
+import br.com.gestaocondominio.api.domain.service.PessoaService;
+import br.com.gestaocondominio.api.domain.service.UsuarioCondominioService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+@Controller
+@RequestMapping("/contratos")
+public class ContratoViewController {
+
+    @Autowired private ContratoService contratoService;
+    @Autowired private PessoaService pessoaService;
+    @Autowired private UsuarioCondominioService usuarioCondominioService;
+    @Autowired private CondominioService condominioService;
+
+    private void carregarDadosPadrao(Model model, Pessoa usuarioLogado) {
+        model.addAttribute("nomeUsuarioLogado", usuarioLogado.getPesNome());
+        model.addAttribute("currentPage", "contratos");
+        model.addAttribute("isGlobalAdmin", usuarioLogado.getPesIsGlobalAdmin());
+    }
+
+    @GetMapping
+    public String listarContratos(Model model,
+                                  @RequestParam(required = false) Integer condominioId,
+                                  @RequestParam(required = false) String busca,
+                                  @RequestParam(required = false) StatusContrato status) {
+        Pessoa usuarioLogado = pessoaService.getLoggedInUser();
+        carregarDadosPadrao(model, usuarioLogado);
+
+        List<Contrato> contratos;
+        Map<StatusContrato, Long> totais;
+
+        if (usuarioLogado.getPesIsGlobalAdmin()) {
+            model.addAttribute("condominiosDisponiveis", condominioService.listarTodosCondominios(true));
+            contratos = contratoService.listarContratos(condominioId, busca, status, null, null);
+            totais = contratoService.contarContratosPorStatus(condominioId);
+            model.addAttribute("condominioFiltro", condominioId);
+        } else {
+            Integer idCondoUsuario = usuarioCondominioService.findByPessoa(usuarioLogado).stream()
+                .findFirst().map(uc -> uc.getCondominio().getConCod()).orElse(null);
+            if (idCondoUsuario == null) {
+                contratos = Collections.emptyList();
+                totais = Collections.emptyMap();
+            } else {
+                contratos = contratoService.listarContratos(idCondoUsuario, busca, status, null, null);
+                totais = contratoService.contarContratosPorStatus(idCondoUsuario);
+            }
+        }
+
+        model.addAttribute("contratos", contratos);
+        model.addAttribute("totalContratos", contratos.stream().count());
+        model.addAttribute("totalAtivos", totais.getOrDefault(StatusContrato.ATIVO, 0L));
+        model.addAttribute("totalAVencer", totais.getOrDefault(StatusContrato.A_VENCER, 0L));
+        model.addAttribute("totalFinalizados", totais.getOrDefault(StatusContrato.FINALIZADO, 0L));
+        model.addAttribute("totalRescindidos", totais.getOrDefault(StatusContrato.RESCINDIDO, 0L));
+        model.addAttribute("buscaFiltro", busca);
+        model.addAttribute("statusFiltro", status);
+
+        return "contratos";
+    }
+
+    @GetMapping("/novo")
+    public String mostrarFormNovo(Model model, @RequestParam(required = false) Integer condominioId) {
+        Pessoa usuarioLogado = pessoaService.getLoggedInUser();
+        ContratoRequestDTO contratoDTO = new ContratoRequestDTO();
+
+        if (usuarioLogado.getPesIsGlobalAdmin()) {
+            model.addAttribute("condominiosDisponiveis", condominioService.listarTodosCondominios(true));
+            contratoDTO.setCondominioId(condominioId);
+        } else {
+            Integer idCondoUsuario = usuarioCondominioService.findByPessoa(usuarioLogado).stream()
+                .findFirst().map(uc -> uc.getCondominio().getConCod())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuário não associado a um condomínio."));
+            contratoDTO.setCondominioId(idCondoUsuario);
+        }
+        
+        model.addAttribute("contrato", contratoDTO);
+        model.addAttribute("isGlobalAdmin", usuarioLogado.getPesIsGlobalAdmin());
+        return "fragments/contrato-form :: contratoForm";
+    }
+
+    @PostMapping("/novo")
+    public String salvarNovoContrato(ContratoRequestDTO contratoDTO) {
+        contratoService.criarContrato(contratoDTO.getCondominioId(), contratoDTO);
+        return "redirect:/contratos";
+    }
+
+    @GetMapping("/editar/{id}")
+    public String mostrarFormEditar(@PathVariable Long id, Model model) {
+        Pessoa usuarioLogado = pessoaService.getLoggedInUser();
+        Contrato contrato = contratoService.obterPorId(id);
+        ContratoRequestDTO dto = new ContratoRequestDTO();
+        dto.fromEntity(contrato);
+        
+        model.addAttribute("contrato", dto);
+        model.addAttribute("isGlobalAdmin", usuarioLogado.getPesIsGlobalAdmin());
+        if (usuarioLogado.getPesIsGlobalAdmin()) {
+            model.addAttribute("condominiosDisponiveis", condominioService.listarTodosCondominios(true));
+        }
+        return "fragments/contrato-form :: contratoForm";
+    }
+
+    @PostMapping("/editar/{id}")
+    public String salvarEdicaoContrato(@PathVariable Long id, ContratoRequestDTO contratoDTO) {
+        contratoService.atualizarContrato(id, contratoDTO);
+        return "redirect:/contratos";
+    }
+
+    @PostMapping("/excluir/{id}")
+    public String excluirContrato(@PathVariable Long id) {
+        contratoService.deletarContrato(id);
+        return "redirect:/contratos";
+    }
+}

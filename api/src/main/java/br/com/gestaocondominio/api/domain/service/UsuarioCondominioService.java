@@ -21,8 +21,8 @@ public class UsuarioCondominioService {
     private final CondominioRepository condominioRepository;
 
     public UsuarioCondominioService(UsuarioCondominioRepository usuarioCondominioRepository,
-                                    PessoaRepository pessoaRepository,
-                                    CondominioRepository condominioRepository) {
+                                      PessoaRepository pessoaRepository,
+                                      CondominioRepository condominioRepository) {
         this.usuarioCondominioRepository = usuarioCondominioRepository;
         this.pessoaRepository = pessoaRepository;
         this.condominioRepository = condominioRepository;
@@ -113,5 +113,9 @@ public class UsuarioCondominioService {
         usuarioCondominioRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Associação de usuário a condomínio não encontrada para exclusão com o ID: " + id));
         usuarioCondominioRepository.deleteById(id);
+    }
+
+    public List<UsuarioCondominio> findByPessoa(Pessoa pessoa) {
+        return usuarioCondominioRepository.findByPesCod(pessoa.getPesCod());
     }
 }

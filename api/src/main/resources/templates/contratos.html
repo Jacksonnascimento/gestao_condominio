@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>CONDOFLOW - Gestão de Contratos</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+</head>
+<body>
+<div class="main-container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div class="content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Gestão de Contratos</h1>
+                <p class="page-subtitle">Visualize, cadastre e gerencie os contratos do condomínio.</p>
+            </div>
+            <button class="btn-primary" th:onclick="'openForm(\'/contratos/novo?condominioId=' + (${condominioFiltro} ?: '') + '\')'">
+                <i class="fa-solid fa-plus btn-icon"></i>
+                Novo Contrato
+            </button>
+        </div>
+
+        <div class="summary-cards" style="grid-template-columns: repeat(5, 1fr);">
+            <div class="card"><div class="card-icon icon-total"><i class="fa-solid fa-file-invoice-dollar"></i></div><div><span class="label">Total</span><span class="value" th:text="${totalContratos}">0</span></div></div>
+            <div class="card"><div class="card-icon icon-ocupantes"><i class="fa-solid fa-check-circle"></i></div><div><span class="label">Ativos</span><span class="value" th:text="${totalAtivos}">0</span></div></div>
+            <div class="card"><div class="card-icon icon-vazias"><i class="fa-solid fa-exclamation-triangle"></i></div><div><span class="label">A Vencer</span><span class="value" th:text="${totalAVencer}">0</span></div></div>
+            <div class="card"><div class="card-icon" style="background-color: #f3f4f6; color: #4b5563;"><i class="fa-solid fa-archive"></i></div><div><span class="label">Finalizados</span><span class="value" th:text="${totalFinalizados}">0</span></div></div>
+            <div class="card"><div class="card-icon" style="background-color: #fee2e2; color: #b91c1c;"><i class="fa-solid fa-times-circle"></i></div><div><span class="label">Rescindidos</span><span class="value" th:text="${totalRescindidos}">0</span></div></div>
+        </div>
+
+        <div class="filter-container">
+            <form th:action="@{/contratos}" method="get" class="search-form">
+                <input type="search" name="busca" placeholder="Buscar por empresa ou serviço..." th:value="${buscaFiltro}">
+                <select th:if="${isGlobalAdmin}" name="condominioId">
+                    <option value="">Todos os Condomínios</option>
+                    <option th:each="c : ${condominiosDisponiveis}" th:value="${c.conCod}" th:text="${c.conNome}" th:selected="${c.conCod == condominioFiltro}"></option>
+                </select>
+                <select name="status">
+                    <option value="">Todos os Status</option>
+                    <option th:each="s : ${T(br.com.gestaocondominio.api.domain.enums.StatusContrato).values()}"
+                            th:value="${s}" th:text="${s.name()}" th:selected="${s == statusFiltro}"></option>
+                </select>
+                <button type="submit" class="btn-secondary">Filtrar</button>
+            </form>
+        </div>
+
+        <div class="units-grid">
+            <div class="unit-card" th:each="contrato : ${contratos}">
+                 <div class="card-header">
+                    <div>
+                        <div class="condo-badge" th:if="${isGlobalAdmin}" th:text="${contrato.condominio.conNome}"></div>
+                        <h3 th:text="${contrato.empresa}"></h3>
+                    </div>
+                    <span class="status" th:text="${contrato.status.name().replace('_', ' ')}" th:classappend="${'status-' + #strings.toLowerCase(contrato.status.name())}"></span>
+                </div>
+                <div class="card-body">
+                    <p class="info-item"><i class="fa-solid fa-briefcase info-icon"></i><strong>Serviço:</strong> <span th:text="${contrato.servico}"></span></p>
+                    <p class="info-item"><i class="fa-solid fa-dollar-sign info-icon"></i><strong>Valor:</strong> <span th:text="${#numbers.formatCurrency(contrato.valor)}"></span></p>
+                    <p class="info-item"><i class="fa-solid fa-calendar-alt info-icon"></i><strong>Período:</strong> <span th:text="${#temporals.format(contrato.dataInicio, 'dd/MM/yy')} + ' a ' + ${#temporals.format(contrato.dataFim, 'dd/MM/yy')}"></span></p>
+                    <p class="info-item" th:if="${contrato.responsavel}"><i class="fa-solid fa-user info-icon"></i><strong>Responsável:</strong> <span th:text="${contrato.responsavel}"></span></p>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-edit" th:onclick="'openForm(\'/contratos/editar/' + ${contrato.id} + '\')'"><i class="fa-solid fa-pencil btn-icon-sm"></i>Editar</button>
+                    <form th:action="@{/contratos/excluir/{id}(id=${contrato.id})}" method="post" style="display:inline;">
+                        <button type="submit" class="btn-delete" onclick="return confirm('Deseja excluir este contrato?');"><i class="fa-solid fa-trash btn-icon-sm"></i>Excluir</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="formModal" class="modal">
+    <div class="modal-content" id="modalContent"></div>
+</div>
+
+<script>
+    const modal = document.getElementById('formModal');
+    const modalContent = document.getElementById('modalContent');
+
+    async function openForm(url) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Falha ao carregar o formulário.');
+            modalContent.innerHTML = await response.text();
+            modal.style.display = 'flex';
+        } catch (error) {
+            alert('Não foi possível carregar o formulário.');
+        }
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+        modalContent.innerHTML = '';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+
+    modalContent.addEventListener('submit', async function(event) {
+        if (event.target.id === 'contratoForm') {
+            event.preventDefault();
+
+            const form = event.target;
+            const formData = new FormData(form);
+            const url = form.action;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: new URLSearchParams(formData)
+                });
+
+                if (response.ok) {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        window.location.href = '/contratos';
+                    }
+                } else {
+                    const errorText = await response.text();
+                    alert('Erro ao salvar: ' + errorText);
+                }
+            } catch (error) {
+                alert('Não foi possível comunicar com o servidor.');
+            }
+        }
+    });
+</script>
+</body>
+</html>

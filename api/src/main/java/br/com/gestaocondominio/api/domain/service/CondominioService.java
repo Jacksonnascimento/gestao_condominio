@@ -224,4 +224,8 @@ public class CondominioService {
                 .map(authString -> Integer.parseInt(authString.substring(authString.lastIndexOf('_') + 1)))
                 .collect(Collectors.toSet());
     }
+
+    public List<Condominio> findAll() {
+        return condominioRepository.findAll();
+    }
 }

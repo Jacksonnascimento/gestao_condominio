@@ -4,6 +4,8 @@ import br.com.gestaocondominio.api.controller.dto.PessoaUpdateRequest;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
 import br.com.gestaocondominio.api.util.ValidadorDocumento;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -156,5 +158,17 @@ public class PessoaService {
         pessoa.setPesAtivo(true);
         pessoa.setPesDtAtualizacao(LocalDateTime.now());
         return pessoaRepository.save(pessoa);
+    }
+
+    public Pessoa getLoggedInUser() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username;
+        if (principal instanceof UserDetails) {
+            username = ((UserDetails) principal).getUsername();
+        } else {
+            username = principal.toString();
+        }
+        return pessoaRepository.findByPesEmail(username)
+                .orElseThrow(() -> new IllegalStateException("Usuário logado não encontrado no banco de dados."));
     }
 }

@@ -11,4 +11,5 @@ public interface UsuarioCondominioRepository extends JpaRepository<UsuarioCondom
     List<UsuarioCondominio> findByUscAtivoAssociacao(boolean ativo);
     List<UsuarioCondominio> findByPessoa(Pessoa pessoa);
     List<UsuarioCondominio> findByCondominio(Condominio condominio);
+    List<UsuarioCondominio> findByPesCod(Integer pesCod);
 }

@@ -1,9 +1,12 @@
 package br.com.gestaocondominio.api.controller;
 
 import br.com.gestaocondominio.api.controller.dto.ContratoRequestDTO;
+import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.entity.Contrato;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
+import br.com.gestaocondominio.api.domain.entity.UsuarioCondominio;
 import br.com.gestaocondominio.api.domain.enums.StatusContrato;
+import br.com.gestaocondominio.api.domain.enums.UserRole;
 import br.com.gestaocondominio.api.domain.service.CondominioService;
 import br.com.gestaocondominio.api.domain.service.ContratoService;
 import br.com.gestaocondominio.api.domain.service.PessoaService;
@@ -18,6 +21,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/contratos")
@@ -34,19 +39,40 @@ public class ContratoViewController {
         model.addAttribute("isGlobalAdmin", usuarioLogado.getPesIsGlobalAdmin());
     }
 
+    private void checarPermissaoAcesso(Pessoa usuarioLogado) {
+        if (usuarioLogado.getPesIsGlobalAdmin()) {
+            return;
+        }
+
+        Set<UserRole> roles = usuarioCondominioService.findByPessoa(usuarioLogado)
+                .stream()
+                .map(UsuarioCondominio::getUscPapel)
+                .collect(Collectors.toSet());
+
+        if (Collections.disjoint(roles, Set.of(UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso Negado");
+        }
+    }
+
     @GetMapping
     public String listarContratos(Model model,
                                   @RequestParam(required = false) Integer condominioId,
                                   @RequestParam(required = false) String busca,
                                   @RequestParam(required = false) StatusContrato status) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
+        checarPermissaoAcesso(usuarioLogado);
         carregarDadosPadrao(model, usuarioLogado);
 
         List<Contrato> contratos;
         Map<StatusContrato, Long> totais;
+        boolean showCondominioInfo = false;
 
         if (usuarioLogado.getPesIsGlobalAdmin()) {
-            model.addAttribute("condominiosDisponiveis", condominioService.listarTodosCondominios(true));
+            List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(true);
+            model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
+            if (condominiosDisponiveis.size() > 1) {
+                showCondominioInfo = true;
+            }
             contratos = contratoService.listarContratos(condominioId, busca, status, null, null);
             totais = contratoService.contarContratosPorStatus(condominioId);
             model.addAttribute("condominioFiltro", condominioId);
@@ -70,6 +96,7 @@ public class ContratoViewController {
         model.addAttribute("totalRescindidos", totais.getOrDefault(StatusContrato.RESCINDIDO, 0L));
         model.addAttribute("buscaFiltro", busca);
         model.addAttribute("statusFiltro", status);
+        model.addAttribute("showCondominioInfo", showCondominioInfo);
 
         return "contratos";
     }
@@ -77,6 +104,7 @@ public class ContratoViewController {
     @GetMapping("/novo")
     public String mostrarFormNovo(Model model, @RequestParam(required = false) Integer condominioId) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
+        checarPermissaoAcesso(usuarioLogado);
         ContratoRequestDTO contratoDTO = new ContratoRequestDTO();
 
         if (usuarioLogado.getPesIsGlobalAdmin()) {
@@ -96,6 +124,7 @@ public class ContratoViewController {
 
     @PostMapping("/novo")
     public String salvarNovoContrato(ContratoRequestDTO contratoDTO) {
+        checarPermissaoAcesso(pessoaService.getLoggedInUser());
         contratoService.criarContrato(contratoDTO.getCondominioId(), contratoDTO);
         return "redirect:/contratos";
     }
@@ -103,6 +132,7 @@ public class ContratoViewController {
     @GetMapping("/editar/{id}")
     public String mostrarFormEditar(@PathVariable Long id, Model model) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
+        checarPermissaoAcesso(usuarioLogado);
         Contrato contrato = contratoService.obterPorId(id);
         ContratoRequestDTO dto = new ContratoRequestDTO();
         dto.fromEntity(contrato);
@@ -117,12 +147,14 @@ public class ContratoViewController {
 
     @PostMapping("/editar/{id}")
     public String salvarEdicaoContrato(@PathVariable Long id, ContratoRequestDTO contratoDTO) {
+        checarPermissaoAcesso(pessoaService.getLoggedInUser());
         contratoService.atualizarContrato(id, contratoDTO);
         return "redirect:/contratos";
     }
 
     @PostMapping("/excluir/{id}")
     public String excluirContrato(@PathVariable Long id) {
+        checarPermissaoAcesso(pessoaService.getLoggedInUser());
         contratoService.deletarContrato(id);
         return "redirect:/contratos";
     }

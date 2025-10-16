@@ -35,7 +35,7 @@
         <div class="filter-container">
             <form th:action="@{/contratos}" method="get" class="search-form">
                 <input type="search" name="busca" placeholder="Buscar por empresa ou serviço..." th:value="${buscaFiltro}">
-                <select th:if="${isGlobalAdmin}" name="condominioId">
+                <select th:if="${showCondominioInfo}" name="condominioId">
                     <option value="">Todos os Condomínios</option>
                     <option th:each="c : ${condominiosDisponiveis}" th:value="${c.conCod}" th:text="${c.conNome}" th:selected="${c.conCod == condominioFiltro}"></option>
                 </select>
@@ -52,7 +52,7 @@
             <div class="unit-card" th:each="contrato : ${contratos}">
                  <div class="card-header">
                     <div>
-                        <div class="condo-badge" th:if="${isGlobalAdmin}" th:text="${contrato.condominio.conNome}"></div>
+                        <div class="condo-badge" th:if="${showCondominioInfo}" th:text="${contrato.condominio.conNome}"></div>
                         <h3 th:text="${contrato.empresa}"></h3>
                     </div>
                     <span class="status" th:text="${contrato.status.name().replace('_', ' ')}" th:classappend="${'status-' + #strings.toLowerCase(contrato.status.name())}"></span>

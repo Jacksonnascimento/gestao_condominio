@@ -16,7 +16,9 @@
                 <li th:classappend="${currentPage == 'dashboard' ? 'active' : ''}"><a th:href="@{/dashboard}">Dashboard</a></li>
                 <li th:classappend="${currentPage == 'unidades' ? 'active' : ''}"><a th:href="@{/unidades}">Unidades</a></li>
                 <li th:classappend="${currentPage == 'ocupantes' ? 'active' : ''}"><a th:href="@{/ocupantes}">Ocupantes</a></li>
-                <li th:classappend="${currentPage == 'contratos' ? 'active' : ''}"><a th:href="@{/contratos}">Contratos</a></li>
+                <li th:if="${usuarioPodeGerenciar}" th:classappend="${currentPage == 'contratos' ? 'active' : ''}">
+                    <a th:href="@{/contratos}">Contratos</a>
+                </li>
                 <li><a href="#">Funcionários</a></li>
                 <li><a href="#">Comunicados</a></li>
                 <li><a href="#">Assembleias</a></li>

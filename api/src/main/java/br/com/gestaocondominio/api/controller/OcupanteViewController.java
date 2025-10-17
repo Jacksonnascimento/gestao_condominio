@@ -44,10 +44,10 @@ public class OcupanteViewController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public String listarOcupantes(Model model,
-                                  @RequestParam(required = false) Integer condominioId,
-                                  @RequestParam(required = false) String busca,
-                                  @RequestParam(required = false) OcupanteVinculo vinculo,
-                                  @RequestParam(required = false) Integer unidadeId) {
+                                    @RequestParam(required = false) Integer condominioId,
+                                    @RequestParam(required = false) String busca,
+                                    @RequestParam(required = false) OcupanteVinculo vinculo,
+                                    @RequestParam(required = false) Integer unidadeId) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         carregarDadosPadrao(model);
 
@@ -75,7 +75,7 @@ public class OcupanteViewController {
                     unidadesDisponiveis = unidadeService.findByCondominioId(idCondoUsuario);
                 }
             }
-        } else { // MORADOR - CORREÇÃO APLICADA AQUI
+        } else { // MORADOR
             Optional<Unidade> unidadeDoMoradorOpt = ocupanteService.findUnidadeByMorador(usuarioLogado);
             if (unidadeDoMoradorOpt.isPresent()) {
                 Unidade unidadeDoMorador = unidadeDoMoradorOpt.get();
@@ -109,30 +109,31 @@ public class OcupanteViewController {
         boolean isGerencial = usuarioLogado.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuarioLogado, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM);
         
         model.addAttribute("isGerencial", isGerencial);
+        model.addAttribute("isGlobalAdmin", usuarioLogado.getPesIsGlobalAdmin()); // CORREÇÃO AQUI
         
         if (isGerencial) {
              if (usuarioLogado.getPesIsGlobalAdmin()) {
-                List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(true);
-                model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
-                model.addAttribute("showCondominioInfo", condominiosDisponiveis.size() > 1);
+                 List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(true);
+                 model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
+                 model.addAttribute("showCondominioInfo", condominiosDisponiveis.size() > 1);
                  if (condominioId != null) {
-                    dto.setCondominioId(condominioId);
-                    model.addAttribute("unidadesDisponiveis", unidadeService.findByCondominioId(condominioId));
-                } else {
-                    model.addAttribute("unidadesDisponiveis", Collections.emptyList());
-                }
+                     dto.setCondominioId(condominioId);
+                     model.addAttribute("unidadesDisponiveis", unidadeService.findByCondominioId(condominioId));
+                 } else {
+                     model.addAttribute("unidadesDisponiveis", Collections.emptyList());
+                 }
             } else {
-                Integer idCondoUsuario = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
-                dto.setCondominioId(idCondoUsuario);
-                model.addAttribute("unidadesDisponiveis", unidadeService.findByCondominioId(idCondoUsuario));
+                 Integer idCondoUsuario = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
+                 dto.setCondominioId(idCondoUsuario);
+                 model.addAttribute("unidadesDisponiveis", unidadeService.findByCondominioId(idCondoUsuario));
             }
         } else { // MORADOR
              ocupanteService.findUnidadeByMorador(usuarioLogado).ifPresent(unidade -> {
-                dto.setCondominioId(unidade.getCondominio().getConCod());
-                dto.setUnidadeId(unidade.getUniCod());
-                model.addAttribute("unidadesDisponiveis", Collections.singletonList(unidade));
-                model.addAttribute("unidadeDoMorador", unidade);
-            });
+                 dto.setCondominioId(unidade.getCondominio().getConCod());
+                 dto.setUnidadeId(unidade.getUniCod());
+                 model.addAttribute("unidadesDisponiveis", Collections.singletonList(unidade));
+                 model.addAttribute("unidadeDoMorador", unidade);
+             });
         }
 
         model.addAttribute("ocupanteRequestDTO", dto);
@@ -163,6 +164,7 @@ public class OcupanteViewController {
         model.addAttribute("ocupanteRequestDTO", dto);
         model.addAttribute("ocupanteId", id);
         model.addAttribute("isGerencial", isGerencial);
+        model.addAttribute("isGlobalAdmin", usuarioLogado.getPesIsGlobalAdmin()); // CORREÇÃO AQUI
         model.addAttribute("vinculosDisponiveis", OcupanteVinculo.values());
         model.addAttribute("tiposPeriodoDisponiveis", TipoPeriodoOcupante.values());
         
@@ -170,6 +172,7 @@ public class OcupanteViewController {
             if (usuarioLogado.getPesIsGlobalAdmin()) {
                 List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(true);
                 model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
+                model.addAttribute("showCondominioInfo", condominiosDisponiveis.size() > 1);
             }
             Integer condominioDoOcupanteId = ocupante.getUnidade().getCondominio().getConCod();
             model.addAttribute("unidadesDisponiveis", unidadeService.findByCondominioId(condominioDoOcupanteId));

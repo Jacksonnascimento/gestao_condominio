@@ -47,17 +47,17 @@
             
             <div class="filter-container">
                  <form th:action="@{/unidades}" method="get" class="search-form">
-                    <input type="search" name="busca" placeholder="Buscar por número ou bloco..." th:value="${buscaFiltro}">
-                    <select name="status" th:if="${isGerencial}">
-                        <option value="">Todos os Status</option>
-                        <option th:each="s : ${statusOcupacao}" th:value="${s.name()}" th:text="${s.getDescricao()}" th:selected="${s.name() == statusFiltro}"></option>
-                    </select>
-                    <select name="condominioId" th:if="${showCondominioInfo}">
-                        <option value="">Todos os Condomínios</option>
-                        <option th:each="c : ${condominiosDisponiveis}" th:value="${c.conCod}" th:text="${c.conNome}" th:selected="${c.conCod == condominioFiltro}"></option>
-                    </select>
-                    <button th:if="${isGerencial or showCondominioInfo}" type="submit" class="btn-secondary">Filtrar</button>
-                </form>
+                     <input type="search" name="busca" placeholder="Buscar por número ou bloco..." th:value="${buscaFiltro}">
+                     <select name="status" th:if="${isGerencial}">
+                         <option value="">Todos os Status</option>
+                         <option th:each="s : ${statusOcupacao}" th:value="${s.name()}" th:text="${s.getDescricao()}" th:selected="${s.name() == statusFiltro}"></option>
+                     </select>
+                     <select name="condominioId" th:if="${showCondominioInfo}">
+                         <option value="">Todos os Condomínios</option>
+                         <option th:each="c : ${condominiosDisponiveis}" th:value="${c.conCod}" th:text="${c.conNome}" th:selected="${c.conCod == condominioFiltro}"></option>
+                     </select>
+                     <button th:if="${isGerencial or showCondominioInfo}" type="submit" class="btn-secondary">Filtrar</button>
+                 </form>
             </div>
 
             <div class="units-grid">
@@ -176,7 +176,7 @@
                             <p class="info-item"><strong>Andar:</strong> <span>${unidade.andar || NA}</span></p>
                             <p class="info-item"><strong>Fração Ideal:</strong> <span>${unidade.fracaoIdeal ? (unidade.fracaoIdeal * 100).toFixed(4).replace('.', ',') + '%' : NA}</span></p>
                             <p class="info-item"><strong>Área:</strong> <span>${unidade.areaPrivada ? unidade.areaPrivada + ' m²' : NA}</span></p>
-                            <p class="info-item"><strong>Tipo:</strong> <span>${unidade.unidadeTipo ? unidade.unidadeTipo : NA}</span></p>
+                            <p class="info-item"><strong>Tipo:</strong> <span>${unidade.unidadeTipo ? unidade.unidadeTipo.descricao : NA}</span></p>
                             <p class="info-item"><strong>Status:</strong> <span>${unidade.uniStatusOcupacao ? unidade.uniStatusOcupacao.descricao : NA}</span></p>
                         </div>
                         <p class="info-item"><strong>Observações:</strong> <span>${unidade.observacao || 'Nenhuma'}</span></p>

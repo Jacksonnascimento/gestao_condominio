@@ -14,7 +14,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/ocupantes")
@@ -34,10 +33,8 @@ public class OcupanteController {
             @RequestParam(required = false) OcupanteVinculo vinculo) {
         
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
-        List<Ocupante> ocupantes = ocupanteService.consultarOcupantesPorUsuario(usuarioLogado, condominioId, busca, vinculo);
-        List<OcupanteResponseDTO> dtos = ocupantes.stream()
-                                                  .map(OcupanteResponseDTO::new)
-                                                  .collect(Collectors.toList());
+        // ===== LINHA CORRIGIDA (agora recebe o DTO diretamente do serviço) =====
+        List<OcupanteResponseDTO> dtos = ocupanteService.consultarOcupantesPorUsuario(usuarioLogado, condominioId, busca, vinculo);
         return new ResponseEntity<>(dtos, HttpStatus.OK);
     }
 

@@ -97,53 +97,6 @@
             <button type="submit" class="btn-primary" th:text="${ocupanteId != null ? 'Salvar Alterações' : 'Salvar Ocupante'}"></button>
         </div>
     </form>
-    
-    <script th:inline="javascript">
-      // IIFE (Immediately Invoked Function Expression) para encapsular e executar o script imediatamente
-      (function() {
-          const condominioSelect = document.getElementById('condominioId');
-          if (condominioSelect) {
-              condominioSelect.addEventListener('change', async function() {
-                  const condominioId = this.value;
-                  const unidadeSelect = document.getElementById('unidadeId');
-                  unidadeSelect.innerHTML = '<option value="">Carregando...</option>';
-
-                  if (!condominioId) {
-                      unidadeSelect.innerHTML = '<option value="">Selecione um condomínio</option>';
-                      return;
-                  }
-
-                  try {
-                      const response = await fetch(`/api/unidades/por-condominio/${condominioId}`);
-                      if (!response.ok) throw new Error('Falha ao buscar unidades.');
-                      
-                      const unidades = await response.json();
-                      unidadeSelect.innerHTML = '<option value="">Selecione...</option>';
-                      unidades.forEach(unidade => {
-                          unidadeSelect.innerHTML += `<option value="${unidade.uniCod}">${unidade.uniNumero}</option>`;
-                      });
-                  } catch (error) {
-                      console.error('Erro ao buscar unidades:', error);
-                      unidadeSelect.innerHTML = '<option value="">Erro ao carregar</option>';
-                  }
-              });
-          }
-
-          const vinculoSelect = document.getElementById('vinculo');
-          const multiFields = document.getElementById('multipropriedade-fields');
-          function toggleMultiFields() {
-              if (vinculoSelect && multiFields) {
-                  multiFields.style.display = (vinculoSelect.value === 'MULTIPROPRIETARIO') ? 'flex' : 'none';
-              }
-          }
-
-          if(vinculoSelect) {
-              vinculoSelect.addEventListener('change', toggleMultiFields);
-              // Garante que o estado inicial do campo seja o correto ao carregar o formulário
-              toggleMultiFields(); 
-          }
-      })();
-    </script>
 </div>
 </body>
 </html>

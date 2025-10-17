@@ -1,9 +1,11 @@
 package br.com.gestaocondominio.api.controller;
 
 import br.com.gestaocondominio.api.controller.dto.OcupanteRequestDTO;
+import br.com.gestaocondominio.api.controller.dto.OcupanteResponseDTO;
 import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.entity.Ocupante;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
+import br.com.gestaocondominio.api.domain.entity.Unidade;
 import br.com.gestaocondominio.api.domain.enums.OcupanteVinculo;
 import br.com.gestaocondominio.api.domain.enums.TipoPeriodoOcupante;
 import br.com.gestaocondominio.api.domain.service.CondominioService;
@@ -17,6 +19,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -39,13 +42,17 @@ public class OcupanteViewController {
     public String listarOcupantes(Model model,
                                   @RequestParam(required = false) Integer condominioId,
                                   @RequestParam(required = false) String busca,
-                                  @RequestParam(required = false) OcupanteVinculo vinculo) {
+                                  @RequestParam(required = false) OcupanteVinculo vinculo,
+                                  @RequestParam(required = false) Integer unidadeId) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         carregarDadosPadrao(model);
 
-        List<Ocupante> ocupantes = ocupanteService.consultarOcupantesPorUsuario(usuarioLogado, condominioId, busca, vinculo);
+        // ===== LINHA CORRIGIDA =====
+        List<OcupanteResponseDTO> ocupantes = ocupanteService.consultarOcupantesPorUsuario(usuarioLogado, condominioId, busca, vinculo);
+        
         Map<OcupanteVinculo, Long> totais = ocupanteService.contarOcupantesPorUsuario(usuarioLogado, condominioId);
         boolean showCondominioInfo = false;
+        List<Unidade> unidadesDisponiveis = new ArrayList<>();
 
         if (usuarioLogado.getPesIsGlobalAdmin()) {
             List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(true);
@@ -53,11 +60,19 @@ public class OcupanteViewController {
             if (condominiosDisponiveis.size() > 1) {
                 showCondominioInfo = true;
             }
+            if (condominioId != null) {
+                unidadesDisponiveis = unidadeService.findByCondominioId(condominioId);
+            }
             model.addAttribute("condominioFiltro", condominioId);
+        } else {
+             Integer idCondoUsuario = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
+             if(idCondoUsuario != null) {
+                unidadesDisponiveis = unidadeService.findByCondominioId(idCondoUsuario);
+             }
         }
 
         model.addAttribute("ocupantes", ocupantes);
-        model.addAttribute("totalOcupantes", ocupantes.stream().count());
+        model.addAttribute("totalOcupantes", (long) ocupantes.size());
         model.addAttribute("totalProprietarios", totais.getOrDefault(OcupanteVinculo.PROPRIETARIO, 0L));
         model.addAttribute("totalLocatarios", totais.getOrDefault(OcupanteVinculo.LOCATARIO, 0L));
         model.addAttribute("totalPromitentes", totais.getOrDefault(OcupanteVinculo.PROMITENTE_COMPRADOR, 0L));
@@ -65,8 +80,10 @@ public class OcupanteViewController {
         model.addAttribute("totalMultiproprietarios", totais.getOrDefault(OcupanteVinculo.MULTIPROPRIETARIO, 0L));
         model.addAttribute("buscaFiltro", busca);
         model.addAttribute("vinculoFiltro", vinculo);
+        model.addAttribute("unidadeFiltro", unidadeId);
         model.addAttribute("showCondominioInfo", showCondominioInfo);
         model.addAttribute("vinculosDisponiveis", OcupanteVinculo.values());
+        model.addAttribute("unidadesDisponiveis", unidadesDisponiveis);
         
         return "ocupantes";
     }

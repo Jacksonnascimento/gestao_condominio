@@ -52,7 +52,8 @@ public class UnidadeServiceImpl implements UnidadeService {
     @Transactional(readOnly = true)
     public List<Unidade> findByCondominioId(Integer condominioId) {
         checkAdminOrSindicoPermissionForCondominio(condominioId);
-        return unidadeRepository.findByCondominioConCodAndUniAtivaTrue(condominioId);
+        // ===== CHAMADA AO MÉTODO CORRIGIDO =====
+        return unidadeRepository.findAtivasByCondominioConCodWithCondominio(condominioId);
     }
 
     @Override

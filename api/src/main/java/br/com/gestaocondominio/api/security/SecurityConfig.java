@@ -44,6 +44,7 @@ public class SecurityConfig {
                     "/api/auth/**",
                     "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
                 ).permitAll()
+                .requestMatchers("/api/**").authenticated() // LINHA ADICIONADA
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))

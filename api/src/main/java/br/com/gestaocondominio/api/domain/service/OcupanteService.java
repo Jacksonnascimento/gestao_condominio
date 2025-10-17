@@ -1,6 +1,7 @@
 package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.controller.dto.OcupanteRequestDTO;
+import br.com.gestaocondominio.api.controller.dto.OcupanteResponseDTO;
 import br.com.gestaocondominio.api.domain.entity.Ocupante;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.entity.Unidade;
@@ -34,26 +35,29 @@ public class OcupanteService {
     @Autowired private UsuarioCondominioService usuarioCondominioService;
 
     @Transactional(readOnly = true)
-public List<Ocupante> consultarOcupantesPorUsuario(Pessoa usuario, Integer condominioId, String busca, OcupanteVinculo vinculo) {
-    
-    if (usuario.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuario, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM)) {
-        Specification<Ocupante> spec = OcupanteSpecification.comFiltros(condominioId, busca, vinculo);
-        return ocupanteRepository.findAll(spec);
-    } 
-    
-    else if (usuarioCondominioService.possuiRole(usuario, UserRole.MORADOR)) {
-        Optional<Ocupante> ocupanteOpt = ocupanteRepository.findByPessoa(usuario).stream().findFirst();
-        if (ocupanteOpt.isPresent()) {
-            return ocupanteRepository.findByUnidade(ocupanteOpt.get().getUnidade());
-        }
+    public List<OcupanteResponseDTO> consultarOcupantesPorUsuario(Pessoa usuario, Integer condominioId, String busca, OcupanteVinculo vinculo) {
+        List<Ocupante> ocupantes = findOcupantesByUsuario(usuario, condominioId, busca, vinculo);
+        return ocupantes.stream()
+                .map(OcupanteResponseDTO::new)
+                .collect(Collectors.toList());
     }
-    
-    return Collections.emptyList();
-}
+
+    private List<Ocupante> findOcupantesByUsuario(Pessoa usuario, Integer condominioId, String busca, OcupanteVinculo vinculo) {
+        if (usuario.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuario, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM)) {
+            Specification<Ocupante> spec = OcupanteSpecification.comFiltros(condominioId, busca, vinculo);
+            return ocupanteRepository.findAll(spec);
+        } else if (usuarioCondominioService.possuiRole(usuario, UserRole.MORADOR)) {
+            Optional<Ocupante> ocupanteOpt = ocupanteRepository.findByPessoa(usuario).stream().findFirst();
+            if (ocupanteOpt.isPresent()) {
+                return ocupanteRepository.findByUnidade(ocupanteOpt.get().getUnidade());
+            }
+        }
+        return Collections.emptyList();
+    }
 
     @Transactional(readOnly = true)
     public Map<OcupanteVinculo, Long> contarOcupantesPorUsuario(Pessoa usuario, Integer condominioId) {
-        List<Ocupante> ocupantes = consultarOcupantesPorUsuario(usuario, condominioId, null, null);
+        List<Ocupante> ocupantes = findOcupantesByUsuario(usuario, condominioId, null, null);
         return ocupantes.stream()
                 .collect(Collectors.groupingBy(Ocupante::getOcuVinculo, Collectors.counting()));
     }

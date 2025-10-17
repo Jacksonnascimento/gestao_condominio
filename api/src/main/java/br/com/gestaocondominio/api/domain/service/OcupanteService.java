@@ -5,84 +5,78 @@ import br.com.gestaocondominio.api.domain.entity.Ocupante;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.entity.Unidade;
 import br.com.gestaocondominio.api.domain.enums.OcupanteVinculo;
+import br.com.gestaocondominio.api.domain.enums.UserRole;
 import br.com.gestaocondominio.api.domain.repository.OcupanteRepository;
+import br.com.gestaocondominio.api.domain.repository.OcupanteSpecification;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
 import br.com.gestaocondominio.api.domain.repository.UnidadeRepository;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 @Service("ocupanteService")
 public class OcupanteService {
 
-    private final OcupanteRepository ocupanteRepository;
-    private final PessoaRepository pessoaRepository;
-    private final UnidadeRepository unidadeRepository;
-    private final PessoaService pessoaService;
-
-    public OcupanteService(OcupanteRepository ocupanteRepository, PessoaRepository pessoaRepository, UnidadeRepository unidadeRepository, PessoaService pessoaService) {
-        this.ocupanteRepository = ocupanteRepository;
-        this.pessoaRepository = pessoaRepository;
-        this.unidadeRepository = unidadeRepository;
-        this.pessoaService = pessoaService;
-    }
+    @Autowired private OcupanteRepository ocupanteRepository;
+    @Autowired private PessoaRepository pessoaRepository;
+    @Autowired private UnidadeRepository unidadeRepository;
+    @Autowired private PessoaService pessoaService;
+    @Autowired private UsuarioCondominioService usuarioCondominioService;
 
     @Transactional(readOnly = true)
-    public List<Ocupante> consultarOcupantes(String busca, String vinculo, Integer unidadeId) {
-        List<Ocupante> todosOcupantes = ocupanteRepository.findAllWithDetails();
-        Stream<Ocupante> stream = todosOcupantes.stream();
-
-        if (busca != null && !busca.isBlank()) {
-            String buscaLower = busca.toLowerCase().trim();
-            stream = stream.filter(ocupante ->
-                (ocupante.getPessoa().getPesNome() != null && ocupante.getPessoa().getPesNome().toLowerCase().contains(buscaLower)) ||
-                (ocupante.getPessoa().getPesEmail() != null && ocupante.getPessoa().getPesEmail().toLowerCase().contains(buscaLower))
-            );
+public List<Ocupante> consultarOcupantesPorUsuario(Pessoa usuario, Integer condominioId, String busca, OcupanteVinculo vinculo) {
+    
+    if (usuario.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuario, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM)) {
+        Specification<Ocupante> spec = OcupanteSpecification.comFiltros(condominioId, busca, vinculo);
+        return ocupanteRepository.findAll(spec);
+    } 
+    
+    else if (usuarioCondominioService.possuiRole(usuario, UserRole.MORADOR)) {
+        Optional<Ocupante> ocupanteOpt = ocupanteRepository.findByPessoa(usuario).stream().findFirst();
+        if (ocupanteOpt.isPresent()) {
+            return ocupanteRepository.findByUnidade(ocupanteOpt.get().getUnidade());
         }
-
-        if (vinculo != null && !vinculo.isBlank()) {
-            try {
-                OcupanteVinculo tipo = OcupanteVinculo.valueOf(vinculo.toUpperCase());
-                stream = stream.filter(ocupante -> ocupante.getOcuVinculo() == tipo);
-            } catch (IllegalArgumentException e) { /* Ignora filtro inválido */ }
-        }
-
-        if (unidadeId != null) {
-            stream = stream.filter(ocupante -> ocupante.getUnidade().getUniCod().equals(unidadeId));
-        }
-
-        return stream.toList();
     }
+    
+    return Collections.emptyList();
+}
 
     @Transactional(readOnly = true)
-    public Optional<Ocupante> buscarPorId(Integer id) {
-        return ocupanteRepository.findById(id);
+    public Map<OcupanteVinculo, Long> contarOcupantesPorUsuario(Pessoa usuario, Integer condominioId) {
+        List<Ocupante> ocupantes = consultarOcupantesPorUsuario(usuario, condominioId, null, null);
+        return ocupantes.stream()
+                .collect(Collectors.groupingBy(Ocupante::getOcuVinculo, Collectors.counting()));
     }
 
     @Transactional
     public Ocupante cadastrarOcupante(OcupanteRequestDTO dto) {
-        if (dto.unidadeId() == null || dto.vinculo() == null || dto.inicioOcupacao() == null || dto.pesCpfCnpj() == null || dto.pesCpfCnpj().isBlank()) {
+        if (dto.getUnidadeId() == null || dto.getVinculo() == null || dto.getInicioOcupacao() == null || dto.getPesCpfCnpj() == null || dto.getPesCpfCnpj().isBlank()) {
             throw new IllegalArgumentException("CPF/CNPJ, Unidade, Vínculo e Início da Ocupação são obrigatórios.");
         }
 
-        Pessoa pessoa = pessoaRepository.findByPesCpfCnpj(dto.pesCpfCnpj())
-            .orElseGet(() -> {
-                Pessoa novaPessoa = new Pessoa();
-                novaPessoa.setPesNome(dto.pesNome());
-                novaPessoa.setPesCpfCnpj(dto.pesCpfCnpj());
-                novaPessoa.setPesTipo(dto.pesTipo());
-                novaPessoa.setPesEmail(dto.pesEmail());
-                novaPessoa.setPesTelefone(dto.pesTelefone());
-                return pessoaService.cadastrarPessoa(novaPessoa);
-            });
+        Pessoa pessoa = pessoaRepository.findByPesCpfCnpj(dto.getPesCpfCnpj())
+                .orElseGet(() -> {
+                    Pessoa novaPessoa = new Pessoa();
+                    novaPessoa.setPesNome(dto.getPesNome());
+                    novaPessoa.setPesCpfCnpj(dto.getPesCpfCnpj());
+                    novaPessoa.setPesTipo(dto.getPesTipo());
+                    novaPessoa.setPesEmail(dto.getPesEmail());
+                    novaPessoa.setPesTelefone(dto.getPesTelefone());
+                    return pessoaService.cadastrarPessoa(novaPessoa);
+                });
 
-        Unidade unidade = unidadeRepository.findById(dto.unidadeId())
-                .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + dto.unidadeId()));
+        Unidade unidade = unidadeRepository.findById(dto.getUnidadeId())
+                .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + dto.getUnidadeId()));
 
         ocupanteRepository.findByPessoaAndUnidade(pessoa, unidade).ifPresent(m -> {
             throw new IllegalArgumentException("Esta pessoa já está cadastrada como ocupante desta unidade.");
@@ -91,13 +85,13 @@ public class OcupanteService {
         Ocupante novoOcupante = new Ocupante();
         novoOcupante.setPessoa(pessoa);
         novoOcupante.setUnidade(unidade);
-        novoOcupante.setOcuVinculo(dto.vinculo());
-        novoOcupante.setOcuDtInicioOcupacao(dto.inicioOcupacao());
-        novoOcupante.setOcuDtFimOcupacao(dto.fimOcupacao());
+        novoOcupante.setOcuVinculo(dto.getVinculo());
+        novoOcupante.setOcuDtInicioOcupacao(dto.getInicioOcupacao());
+        novoOcupante.setOcuDtFimOcupacao(dto.getFimOcupacao());
 
-        if (dto.vinculo() == OcupanteVinculo.MULTIPROPRIETARIO) {
-            novoOcupante.setOcuPeriodoUso(dto.periodoUso());
-            novoOcupante.setOcuTipoPeriodo(dto.tipoPeriodo());
+        if (dto.getVinculo() == OcupanteVinculo.MULTIPROPRIETARIO) {
+            novoOcupante.setOcuPeriodoUso(dto.getPeriodoUso());
+            novoOcupante.setOcuTipoPeriodo(dto.getTipoPeriodo());
         }
 
         novoOcupante.setOcuDtCadastro(LocalDateTime.now());
@@ -107,54 +101,53 @@ public class OcupanteService {
     }
 
     @Transactional
-    public Ocupante editarOcupante(Integer id, OcupanteRequestDTO dto) {
-        Ocupante ocupanteExistente = ocupanteRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Ocupante não encontrado com o ID: " + id));
+    public Ocupante editarOcupante(Integer id, OcupanteRequestDTO dto, Pessoa usuarioLogado) {
+        Ocupante ocupanteExistente = buscarPorIdEValidarAcesso(id, usuarioLogado);
 
         Pessoa pessoaParaAtualizar = ocupanteExistente.getPessoa();
-        pessoaParaAtualizar.setPesNome(dto.pesNome());
-        pessoaParaAtualizar.setPesEmail(dto.pesEmail());
-        pessoaParaAtualizar.setPesTelefone(dto.pesTelefone());
+        pessoaParaAtualizar.setPesNome(dto.getPesNome());
+        pessoaParaAtualizar.setPesEmail(dto.getPesEmail());
+        pessoaParaAtualizar.setPesTelefone(dto.getPesTelefone());
         pessoaRepository.save(pessoaParaAtualizar);
 
-        ocupanteExistente.setOcuVinculo(dto.vinculo());
-        ocupanteExistente.setOcuDtInicioOcupacao(dto.inicioOcupacao());
-        ocupanteExistente.setOcuDtFimOcupacao(dto.fimOcupacao());
+        ocupanteExistente.setOcuVinculo(dto.getVinculo());
+        ocupanteExistente.setOcuDtInicioOcupacao(dto.getInicioOcupacao());
+        ocupanteExistente.setOcuDtFimOcupacao(dto.getFimOcupacao());
 
-        if (dto.vinculo() == OcupanteVinculo.MULTIPROPRIETARIO) {
-            ocupanteExistente.setOcuPeriodoUso(dto.periodoUso());
-            ocupanteExistente.setOcuTipoPeriodo(dto.tipoPeriodo());
+        if (dto.getVinculo() == OcupanteVinculo.MULTIPROPRIETARIO) {
+            ocupanteExistente.setOcuPeriodoUso(dto.getPeriodoUso());
+            ocupanteExistente.setOcuTipoPeriodo(dto.getTipoPeriodo());
         } else {
             ocupanteExistente.setOcuPeriodoUso(null);
             ocupanteExistente.setOcuTipoPeriodo(null);
         }
 
         ocupanteExistente.setOcuDtAtualizacao(LocalDateTime.now());
-
         return ocupanteRepository.save(ocupanteExistente);
     }
 
     @Transactional
-    public void excluirOcupante(Integer id) {
-        if (!ocupanteRepository.existsById(id)) {
-            throw new IllegalArgumentException("Ocupante não encontrado com o ID: " + id);
-        }
-        ocupanteRepository.deleteById(id);
+    public void excluirOcupante(Integer id, Pessoa usuarioLogado) {
+        Ocupante ocupante = buscarPorIdEValidarAcesso(id, usuarioLogado);
+        ocupanteRepository.delete(ocupante);
     }
 
-    public boolean temPermissaoParaGerenciar(Integer ocupanteId) {
-        Ocupante ocupante = ocupanteRepository.findById(ocupanteId)
-            .orElseThrow(() -> new IllegalArgumentException("Ocupante não encontrado com o ID: " + ocupanteId));
+    @Transactional(readOnly = true)
+    public Ocupante buscarPorIdEValidarAcesso(Integer id, Pessoa usuario) {
+        Ocupante ocupante = ocupanteRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ocupante não encontrado"));
 
-        Integer condominioId = ocupante.getUnidade().getCondominio().getConCod();
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (usuario.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuario, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM)) {
+            return ocupante;
+        }
 
-        return authentication.getAuthorities().stream()
-                .anyMatch(auth -> {
-                    String authority = auth.getAuthority();
-                    return authority.equals("ROLE_GLOBAL_ADMIN") ||
-                           authority.equals("ROLE_SINDICO_" + condominioId) ||
-                           authority.equals("ROLE_ADMIN_" + condominioId);
-                });
+        if (usuarioCondominioService.possuiRole(usuario, UserRole.MORADOR)) {
+            Optional<Ocupante> moradorOcupanteOpt = ocupanteRepository.findByPessoa(usuario).stream().findFirst();
+            if (moradorOcupanteOpt.isPresent() && moradorOcupanteOpt.get().getUnidade().equals(ocupante.getUnidade())) {
+                return ocupante;
+            }
+        }
+
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso Negado");
     }
 }

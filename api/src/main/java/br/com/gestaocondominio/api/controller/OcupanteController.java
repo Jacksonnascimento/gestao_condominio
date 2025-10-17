@@ -3,7 +3,11 @@ package br.com.gestaocondominio.api.controller;
 import br.com.gestaocondominio.api.controller.dto.OcupanteRequestDTO;
 import br.com.gestaocondominio.api.controller.dto.OcupanteResponseDTO;
 import br.com.gestaocondominio.api.domain.entity.Ocupante;
+import br.com.gestaocondominio.api.domain.entity.Pessoa;
+import br.com.gestaocondominio.api.domain.enums.OcupanteVinculo;
 import br.com.gestaocondominio.api.domain.service.OcupanteService;
+import br.com.gestaocondominio.api.domain.service.PessoaService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,20 +20,21 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/ocupantes")
 public class OcupanteController {
 
-    private final OcupanteService ocupanteService;
+    @Autowired
+    private OcupanteService ocupanteService;
 
-    public OcupanteController(OcupanteService ocupanteService) {
-        this.ocupanteService = ocupanteService;
-    }
+    @Autowired
+    private PessoaService pessoaService;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<OcupanteResponseDTO>> consultarOcupantes(
+            @RequestParam(required = false) Integer condominioId,
             @RequestParam(required = false) String busca,
-            @RequestParam(required = false) String vinculo,
-            @RequestParam(required = false) Integer unidadeId) {
+            @RequestParam(required = false) OcupanteVinculo vinculo) {
         
-        List<Ocupante> ocupantes = ocupanteService.consultarOcupantes(busca, vinculo, unidadeId);
+        Pessoa usuarioLogado = pessoaService.getLoggedInUser();
+        List<Ocupante> ocupantes = ocupanteService.consultarOcupantesPorUsuario(usuarioLogado, condominioId, busca, vinculo);
         List<OcupanteResponseDTO> dtos = ocupantes.stream()
                                                   .map(OcupanteResponseDTO::new)
                                                   .collect(Collectors.toList());
@@ -37,23 +42,25 @@ public class OcupanteController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN') or @ocupanteService.temPermissaoParaCriar(#dto.unidadeId)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<OcupanteResponseDTO> cadastrarOcupante(@RequestBody OcupanteRequestDTO dto) {
         Ocupante novoOcupante = ocupanteService.cadastrarOcupante(dto);
         return new ResponseEntity<>(new OcupanteResponseDTO(novoOcupante), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN') or @ocupanteService.temPermissaoParaGerenciar(#id)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<OcupanteResponseDTO> editarOcupante(@PathVariable Integer id, @RequestBody OcupanteRequestDTO dto) {
-        Ocupante ocupanteAtualizado = ocupanteService.editarOcupante(id, dto);
+        Pessoa usuarioLogado = pessoaService.getLoggedInUser();
+        Ocupante ocupanteAtualizado = ocupanteService.editarOcupante(id, dto, usuarioLogado);
         return new ResponseEntity<>(new OcupanteResponseDTO(ocupanteAtualizado), HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN') or @ocupanteService.temPermissaoParaGerenciar(#id)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> excluirOcupante(@PathVariable Integer id) {
-        ocupanteService.excluirOcupante(id);
+        Pessoa usuarioLogado = pessoaService.getLoggedInUser();
+        ocupanteService.excluirOcupante(id, usuarioLogado);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

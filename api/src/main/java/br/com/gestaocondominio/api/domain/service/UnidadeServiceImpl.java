@@ -51,6 +51,7 @@ public class UnidadeServiceImpl implements UnidadeService {
     @Override
     @Transactional(readOnly = true)
     public List<Unidade> findByCondominioId(Integer condominioId) {
+        checkAdminOrSindicoPermissionForCondominio(condominioId);
         return unidadeRepository.findByCondominioConCodAndUniAtivaTrue(condominioId);
     }
 
@@ -61,17 +62,17 @@ public class UnidadeServiceImpl implements UnidadeService {
 
         if (condominioId == null) {
             Set<Integer> condoIdsComAcesso = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_");
-            
+
             if (condoIdsComAcesso.size() == 1) {
                 condominioId = condoIdsComAcesso.iterator().next();
                 dto.setConCod(condominioId);
             } else {
-                 throw new IllegalArgumentException("Condomínio deve ser informado para a unidade.");
+                throw new IllegalArgumentException("Condomínio deve ser informado para a unidade.");
             }
         }
 
         checkAdminOrSindicoPermissionForCondominio(condominioId);
-        
+
         final Integer finalCondominioId = condominioId;
         Condominio condominio = condominioRepository.findById(finalCondominioId)
                 .orElseThrow(() -> new EntityNotFoundException("Condomínio não encontrado com o ID: " + finalCondominioId));
@@ -83,7 +84,7 @@ public class UnidadeServiceImpl implements UnidadeService {
         unidadeRepository.findByUniNumeroAndCondominio(dto.getUniNumero(), condominio).ifPresent(u -> {
             throw new IllegalArgumentException("Já existe uma unidade com este número para o condomínio informado: " + u.getUniNumero());
         });
-        
+
         Unidade unidade = new Unidade();
         unidade.setCondominio(condominio);
         unidade.setUnidadeTipo(dto.getUnidadeTipo());
@@ -97,15 +98,15 @@ public class UnidadeServiceImpl implements UnidadeService {
         unidade.setUniDtCadastro(LocalDateTime.now());
         unidade.setUniDtAtualizacao(LocalDateTime.now());
         unidade.setUniAtiva(dto.getUniAtiva() != null ? dto.getUniAtiva() : true);
-        
+
         return unidadeRepository.save(unidade);
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public List<Unidade> listarTodasUnidades(boolean incluirInativas, String statusOcupacao, String busca) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        
+
         List<Unidade> unidadesAutorizadas;
 
         if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) {
@@ -136,9 +137,9 @@ public class UnidadeServiceImpl implements UnidadeService {
 
         if (busca != null && !busca.isBlank()) {
             String buscaLower = busca.toLowerCase();
-            stream = stream.filter(u -> 
-                (u.getUniNumero() != null && u.getUniNumero().toLowerCase().contains(buscaLower)) ||
-                (u.getBloco() != null && u.getBloco().toLowerCase().contains(buscaLower))
+            stream = stream.filter(u ->
+                    (u.getUniNumero() != null && u.getUniNumero().toLowerCase().contains(buscaLower)) ||
+                            (u.getBloco() != null && u.getBloco().toLowerCase().contains(buscaLower))
             );
         }
 
@@ -159,7 +160,7 @@ public class UnidadeServiceImpl implements UnidadeService {
                 .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + id));
 
         checkAdminOrSindicoPermissionForCondominio(unidadeExistente.getCondominio().getConCod());
-        
+
         if (dto.getUniNumero() != null && !dto.getUniNumero().equalsIgnoreCase(unidadeExistente.getUniNumero())) {
             unidadeRepository.findByUniNumeroAndCondominio(dto.getUniNumero(), unidadeExistente.getCondominio()).ifPresent(u -> {
                 if (!u.getUniCod().equals(id))
@@ -175,11 +176,11 @@ public class UnidadeServiceImpl implements UnidadeService {
         unidadeExistente.setFracaoIdeal(dto.getFracaoIdeal());
         unidadeExistente.setAreaPrivada(dto.getAreaPrivada());
         unidadeExistente.setObservacao(dto.getObservacao());
-        
+
         if (dto.getUniAtiva() != null) {
             unidadeExistente.setUniAtiva(dto.getUniAtiva());
         }
-        
+
         unidadeExistente.setUniDtAtualizacao(LocalDateTime.now());
         return unidadeRepository.save(unidadeExistente);
     }
@@ -188,7 +189,7 @@ public class UnidadeServiceImpl implements UnidadeService {
     public Unidade inativarUnidade(Integer id) {
         Unidade unidade = unidadeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + id));
-        
+
         checkAdminOrSindicoPermissionForCondominio(unidade.getCondominio().getConCod());
 
         if (!ocupanteRepository.findByUnidade(unidade).isEmpty()) {
@@ -203,7 +204,7 @@ public class UnidadeServiceImpl implements UnidadeService {
         if (!solicitacaoManutencaoRepository.findByUnidadeAndStatusNotIn(unidade, Arrays.asList(SolicitacaoManutencaoStatus.CONCLUIDA, SolicitacaoManutencaoStatus.CANCELADA)).isEmpty()) {
             throw new IllegalArgumentException("Não é possível inativar a unidade, pois existem solicitações de manutenção ativas ou pendentes vinculadas a ela.");
         }
-        
+
         unidade.setUniAtiva(false);
         unidade.setUniDtAtualizacao(LocalDateTime.now());
         return unidadeRepository.save(unidade);
@@ -213,7 +214,7 @@ public class UnidadeServiceImpl implements UnidadeService {
     public Unidade ativarUnidade(Integer id) {
         Unidade unidade = unidadeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + id));
-        
+
         checkAdminOrSindicoPermissionForCondominio(unidade.getCondominio().getConCod());
 
         unidade.setUniAtiva(true);
@@ -224,13 +225,13 @@ public class UnidadeServiceImpl implements UnidadeService {
     private void checkPermissionToViewUnit(Unidade unidade) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        
+
         if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN") ||
-            hasAuthority(authentication, "ROLE_SINDICO_" + unidade.getCondominio().getConCod()) ||
-            hasAuthority(authentication, "ROLE_ADMIN_" + unidade.getCondominio().getConCod())) {
+                hasAuthority(authentication, "ROLE_SINDICO_" + unidade.getCondominio().getConCod()) ||
+                hasAuthority(authentication, "ROLE_ADMIN_" + unidade.getCondominio().getConCod())) {
             return;
         }
-        
+
         boolean isMoradorDaUnidade = ocupanteRepository.findByPessoaAndUnidade(userDetails.getPessoa(), unidade).isPresent();
         if (isMoradorDaUnidade) {
             return;
@@ -241,10 +242,10 @@ public class UnidadeServiceImpl implements UnidadeService {
 
     private void checkAdminOrSindicoPermissionForCondominio(Integer condominioId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        
+
         boolean hasPermission = hasAuthority(authentication, "ROLE_GLOBAL_ADMIN") ||
-                                hasAuthority(authentication, "ROLE_SINDICO_" + condominioId) ||
-                                hasAuthority(authentication, "ROLE_ADMIN_" + condominioId);
+                hasAuthority(authentication, "ROLE_SINDICO_" + condominioId) ||
+                hasAuthority(authentication, "ROLE_ADMIN_" + condominioId);
 
         if (!hasPermission) {
             throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar unidades neste condomínio.");
@@ -262,7 +263,7 @@ public class UnidadeServiceImpl implements UnidadeService {
                 .map(authString -> Integer.parseInt(authString.substring(authString.lastIndexOf('_') + 1)))
                 .collect(Collectors.toSet());
     }
-    
+
     @Deprecated
     public void checkAdminOrSindicoPermission(Integer unidadeId) {
         Unidade unidade = unidadeRepository.findById(unidadeId).orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada"));

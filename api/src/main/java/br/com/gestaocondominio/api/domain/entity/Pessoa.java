@@ -8,8 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import org.hibernate.annotations.JdbcTypeCode; 
-import org.hibernate.type.SqlTypes; 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -28,6 +28,7 @@ public class Pessoa {
     @Column(name = "PES_COD")
     private Integer pesCod;
 
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "PES_NOME", nullable = false, length = 100)
     private String pesNome;
 
@@ -37,6 +38,7 @@ public class Pessoa {
     @Column(name = "PES_TIPO", length = 1)
     private Character pesTipo;
 
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "PES_EMAIL", unique = true, nullable = false, length = 100)
     private String pesEmail;
 
@@ -64,7 +66,7 @@ public class Pessoa {
 
     @JsonIgnore
     @Lob
-    @JdbcTypeCode(SqlTypes.VARBINARY) 
+    @JdbcTypeCode(SqlTypes.VARBINARY)
     @Basic(fetch = FetchType.LAZY)
     @Column(name = "PES_IMAGEM", columnDefinition = "BYTEA")
     private byte[] pesImagem;

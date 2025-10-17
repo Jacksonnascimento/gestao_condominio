@@ -4,6 +4,7 @@ import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.entity.UsuarioCondominio;
 import br.com.gestaocondominio.api.domain.entity.UsuarioCondominioId;
+import br.com.gestaocondominio.api.domain.enums.UserRole;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
 import br.com.gestaocondominio.api.domain.repository.UsuarioCondominioRepository;
@@ -21,8 +22,8 @@ public class UsuarioCondominioService {
     private final CondominioRepository condominioRepository;
 
     public UsuarioCondominioService(UsuarioCondominioRepository usuarioCondominioRepository,
-                                      PessoaRepository pessoaRepository,
-                                      CondominioRepository condominioRepository) {
+            PessoaRepository pessoaRepository,
+            CondominioRepository condominioRepository) {
         this.usuarioCondominioRepository = usuarioCondominioRepository;
         this.pessoaRepository = pessoaRepository;
         this.condominioRepository = condominioRepository;
@@ -34,14 +35,16 @@ public class UsuarioCondominioService {
             throw new IllegalArgumentException("Pessoa deve ser informada para a associação.");
         }
         Pessoa pessoa = pessoaRepository.findById(usuarioCondominio.getPessoa().getPesCod())
-                .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + usuarioCondominio.getPessoa().getPesCod()));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Pessoa não encontrada com o ID: " + usuarioCondominio.getPessoa().getPesCod()));
         usuarioCondominio.setPessoa(pessoa);
 
         if (usuarioCondominio.getCondominio() == null || usuarioCondominio.getCondominio().getConCod() == null) {
             throw new IllegalArgumentException("Condomínio deve ser informado para a associação.");
         }
         Condominio condominio = condominioRepository.findById(usuarioCondominio.getCondominio().getConCod())
-                .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado com o ID: " + usuarioCondominio.getCondominio().getConCod()));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Condomínio não encontrado com o ID: " + usuarioCondominio.getCondominio().getConCod()));
         usuarioCondominio.setCondominio(condominio);
 
         if (usuarioCondominio.getUscPapel() == null) {
@@ -54,8 +57,7 @@ public class UsuarioCondominioService {
         UsuarioCondominioId idComposto = new UsuarioCondominioId(
                 usuarioCondominio.getPesCod(),
                 usuarioCondominio.getConCod(),
-                usuarioCondominio.getUscPapel()
-        );
+                usuarioCondominio.getUscPapel());
         if (usuarioCondominioRepository.findById(idComposto).isPresent()) {
             throw new IllegalArgumentException("Esta pessoa já possui este papel neste condomínio.");
         }
@@ -80,9 +82,11 @@ public class UsuarioCondominioService {
         return usuarioCondominioRepository.findAll();
     }
 
-    public UsuarioCondominio atualizarUsuarioCondominio(UsuarioCondominioId id, UsuarioCondominio usuarioCondominioAtualizado) {
+    public UsuarioCondominio atualizarUsuarioCondominio(UsuarioCondominioId id,
+            UsuarioCondominio usuarioCondominioAtualizado) {
         UsuarioCondominio usuarioCondominioExistente = usuarioCondominioRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Associação de usuário a condomínio não encontrada com o ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Associação de usuário a condomínio não encontrada com o ID: " + id));
 
         if (usuarioCondominioAtualizado.getUscAtivoAssociacao() != null) {
             usuarioCondominioExistente.setUscAtivoAssociacao(usuarioCondominioAtualizado.getUscAtivoAssociacao());
@@ -94,7 +98,8 @@ public class UsuarioCondominioService {
 
     public UsuarioCondominio inativarUsuarioCondominio(UsuarioCondominioId id) {
         UsuarioCondominio usuarioCondominio = usuarioCondominioRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Associação de usuário a condomínio não encontrada com o ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Associação de usuário a condomínio não encontrada com o ID: " + id));
 
         usuarioCondominio.setUscAtivoAssociacao(false);
         usuarioCondominio.setUscDtAtualizacao(LocalDateTime.now());
@@ -103,7 +108,8 @@ public class UsuarioCondominioService {
 
     public UsuarioCondominio ativarUsuarioCondominio(UsuarioCondominioId id) {
         UsuarioCondominio usuarioCondominio = usuarioCondominioRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Associação de usuário a condomínio não encontrada com o ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Associação de usuário a condomínio não encontrada com o ID: " + id));
         usuarioCondominio.setUscAtivoAssociacao(true);
         usuarioCondominio.setUscDtAtualizacao(LocalDateTime.now());
         return usuarioCondominioRepository.save(usuarioCondominio);
@@ -111,11 +117,34 @@ public class UsuarioCondominioService {
 
     public void deletarUsuarioCondominio(UsuarioCondominioId id) {
         usuarioCondominioRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Associação de usuário a condomínio não encontrada para exclusão com o ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Associação de usuário a condomínio não encontrada para exclusão com o ID: " + id));
         usuarioCondominioRepository.deleteById(id);
     }
 
     public List<UsuarioCondominio> findByPessoa(Pessoa pessoa) {
         return usuarioCondominioRepository.findByPesCod(pessoa.getPesCod());
+    }
+
+    public boolean possuiRole(Pessoa pessoa, UserRole... roles) {
+        if (pessoa == null || roles == null) {
+            return false;
+        }
+        List<UsuarioCondominio> associacoes = findByPessoa(pessoa);
+        for (UsuarioCondominio assoc : associacoes) {
+            for (UserRole role : roles) {
+                if (assoc.getUscPapel() == role) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public Integer getCondominioIdDoUsuario(Pessoa pessoa) {
+        return findByPessoa(pessoa).stream()
+                .findFirst()
+                .map(UsuarioCondominio::getConCod)
+                .orElse(null);
     }
 }

@@ -21,13 +21,21 @@ public class UnidadeController {
         this.unidadeService = unidadeService;
     }
 
+
+    @GetMapping("/por-condominio/{condominioId}")
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN') or hasAnyAuthority('ROLE_SINDICO_' + #condominioId, 'ROLE_ADMIN_' + #condominioId)")
+    public ResponseEntity<List<Unidade>> listarUnidadesPorCondominio(@PathVariable Integer condominioId) {
+        List<Unidade> unidades = unidadeService.findByCondominioId(condominioId);
+        return new ResponseEntity<>(unidades, HttpStatus.OK);
+    }
+
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN') or hasAnyAuthority('ROLE_SINDICO_' + #dto.conCod, 'ROLE_ADMIN_' + #dto.conCod)")
     public ResponseEntity<Unidade> cadastrarUnidade(@RequestBody UnidadeRequestDTO dto) {
         Unidade novaUnidade = unidadeService.cadastrarUnidade(dto);
         return new ResponseEntity<>(novaUnidade, HttpStatus.CREATED);
     }
-    
+
     @GetMapping("/{id}")
     public ResponseEntity<Unidade> buscarUnidadePorId(@PathVariable Integer id) {
         Optional<Unidade> unidade = unidadeService.buscarUnidadePorId(id);

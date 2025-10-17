@@ -1,95 +1,149 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-    <div th:fragment="form-modal-content">
-        <div class="modal-header">
-            <h2 th:text="${ocupanteId != null ? 'Editar Ocupante' : 'Novo Ocupante'}"></h2>
-            <button class="close-btn" onclick="closeModal()">&times;</button>
+<div th:fragment="form-modal-content">
+    <div class="modal-header">
+        <h2 th:text="${ocupanteId != null ? 'Editar Ocupante' : 'Novo Ocupante'}"></h2>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+    </div>
+
+    <form id="ocupanteForm" class="modal-form" th:object="${ocupanteRequestDTO}"
+          th:action="${ocupanteId != null ? '/ocupantes/editar/' + ocupanteId : '/ocupantes/salvar'}"
+          method="post">
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="pesCpfCnpj">CPF/CNPJ *</label>
+                <input type="text" id="pesCpfCnpj" th:field="*{pesCpfCnpj}" required th:readonly="${ocupanteId != null}">
+            </div>
+            <div class="form-group">
+                <label for="pesNome">Nome Completo *</label>
+                <input type="text" id="pesNome" th:field="*{pesNome}" required>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="pesEmail">Email *</label>
+                <input type="email" id="pesEmail" th:field="*{pesEmail}" required>
+            </div>
+            <div class="form-group">
+                <label for="pesTelefone">Telefone</label>
+                <input type="text" id="pesTelefone" th:field="*{pesTelefone}">
+            </div>
+            <div class="form-group" th:if="${ocupanteId == null}">
+                <label for="pesTipo">Tipo</label>
+                <select id="pesTipo" th:field="*{pesTipo}">
+                    <option value="F">Física</option>
+                    <option value="J">Jurídica</option>
+                </select>
+            </div>
+        </div>
+
+        <hr style="margin: 20px 0;">
+
+        <div class="form-row">
+            <div class="form-group" th:if="${isGlobalAdmin and showCondominioInfo}">
+                <label for="condominioId">Condomínio *</label>
+                <select id="condominioId" th:field="*{condominioId}" required>
+                    <option value="">Selecione...</option>
+                    <option th:each="condo : ${condominiosDisponiveis}" th:value="${condo.conCod}" th:text="${condo.conNome}"></option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="unidadeId">Unidade *</label>
+                <select id="unidadeId" th:field="*{unidadeId}" required th:disabled="${ocupanteId != null and !isGlobalAdmin}">
+                    <option value="">Selecione...</option>
+                    <option th:each="unidade : ${unidadesDisponiveis}" th:value="${unidade.uniCod}" th:text="${unidade.uniNumero}" th:selected="${unidade.uniCod == ocupanteRequestDTO.unidadeId}"></option>
+                </select>
+            </div>
         </div>
         
-        <form id="ocupanteForm" class="modal-form" th:object="${ocupanteRequestDTO}" 
-              th:action="${ocupanteId != null ? '/ocupantes/editar/' + ocupanteId : '/ocupantes/salvar'}" 
-              method="post">
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="pesCpfCnpj">CPF/CNPJ *</label>
-                    <input type="text" id="pesCpfCnpj" th:field="*{pesCpfCnpj}" required th:readonly="${ocupanteId != null}">
-                </div>
-                <div class="form-group">
-                    <label for="pesNome">Nome Completo *</label>
-                    <input type="text" id="pesNome" th:field="*{pesNome}" required>
-                </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="vinculo">Vínculo *</label>
+                <select id="vinculo" th:field="*{vinculo}" required>
+                    <option value="">Selecione...</option>
+                    <option th:each="v : ${vinculosDisponiveis}" th:value="${v.name()}" th:text="${v.getDescricao()}"></option>
+                </select>
             </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="pesEmail">Email *</label>
-                    <input type="email" id="pesEmail" th:field="*{pesEmail}" required>
-                </div>
-                 <div class="form-group">
-                    <label for="pesTelefone">Telefone</label>
-                    <input type="text" id="pesTelefone" th:field="*{pesTelefone}">
-                </div>
-                 <div class="form-group" th:if="${ocupanteId == null}">
-                    <label for="pesTipo">Tipo</label>
-                     <select id="pesTipo" th:field="*{pesTipo}">
-                        <option value="F">Física</option>
-                        <option value="J">Jurídica</option>
-                    </select>
-                </div>
+            <div class="form-group">
+                <label for="inicioOcupacao">Início da Ocupação *</label>
+                <input type="date" id="inicioOcupacao" th:field="*{inicioOcupacao}" required>
             </div>
-            
-            <hr style="margin: 20px 0;">
+            <div class="form-group">
+                <label for="fimOcupacao">Fim da Ocupação</label>
+                <input type="date" id="fimOcupacao" th:field="*{fimOcupacao}">
+            </div>
+        </div>
 
+        <div id="multipropriedade-fields" style="display:none;">
             <div class="form-row">
                 <div class="form-group">
-                    <label for="unidadeId">Unidade *</label>
-                    <select id="unidadeId" th:field="*{unidadeId}" required th:disabled="${ocupanteId != null}">
+                    <label for="periodoUso">Período de Uso</label>
+                    <input type="text" id="periodoUso" th:field="*{periodoUso}" placeholder="Ex: Semana 1-4, Janeiro">
+                </div>
+                <div class="form-group">
+                    <label for="tipoPeriodo">Tipo do Período</label>
+                    <select id="tipoPeriodo" th:field="*{tipoPeriodo}">
                         <option value="">Selecione...</option>
-                        <option th:each="unidade : ${unidadesDisponiveis}" th:value="${unidade.uniCod}" th:text="${unidade.uniNumero}"></option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="vinculo">Vínculo *</label>
-                    <select id="vinculo" th:field="*{vinculo}" required>
-                        <option value="">Selecione...</option>
-                        <option th:each="v : ${vinculosDisponiveis}" th:value="${v.name()}" th:text="${v.getDescricao()}"></option>
+                        <option th:each="t : ${tiposPeriodoDisponiveis}" th:value="${t.name()}" th:text="${t.getDescricao()}"></option>
                     </select>
                 </div>
             </div>
+        </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="inicioOcupacao">Início da Ocupação *</label>
-                    <input type="date" id="inicioOcupacao" th:field="*{inicioOcupacao}" required>
-                </div>
-                <div class="form-group">
-                    <label for="fimOcupacao">Fim da Ocupação (opcional)</label>
-                    <input type="date" id="fimOcupacao" th:field="*{fimOcupacao}">
-                </div>
-            </div>
-           
-            <div id="multipropriedade-fields" style="display:none;">
-                 <div class="form-row">
-                    <div class="form-group">
-                        <label for="periodoUso">Período de Uso</label>
-                        <input type="text" id="periodoUso" th:field="*{periodoUso}" placeholder="Ex: Semana 1-4, Janeiro">
-                    </div>
-                    <div class="form-group">
-                        <label for="tipoPeriodo">Tipo do Período</label>
-                        <select id="tipoPeriodo" th:field="*{tipoPeriodo}">
-                            <option value="">Selecione...</option>
-                            <option th:each="t : ${tiposPeriodoDisponiveis}" th:value="${t.name()}" th:text="${t.getDescricao()}"></option>
-                        </select>
-                    </div>
-                </div>
-            </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
+            <button type="submit" class="btn-primary" th:text="${ocupanteId != null ? 'Salvar Alterações' : 'Salvar Ocupante'}"></button>
+        </div>
+    </form>
+    
+    <script th:inline="javascript">
+      // IIFE (Immediately Invoked Function Expression) para encapsular e executar o script imediatamente
+      (function() {
+          const condominioSelect = document.getElementById('condominioId');
+          if (condominioSelect) {
+              condominioSelect.addEventListener('change', async function() {
+                  const condominioId = this.value;
+                  const unidadeSelect = document.getElementById('unidadeId');
+                  unidadeSelect.innerHTML = '<option value="">Carregando...</option>';
 
-            <div class="modal-footer">
-                <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
-                <button type="submit" class="btn-primary" th:text="${ocupanteId != null ? 'Salvar Alterações' : 'Salvar Ocupante'}"></button>
-            </div>
-        </form>
-    </div>
+                  if (!condominioId) {
+                      unidadeSelect.innerHTML = '<option value="">Selecione um condomínio</option>';
+                      return;
+                  }
+
+                  try {
+                      const response = await fetch(`/api/unidades/por-condominio/${condominioId}`);
+                      if (!response.ok) throw new Error('Falha ao buscar unidades.');
+                      
+                      const unidades = await response.json();
+                      unidadeSelect.innerHTML = '<option value="">Selecione...</option>';
+                      unidades.forEach(unidade => {
+                          unidadeSelect.innerHTML += `<option value="${unidade.uniCod}">${unidade.uniNumero}</option>`;
+                      });
+                  } catch (error) {
+                      console.error('Erro ao buscar unidades:', error);
+                      unidadeSelect.innerHTML = '<option value="">Erro ao carregar</option>';
+                  }
+              });
+          }
+
+          const vinculoSelect = document.getElementById('vinculo');
+          const multiFields = document.getElementById('multipropriedade-fields');
+          function toggleMultiFields() {
+              if (vinculoSelect && multiFields) {
+                  multiFields.style.display = (vinculoSelect.value === 'MULTIPROPRIETARIO') ? 'flex' : 'none';
+              }
+          }
+
+          if(vinculoSelect) {
+              vinculoSelect.addEventListener('change', toggleMultiFields);
+              // Garante que o estado inicial do campo seja o correto ao carregar o formulário
+              toggleMultiFields(); 
+          }
+      })();
+    </script>
+</div>
 </body>
 </html>

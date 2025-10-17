@@ -312,3 +312,8 @@ CREATE TABLE GC_CONTRATO (
     PRIMARY KEY (CTR_COD),
     FOREIGN KEY (CON_COD) REFERENCES GC_CONDOMINIO (CON_COD)
 );
+
+
+CREATE INDEX IF NOT EXISTS idx_pessoa_nome_lower ON gc_pessoa (LOWER(pes_nome));
+
+CREATE INDEX IF NOT EXISTS idx_pessoa_email_lower ON gc_pessoa (LOWER(pes_email));

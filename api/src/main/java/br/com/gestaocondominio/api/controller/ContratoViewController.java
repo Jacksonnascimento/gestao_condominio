@@ -58,7 +58,7 @@ public class ContratoViewController {
     public String listarContratos(Model model,
                                   @RequestParam(required = false) Integer condominioId,
                                   @RequestParam(required = false) String busca,
-                                  @RequestParam(required = false) StatusContrato status) {
+                                  @RequestParam(required = false, defaultValue = "ativos") String filtro) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         checarPermissaoAcesso(usuarioLogado);
         carregarDadosPadrao(model, usuarioLogado);
@@ -67,13 +67,17 @@ public class ContratoViewController {
         Map<StatusContrato, Long> totais;
         boolean showCondominioInfo = false;
 
+        boolean isProximoVencimento = "a-vencer".equals(filtro);
+        boolean isHistorico = "historico".equals(filtro);
+        StatusContrato statusFiltro = "ativos".equals(filtro) ? StatusContrato.ATIVO : null;
+
         if (usuarioLogado.getPesIsGlobalAdmin()) {
             List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(true);
             model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
             if (condominiosDisponiveis.size() > 1) {
                 showCondominioInfo = true;
             }
-            contratos = contratoService.listarContratos(condominioId, busca, status, null, null);
+            contratos = contratoService.listarContratos(condominioId, busca, statusFiltro, isProximoVencimento, isHistorico);
             totais = contratoService.contarContratosPorStatus(condominioId);
             model.addAttribute("condominioFiltro", condominioId);
         } else {
@@ -83,19 +87,19 @@ public class ContratoViewController {
                 contratos = Collections.emptyList();
                 totais = Collections.emptyMap();
             } else {
-                contratos = contratoService.listarContratos(idCondoUsuario, busca, status, null, null);
+                contratos = contratoService.listarContratos(idCondoUsuario, busca, statusFiltro, isProximoVencimento, isHistorico);
                 totais = contratoService.contarContratosPorStatus(idCondoUsuario);
             }
         }
 
         model.addAttribute("contratos", contratos);
-        model.addAttribute("totalContratos", contratos.stream().count());
+        model.addAttribute("totalContratos", totais.values().stream().mapToLong(Long::longValue).sum());
         model.addAttribute("totalAtivos", totais.getOrDefault(StatusContrato.ATIVO, 0L));
         model.addAttribute("totalAVencer", totais.getOrDefault(StatusContrato.A_VENCER, 0L));
         model.addAttribute("totalFinalizados", totais.getOrDefault(StatusContrato.FINALIZADO, 0L));
         model.addAttribute("totalRescindidos", totais.getOrDefault(StatusContrato.RESCINDIDO, 0L));
         model.addAttribute("buscaFiltro", busca);
-        model.addAttribute("statusFiltro", status);
+        model.addAttribute("filtroAtivo", filtro);
         model.addAttribute("showCondominioInfo", showCondominioInfo);
 
         return "contratos";

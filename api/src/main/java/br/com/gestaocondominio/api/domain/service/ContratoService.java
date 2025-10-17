@@ -49,7 +49,7 @@ public class ContratoService {
         contratoRepository.deleteById(id);
     }
 
-    public List<Contrato> listarContratos(Integer condominioId, String busca, StatusContrato status, LocalDate dataInicio, LocalDate dataFim) {
+    public List<Contrato> listarContratos(Integer condominioId, String busca, StatusContrato status, Boolean isProximoVencimento, Boolean isHistorico) {
         Specification<Contrato> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -63,9 +63,15 @@ public class ContratoService {
                     cb.like(cb.lower(root.get("servico")), "%" + busca.toLowerCase() + "%")
                 ));
             }
-            if (status != null) {
+            
+            if (Boolean.TRUE.equals(isHistorico)) {
+                predicates.add(root.get("status").in(StatusContrato.FINALIZADO, StatusContrato.RESCINDIDO));
+            } else if (Boolean.TRUE.equals(isProximoVencimento)) {
+                predicates.add(cb.equal(root.get("status"), StatusContrato.A_VENCER));
+            } else if (status != null) {
                 predicates.add(cb.equal(root.get("status"), status));
             }
+            
             return cb.and(predicates.toArray(new Predicate[0]));
         };
         return contratoRepository.findAll(spec);
@@ -74,11 +80,15 @@ public class ContratoService {
     public Map<StatusContrato, Long> contarContratosPorStatus(Integer condominioId) {
         Specification<Contrato> spec = (root, query, cb) -> {
             if (condominioId == null) {
-                return cb.conjunction(); // Retorna uma condição "verdadeira" que não filtra nada
+                return cb.conjunction(); 
             }
             return cb.equal(root.get("condominio").get("conCod"), condominioId);
         };
-        return contratoRepository.findAll(spec).stream()
+        
+        List<Contrato> todosContratos = contratoRepository.findAll(spec);
+        todosContratos.forEach(contrato -> contrato.setStatus(calcularStatus(contrato.getDataFim())));
+        
+        return todosContratos.stream()
                 .collect(Collectors.groupingBy(Contrato::getStatus, Collectors.counting()));
     }
 
@@ -91,7 +101,8 @@ public class ContratoService {
         contrato.setDataFim(dto.getDataFim());
         contrato.setObservacoes(dto.getObservacoes());
         
-        if (dto.getId() != null && dto.getStatus() != null) {
+        
+        if (dto.getStatus() != null && dto.getStatus() != StatusContrato.ATIVO && dto.getStatus() != StatusContrato.A_VENCER && dto.getStatus() != StatusContrato.FINALIZADO) {
             contrato.setStatus(dto.getStatus());
         } else {
             contrato.setStatus(calcularStatus(dto.getDataFim()));
@@ -100,6 +111,7 @@ public class ContratoService {
 
     private StatusContrato calcularStatus(LocalDate dataFim) {
         LocalDate hoje = LocalDate.now();
+        if (dataFim == null) return StatusContrato.ATIVO; 
         if (dataFim.isBefore(hoje)) return StatusContrato.FINALIZADO;
         if (dataFim.isBefore(hoje.plusDays(30))) return StatusContrato.A_VENCER;
         return StatusContrato.ATIVO;

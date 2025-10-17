@@ -52,7 +52,6 @@ public class UnidadeServiceImpl implements UnidadeService {
     @Transactional(readOnly = true)
     public List<Unidade> findByCondominioId(Integer condominioId) {
         checkAdminOrSindicoPermissionForCondominio(condominioId);
-        // ===== CHAMADA AO MÉTODO CORRIGIDO =====
         return unidadeRepository.findAtivasByCondominioConCodWithCondominio(condominioId);
     }
 
@@ -107,25 +106,28 @@ public class UnidadeServiceImpl implements UnidadeService {
     @Transactional(readOnly = true)
     public List<Unidade> listarTodasUnidades(boolean incluirInativas, String statusOcupacao, String busca) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         List<Unidade> unidadesAutorizadas;
 
-        if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) {
+        if (userDetails.getPessoa().getPesIsGlobalAdmin()) {
             unidadesAutorizadas = incluirInativas ? unidadeRepository.findAllWithCondominio() : unidadeRepository.findByUniAtivaWithCondominio(true);
         } else {
-            Set<Integer> condoIdsComAcessoAdmin = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_");
+            Set<Integer> condoIdsComAcessoAdmin = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_", "ROLE_FUNCIONARIO_ADM");
             if (!condoIdsComAcessoAdmin.isEmpty()) {
                 List<Condominio> condominiosGerenciados = condominioRepository.findAllById(condoIdsComAcessoAdmin);
                 unidadesAutorizadas = unidadeRepository.findByCondominioInWithCondominio(condominiosGerenciados);
-            } else {
-                UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-                Pessoa pessoaLogada = userDetails.getPessoa();
-                List<Ocupante> vinculosOcupante = ocupanteRepository.findByPessoa(pessoaLogada);
-                unidadesAutorizadas = vinculosOcupante.stream().map(Ocupante::getUnidade).collect(Collectors.toList());
+            } else { // Assume MORADOR ou outro papel restrito
+                List<Ocupante> vinculosOcupante = ocupanteRepository.findByPessoa(userDetails.getPessoa());
+                unidadesAutorizadas = vinculosOcupante.stream()
+                                         .map(Ocupante::getUnidade)
+                                         .collect(Collectors.toList());
             }
 
             if (!incluirInativas) {
-                unidadesAutorizadas = unidadesAutorizadas.stream().filter(u -> u.getUniAtiva() != null && u.getUniAtiva()).collect(Collectors.toList());
+                unidadesAutorizadas = unidadesAutorizadas.stream()
+                                         .filter(u -> u.getUniAtiva() != null && u.getUniAtiva())
+                                         .collect(Collectors.toList());
             }
         }
 
@@ -140,7 +142,7 @@ public class UnidadeServiceImpl implements UnidadeService {
             String buscaLower = busca.toLowerCase();
             stream = stream.filter(u ->
                     (u.getUniNumero() != null && u.getUniNumero().toLowerCase().contains(buscaLower)) ||
-                            (u.getBloco() != null && u.getBloco().toLowerCase().contains(buscaLower))
+                    (u.getBloco() != null && u.getBloco().toLowerCase().contains(buscaLower))
             );
         }
 

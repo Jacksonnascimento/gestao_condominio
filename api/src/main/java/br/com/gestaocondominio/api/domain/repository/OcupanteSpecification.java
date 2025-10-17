@@ -16,17 +16,15 @@ import java.util.List;
 
 public class OcupanteSpecification {
 
-    public static Specification<Ocupante> comFiltros(Integer condominioId, String busca, OcupanteVinculo vinculo) {
+    public static Specification<Ocupante> comFiltros(Integer condominioId, String busca, OcupanteVinculo vinculo, Integer unidadeId) {
         
         return (root, query, criteriaBuilder) -> {
             
-            
             if (Long.class != query.getResultType() && long.class != query.getResultType()) {
-                 root.fetch("pessoa", JoinType.LEFT);
-                 root.fetch("unidade", JoinType.LEFT).fetch("condominio", JoinType.LEFT);
-                 query.distinct(true);
+                   root.fetch("pessoa", JoinType.LEFT);
+                   root.fetch("unidade", JoinType.LEFT).fetch("condominio", JoinType.LEFT);
+                   query.distinct(true);
             }
-
             
             List<Predicate> predicates = new ArrayList<>();
 
@@ -34,6 +32,12 @@ public class OcupanteSpecification {
                 Join<Ocupante, Unidade> unidadeJoin = root.join("unidade");
                 Join<Unidade, Condominio> condominioJoin = unidadeJoin.join("condominio");
                 predicates.add(criteriaBuilder.equal(condominioJoin.get("conCod"), condominioId));
+            }
+
+            
+            if (unidadeId != null) {
+                Join<Ocupante, Unidade> unidadeJoin = root.join("unidade");
+                predicates.add(criteriaBuilder.equal(unidadeJoin.get("uniCod"), unidadeId));
             }
 
             if (StringUtils.hasText(busca)) {

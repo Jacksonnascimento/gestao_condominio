@@ -16,7 +16,8 @@
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Gestão de Ocupantes</h1>
-                    <p class="page-subtitle">Controle e gerencie os vínculos dos ocupantes com as unidades.</p>
+                    <p class="page-subtitle" th:if="${isGerencial}">Controle e gerencie os vínculos dos ocupantes com as unidades.</p>
+                    <p class="page-subtitle" th:unless="${isGerencial}" th:if="${unidadeDoMorador != null}">Gerencie os ocupantes da sua unidade: <strong th:text="${unidadeDoMorador.uniNumero}"></strong></p>
                 </div>
                 <button class="btn-primary" onclick="openForm('/ocupantes/novo')">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
@@ -24,7 +25,7 @@
                 </button>
             </div>
 
-            <div class="summary-cards" style="grid-template-columns: repeat(6, 1fr);">
+            <div th:if="${isGerencial}" class="summary-cards" style="grid-template-columns: repeat(6, 1fr);">
                 <div class="card"><div class="card-icon icon-total"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.964A3 3 0 0115 12a3 3 0 01-3 3m-3-3a3 3 0 100-6 3 3 0 000 6zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><div><span class="label">Total</span><span class="value" th:text="${totalOcupantes}">0</span></div></div>
                 <div class="card"><div class="card-icon icon-proprietario"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg></div><div><span class="label">Proprietários</span><span class="value" th:text="${totalProprietarios}">0</span></div></div>
                 <div class="card"><div class="card-icon icon-locatario"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-1.5m-15-13.5H18M15 7.5h3" /></svg></div><div><span class="label">Locatários</span><span class="value" th:text="${totalLocatarios}">0</span></div></div>
@@ -40,7 +41,7 @@
                         <option value="">Todos os Vínculos</option>
                         <option th:each="v : ${vinculosDisponiveis}" th:value="${v.name()}" th:text="${v.getDescricao()}" th:selected="${v == vinculoFiltro}"></option>
                     </select>
-                    <select name="unidadeId">
+                    <select name="unidadeId" th:if="${isGerencial}">
                         <option value="">Todas as Unidades</option>
                         <option th:each="u : ${unidadesDisponiveis}" th:value="${u.uniCod}" th:text="${u.uniNumero}" th:selected="${u.uniCod == unidadeFiltro}"></option>
                     </select>
@@ -77,135 +78,140 @@
     <div id="formModal" class="modal">
         <div class="modal-content" id="modalContent"></div>
     </div>
-
+    
     <script>
-        const modal = document.getElementById('formModal');
-        const modalContent = document.getElementById('modalContent');
-
-        async function openForm(url) {
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('Falha ao carregar o formulário.');
-                modalContent.innerHTML = await response.text();
-                modal.style.display = 'flex';
-                toggleMultipropriedadeFields();
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Não foi possível carregar o formulário.');
-            }
-        }
-
-        function closeModal() {
-            modal.style.display = 'none';
-            modalContent.innerHTML = '';
-        }
-
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                closeModal();
-            }
-        }
-
-        modalContent.addEventListener('submit', async function(event) {
-            if (event.target.id === 'ocupanteForm') {
-                event.preventDefault();
-                const form = event.target;
-                const formData = new FormData(form);
-                const url = form.action;
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('formModal');
+            const modalContent = document.getElementById('modalContent');
+    
+            window.openForm = async function(url) {
                 try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        body: new URLSearchParams(formData)
-                    });
-                    if (response.ok) {
-                        window.location.reload();
-                    } else {
-                        const errorData = await response.text();
-                        alert('Erro: ' + errorData);
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error('Falha ao carregar o formulário.');
+                    modalContent.innerHTML = await response.text();
+                    modal.style.display = 'flex';
+                    
+                    const vinculoSelect = document.getElementById('vinculo');
+                    if(vinculoSelect) {
+                        toggleMultipropriedadeFields();
                     }
                 } catch (error) {
-                    console.error('Erro ao enviar formulário:', error);
-                    alert('Não foi possível comunicar com o servidor.');
+                    console.error('Erro:', error);
+                    alert('Não foi possível carregar o formulário.');
+                }
+            }
+    
+            window.closeModal = function() {
+                modal.style.display = 'none';
+                modalContent.innerHTML = '';
+            }
+    
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    closeModal();
+                }
+            }
+    
+            document.body.addEventListener('submit', async function(event) {
+                if (event.target.matches('#ocupanteForm')) {
+                    event.preventDefault();
+                    const form = event.target;
+                    const formData = new FormData(form);
+                    const url = form.action;
+                    try {
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            body: new URLSearchParams(formData)
+                        });
+                        if (response.redirected) {
+                            window.location.href = response.url;
+                        } else {
+                            const errorData = await response.text();
+                            alert('Erro: ' + (errorData || 'Ocorreu um problema ao salvar.'));
+                        }
+                    } catch (error) {
+                        console.error('Erro ao enviar formulário:', error);
+                        alert('Não foi possível comunicar com o servidor.');
+                    }
+                }
+            });
+    
+            document.body.addEventListener('blur', function(event) {
+                if (event.target.matches('#pesCpfCnpj')) {
+                    buscarPessoaPorCpf(event.target);
+                }
+            }, true);
+    
+            document.body.addEventListener('change', function(event) {
+                if (event.target.matches('#vinculo')) {
+                    toggleMultipropriedadeFields();
+                }
+                if (event.target.matches('#condominioId')) {
+                    carregarUnidadesPorCondominio(event.target.value);
+                }
+            });
+    
+            async function carregarUnidadesPorCondominio(condominioId) {
+                const unidadeSelect = document.getElementById('unidadeId');
+                if (!unidadeSelect) return;
+                unidadeSelect.innerHTML = '<option value="">Carregando...</option>';
+                if (!condominioId) {
+                    unidadeSelect.innerHTML = '<option value="">Selecione um condomínio</option>';
+                    return;
+                }
+                try {
+                    const response = await fetch(`/api/unidades/por-condominio/${condominioId}`);
+                    if (!response.ok) throw new Error('Falha ao buscar unidades.');
+                    const unidades = await response.json();
+                    unidadeSelect.innerHTML = '<option value="">Selecione...</option>';
+                    unidades.forEach(unidade => {
+                        unidadeSelect.innerHTML += `<option value="${unidade.uniCod}">${unidade.uniNumero}</option>`;
+                    });
+                } catch (error) {
+                    console.error('Erro na função carregarUnidadesPorCondominio:', error);
+                    unidadeSelect.innerHTML = '<option value="">Erro ao carregar</option>';
+                }
+            }
+            
+            async function buscarPessoaPorCpf(cpfInput) {
+                const cpf = cpfInput.value;
+                const h2 = document.querySelector('.modal-content h2');
+                if ((h2 && h2.textContent.startsWith('Editar')) || !cpf || cpf.length < 11) {
+                    return;
+                }
+                try {
+                    const response = await fetch(`/api/pessoas/por-cpf/${cpf}`);
+                    const nomeInput = document.getElementById('pesNome');
+                    const emailInput = document.getElementById('pesEmail');
+                    const telefoneInput = document.getElementById('pesTelefone');
+                    
+                    const fieldsToToggle = [nomeInput, emailInput, telefoneInput];
+
+                    if (response.ok) {
+                        const pessoa = await response.json();
+                        nomeInput.value = pessoa.pesNome;
+                        emailInput.value = pessoa.pesEmail;
+                        telefoneInput.value = pessoa.pesTelefone;
+                        fieldsToToggle.forEach(field => field.readOnly = true);
+                    } else {
+                        fieldsToToggle.forEach(field => {
+                            if (field !== cpfInput) field.value = '';
+                            field.readOnly = false;
+                        });
+                    }
+                } catch (error) {
+                    console.error('Erro ao buscar pessoa:', error);
+                }
+            }
+    
+            window.toggleMultipropriedadeFields = function() {
+                const vinculoSelect = document.getElementById('vinculo');
+                const fields = document.getElementById('multipropriedade-fields');
+                if (vinculoSelect && fields) {
+                    fields.style.display = (vinculoSelect.value === 'MULTIPROPRIETARIO') ? 'block' : 'none';
                 }
             }
         });
-
-        modalContent.addEventListener('blur', function(event) {
-            if (event.target.id === 'pesCpfCnpj') {
-                buscarPessoaPorCpf(event.target);
-            }
-        }, true);
-
-        modalContent.addEventListener('change', function(event) {
-            if (event.target.id === 'vinculo') {
-                toggleMultipropriedadeFields();
-            }
-            if (event.target.id === 'condominioId') {
-                carregarUnidadesPorCondominio(event.target.value);
-            }
-        });
-
-        async function carregarUnidadesPorCondominio(condominioId) {
-            const unidadeSelect = document.getElementById('unidadeId');
-            if (!unidadeSelect) return;
-            unidadeSelect.innerHTML = '<option value="">Carregando...</option>';
-            if (!condominioId) {
-                unidadeSelect.innerHTML = '<option value="">Selecione um condomínio</option>';
-                return;
-            }
-            try {
-                const response = await fetch(`/api/unidades/por-condominio/${condominioId}`);
-                if (!response.ok) throw new Error('Falha ao buscar unidades.');
-                const unidades = await response.json();
-                unidadeSelect.innerHTML = '<option value="">Selecione...</option>';
-                unidades.forEach(unidade => {
-                    unidadeSelect.innerHTML += `<option value="${unidade.uniCod}">${unidade.uniNumero}</option>`;
-                });
-            } catch (error) {
-                console.error('Erro na função carregarUnidadesPorCondominio:', error);
-                unidadeSelect.innerHTML = '<option value="">Erro ao carregar</option>';
-            }
-        }
-        
-        async function buscarPessoaPorCpf(cpfInput) {
-            const cpf = cpfInput.value;
-            const h2 = modalContent.querySelector('h2');
-            if ((h2 && h2.textContent.startsWith('Editar')) || !cpf || cpf.length < 11) {
-                return;
-            }
-            try {
-                const response = await fetch(`/api/pessoas/por-cpf/${cpf}`);
-                const nomeInput = document.getElementById('pesNome');
-                const emailInput = document.getElementById('pesEmail');
-                const telefoneInput = document.getElementById('pesTelefone');
-                if (response.ok) {
-                    const pessoa = await response.json();
-                    nomeInput.value = pessoa.pesNome;
-                    emailInput.value = pessoa.pesEmail;
-                    telefoneInput.value = pessoa.pesTelefone;
-                    nomeInput.readOnly = true;
-                    emailInput.readOnly = true;
-                    telefoneInput.readOnly = true;
-                } else {
-                    nomeInput.value = '';
-                    emailInput.value = '';
-                    telefoneInput.value = '';
-                    nomeInput.readOnly = false;
-                    emailInput.readOnly = false;
-                    telefoneInput.readOnly = false;
-                }
-            } catch (error) {
-                console.error('Erro ao buscar pessoa:', error);
-            }
-        }
-
-        function toggleMultipropriedadeFields() {
-            const vinculoSelect = document.getElementById('vinculo');
-            const fields = document.getElementById('multipropriedade-fields');
-            if (vinculoSelect && fields) {
-                fields.style.display = (vinculoSelect.value === 'MULTIPROPRIETARIO') ? 'block' : 'none';
-            }
-        }
     </script>
 </body>
 </html>

@@ -30,11 +30,11 @@ public class OcupanteController {
     public ResponseEntity<List<OcupanteResponseDTO>> consultarOcupantes(
             @RequestParam(required = false) Integer condominioId,
             @RequestParam(required = false) String busca,
-            @RequestParam(required = false) OcupanteVinculo vinculo) {
+            @RequestParam(required = false) OcupanteVinculo vinculo,
+            @RequestParam(required = false) Integer unidadeId) { // PARÂMETRO ADICIONADO
         
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
-        // ===== LINHA CORRIGIDA (agora recebe o DTO diretamente do serviço) =====
-        List<OcupanteResponseDTO> dtos = ocupanteService.consultarOcupantesPorUsuario(usuarioLogado, condominioId, busca, vinculo);
+        List<OcupanteResponseDTO> dtos = ocupanteService.consultarOcupantesPorUsuario(usuarioLogado, condominioId, busca, vinculo, unidadeId);
         return new ResponseEntity<>(dtos, HttpStatus.OK);
     }
 

@@ -28,43 +28,60 @@ import java.util.stream.Collectors;
 @Service("ocupanteService")
 public class OcupanteService {
 
-    @Autowired private OcupanteRepository ocupanteRepository;
-    @Autowired private PessoaRepository pessoaRepository;
-    @Autowired private UnidadeRepository unidadeRepository;
-    @Autowired private PessoaService pessoaService;
-    @Autowired private UsuarioCondominioService usuarioCondominioService;
+    @Autowired
+    private OcupanteRepository ocupanteRepository;
+    @Autowired
+    private PessoaRepository pessoaRepository;
+    @Autowired
+    private UnidadeRepository unidadeRepository;
+    @Autowired
+    private PessoaService pessoaService;
+    @Autowired
+    private UsuarioCondominioService usuarioCondominioService;
 
     @Transactional(readOnly = true)
-    public List<OcupanteResponseDTO> consultarOcupantesPorUsuario(Pessoa usuario, Integer condominioId, String busca, OcupanteVinculo vinculo) {
-        List<Ocupante> ocupantes = findOcupantesByUsuario(usuario, condominioId, busca, vinculo);
+    public List<OcupanteResponseDTO> consultarOcupantesPorUsuario(Pessoa usuario, Integer condominioId, String busca,
+            OcupanteVinculo vinculo, Integer unidadeId) {
+        List<Ocupante> ocupantes = findOcupantesByUsuario(usuario, condominioId, busca, vinculo, unidadeId);
         return ocupantes.stream()
                 .map(OcupanteResponseDTO::new)
                 .collect(Collectors.toList());
     }
 
-    private List<Ocupante> findOcupantesByUsuario(Pessoa usuario, Integer condominioId, String busca, OcupanteVinculo vinculo) {
-        if (usuario.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuario, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM)) {
-            Specification<Ocupante> spec = OcupanteSpecification.comFiltros(condominioId, busca, vinculo);
+    private List<Ocupante> findOcupantesByUsuario(Pessoa usuario, Integer condominioId, String busca,
+            OcupanteVinculo vinculo, Integer unidadeId) {
+        if (usuario.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuario, UserRole.SINDICO,
+                UserRole.ADMIN, UserRole.FUNCIONARIO_ADM)) {
+            Specification<Ocupante> spec = OcupanteSpecification.comFiltros(condominioId, busca, vinculo, unidadeId);
             return ocupanteRepository.findAll(spec);
-        } else if (usuarioCondominioService.possuiRole(usuario, UserRole.MORADOR)) {
+        } else {
             Optional<Ocupante> ocupanteOpt = ocupanteRepository.findByPessoa(usuario).stream().findFirst();
             if (ocupanteOpt.isPresent()) {
-                return ocupanteRepository.findByUnidade(ocupanteOpt.get().getUnidade());
+                Unidade unidadeDoMorador = ocupanteOpt.get().getUnidade();
+                return ocupanteRepository.findByUnidade(unidadeDoMorador);
             }
         }
         return Collections.emptyList();
     }
 
+    // Assinatura sobrecarregada para não quebrar o controller antigo
+    public List<OcupanteResponseDTO> consultarOcupantesPorUsuario(Pessoa usuario, Integer condominioId, String busca,
+            OcupanteVinculo vinculo) {
+        return this.consultarOcupantesPorUsuario(usuario, condominioId, busca, vinculo, null);
+    }
+
     @Transactional(readOnly = true)
     public Map<OcupanteVinculo, Long> contarOcupantesPorUsuario(Pessoa usuario, Integer condominioId) {
-        List<Ocupante> ocupantes = findOcupantesByUsuario(usuario, condominioId, null, null);
+        List<Ocupante> ocupantes = findOcupantesByUsuario(usuario, condominioId, null, null, null);
         return ocupantes.stream()
                 .collect(Collectors.groupingBy(Ocupante::getOcuVinculo, Collectors.counting()));
     }
 
+    // O restante da classe permanece igual...
     @Transactional
     public Ocupante cadastrarOcupante(OcupanteRequestDTO dto) {
-        if (dto.getUnidadeId() == null || dto.getVinculo() == null || dto.getInicioOcupacao() == null || dto.getPesCpfCnpj() == null || dto.getPesCpfCnpj().isBlank()) {
+        if (dto.getUnidadeId() == null || dto.getVinculo() == null || dto.getInicioOcupacao() == null
+                || dto.getPesCpfCnpj() == null || dto.getPesCpfCnpj().isBlank()) {
             throw new IllegalArgumentException("CPF/CNPJ, Unidade, Vínculo e Início da Ocupação são obrigatórios.");
         }
 
@@ -80,7 +97,8 @@ public class OcupanteService {
                 });
 
         Unidade unidade = unidadeRepository.findById(dto.getUnidadeId())
-                .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + dto.getUnidadeId()));
+                .orElseThrow(
+                        () -> new IllegalArgumentException("Unidade não encontrada com o ID: " + dto.getUnidadeId()));
 
         ocupanteRepository.findByPessoaAndUnidade(pessoa, unidade).ifPresent(m -> {
             throw new IllegalArgumentException("Esta pessoa já está cadastrada como ocupante desta unidade.");
@@ -141,7 +159,8 @@ public class OcupanteService {
         Ocupante ocupante = ocupanteRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ocupante não encontrado"));
 
-        if (usuario.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuario, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM)) {
+        if (usuario.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuario, UserRole.SINDICO,
+                UserRole.ADMIN, UserRole.FUNCIONARIO_ADM)) {
             return ocupante;
         }
 
@@ -153,5 +172,13 @@ public class OcupanteService {
         }
 
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso Negado");
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Unidade> findUnidadeByMorador(Pessoa morador) {
+        return ocupanteRepository.findByPessoa(morador)
+                .stream()
+                .findFirst()
+                .map(Ocupante::getUnidade);
     }
 }

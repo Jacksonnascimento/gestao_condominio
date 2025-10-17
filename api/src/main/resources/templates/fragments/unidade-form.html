@@ -11,14 +11,14 @@
               th:action="${unidadeId != null ? '/unidades/editar/' + unidadeId : '/unidades/salvar'}" 
               method="post">
             
-            <div class="form-group" th:if="${isMultiCondo}">
+            <div class="form-group" th:if="${showCondominioInfo}">
                 <label for="conCod">Condomínio *</label>
                 <select id="conCod" th:field="*{conCod}" required>
                     <option value="">Selecione o Condomínio...</option>
-                    <option th:each="condo : ${condominiosDisponiveis}" th:value="${condo.conCod}" th:text="${condo.nome}"></option>
+                    <option th:each="condo : ${condominiosDisponiveis}" th:value="${condo.conCod}" th:text="${condo.conNome}"></option>
                 </select>
             </div>
-            <input type="hidden" th:if="${!isMultiCondo}" th:field="*{conCod}" />
+            <input type="hidden" th:if="${!showCondominioInfo}" th:field="*{conCod}" />
 
             <div class="form-row">
                 <div class="form-group">

@@ -1,9 +1,7 @@
 package br.com.gestaocondominio.api.domain.repository;
 
-import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.entity.Ocupante;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
-import br.com.gestaocondominio.api.domain.entity.Unidade;
 import br.com.gestaocondominio.api.domain.enums.OcupanteVinculo;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
@@ -21,23 +19,19 @@ public class OcupanteSpecification {
         return (root, query, criteriaBuilder) -> {
             
             if (Long.class != query.getResultType() && long.class != query.getResultType()) {
-                   root.fetch("pessoa", JoinType.LEFT);
-                   root.fetch("unidade", JoinType.LEFT).fetch("condominio", JoinType.LEFT);
-                   query.distinct(true);
+                root.fetch("pessoa", JoinType.LEFT);
+                root.fetch("unidade", JoinType.LEFT).fetch("condominio", JoinType.LEFT);
+                query.distinct(true);
             }
             
             List<Predicate> predicates = new ArrayList<>();
 
             if (condominioId != null) {
-                Join<Ocupante, Unidade> unidadeJoin = root.join("unidade");
-                Join<Unidade, Condominio> condominioJoin = unidadeJoin.join("condominio");
-                predicates.add(criteriaBuilder.equal(condominioJoin.get("conCod"), condominioId));
+                predicates.add(criteriaBuilder.equal(root.get("unidade").get("condominio").get("conCod"), condominioId));
             }
-
             
             if (unidadeId != null) {
-                Join<Ocupante, Unidade> unidadeJoin = root.join("unidade");
-                predicates.add(criteriaBuilder.equal(unidadeJoin.get("uniCod"), unidadeId));
+                predicates.add(criteriaBuilder.equal(root.get("unidade").get("uniCod"), unidadeId));
             }
 
             if (StringUtils.hasText(busca)) {

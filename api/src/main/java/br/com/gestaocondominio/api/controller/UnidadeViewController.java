@@ -40,14 +40,14 @@ public class UnidadeViewController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public String listarUnidades(Model model,
-                                 @RequestParam(required = false) Integer condominioId,
-                                 @RequestParam(required = false) String busca,
-                                 @RequestParam(required = false) String status) {
+                                   @RequestParam(required = false) Integer condominioId,
+                                   @RequestParam(required = false) String busca,
+                                   @RequestParam(required = false, name = "status") String statusFiltro) {
         
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         carregarDadosPadrao(model);
 
-        List<Unidade> unidades = unidadeService.listarTodasUnidades(true, status, busca);
+        List<Unidade> unidades = unidadeService.listarTodasUnidades(true, statusFiltro, busca);
 
         if (condominioId != null) {
             unidades = unidades.stream()
@@ -70,11 +70,11 @@ public class UnidadeViewController {
         model.addAttribute("unidades", unidades);
         model.addAttribute("condominioFiltro", condominioId);
         model.addAttribute("buscaFiltro", busca);
-        model.addAttribute("statusFiltro", status);
+        model.addAttribute("statusFiltro", statusFiltro);
         model.addAttribute("showCondominioInfo", showCondominioInfo);
         
-        long totalUnidades = unidades.size();
-        model.addAttribute("totalUnidades", totalUnidades);
+        
+        model.addAttribute("totalUnidades", unidades.size());
         model.addAttribute("totalOcupadas", unidades.stream().filter(u -> u.getUniStatusOcupacao() == UnidadeStatusOcupacao.OCUPADA).count());
         model.addAttribute("totalVazias", unidades.stream().filter(u -> u.getUniStatusOcupacao() == UnidadeStatusOcupacao.VAZIA).count());
         model.addAttribute("totalMultipropriedade", unidades.stream().filter(u -> u.getUniStatusOcupacao() == UnidadeStatusOcupacao.MULTIPROPRIEDADE).count());
@@ -96,7 +96,7 @@ public class UnidadeViewController {
              List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(true);
              model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
              if (condominiosDisponiveis.size() > 1) {
-                showCondominioInfo = true;
+                 showCondominioInfo = true;
              }
         } else {
             Integer idCondoUsuario = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);

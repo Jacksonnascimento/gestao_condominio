@@ -45,18 +45,28 @@
                 <div class="card"><div class="card-icon icon-reforma"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.472-2.472a3.375 3.375 0 00-4.773-4.773L6.23 15.729a3.375 3.375 0 004.773 4.773l2.472-2.472z" /></svg></div><div><span class="label">Em Reforma</span><span class="value" th:text="${totalEmReforma}">0</span></div></div>
             </div>
             
+            <div class="filter-tabs">
+                <a th:href="@{/unidades(condominioId=${condominioFiltro}, busca=${buscaFiltro})}" 
+                   th:classappend="${statusFiltro == null or statusFiltro == ''} ? 'active'">Todos</a>
+                <a th:href="@{/unidades(status='OCUPADA', condominioId=${condominioFiltro}, busca=${buscaFiltro})}" 
+                   th:classappend="${statusFiltro == 'OCUPADA'} ? 'active'">Ocupada</a>
+                <a th:href="@{/unidades(status='VAZIA', condominioId=${condominioFiltro}, busca=${buscaFiltro})}" 
+                   th:classappend="${statusFiltro == 'VAZIA'} ? 'active'">Vazia</a>
+                <a th:href="@{/unidades(status='EM_REFORMA', condominioId=${condominioFiltro}, busca=${buscaFiltro})}" 
+                   th:classappend="${statusFiltro == 'EM_REFORMA'} ? 'active'">Em Reforma</a>
+                <a th:href="@{/unidades(status='MULTIPROPRIEDADE', condominioId=${condominioFiltro}, busca=${buscaFiltro})}" 
+                   th:classappend="${statusFiltro == 'MULTIPROPRIEDADE'} ? 'active'">Multipropriedade</a>
+            </div>
+
             <div class="filter-container">
                  <form th:action="@{/unidades}" method="get" class="search-form">
+                     <input type="hidden" name="status" th:value="${statusFiltro}" />
                      <input type="search" name="busca" placeholder="Buscar por número ou bloco..." th:value="${buscaFiltro}">
-                     <select name="status" th:if="${isGerencial}">
-                         <option value="">Todos os Status</option>
-                         <option th:each="s : ${statusOcupacao}" th:value="${s.name()}" th:text="${s.getDescricao()}" th:selected="${s.name() == statusFiltro}"></option>
-                     </select>
-                     <select name="condominioId" th:if="${showCondominioInfo}">
+                     <select name="condominioId" th:if="${showCondominioInfo}" onchange="this.form.submit()">
                          <option value="">Todos os Condomínios</option>
                          <option th:each="c : ${condominiosDisponiveis}" th:value="${c.conCod}" th:text="${c.conNome}" th:selected="${c.conCod == condominioFiltro}"></option>
                      </select>
-                     <button th:if="${isGerencial or showCondominioInfo}" type="submit" class="btn-secondary">Filtrar</button>
+                     <button type="submit" class="btn-secondary">Buscar</button>
                  </form>
             </div>
 

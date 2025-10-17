@@ -1,9 +1,8 @@
 package br.com.gestaocondominio.api.domain.repository;
 
 import br.com.gestaocondominio.api.domain.entity.Ocupante;
-import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.enums.OcupanteVinculo;
-import jakarta.persistence.criteria.Join;
+
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
@@ -35,12 +34,11 @@ public class OcupanteSpecification {
             }
 
             if (StringUtils.hasText(busca)) {
-                Join<Ocupante, Pessoa> pessoaJoin = root.join("pessoa");
                 String buscaPattern = "%" + busca.toLowerCase() + "%";
                 
                 Predicate buscaPredicate = criteriaBuilder.or(
-                    criteriaBuilder.like(criteriaBuilder.lower(pessoaJoin.get("pesNome")), buscaPattern),
-                    criteriaBuilder.like(criteriaBuilder.lower(pessoaJoin.get("pesEmail")), buscaPattern)
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("pessoa").get("pesNome")), buscaPattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("pessoa").get("pesEmail")), buscaPattern)
                 );
                 predicates.add(buscaPredicate);
             }

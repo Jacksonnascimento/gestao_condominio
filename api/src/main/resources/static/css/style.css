@@ -1,4 +1,3 @@
-/* GERAL */
 :root {
     --primary-color: #3b82f6;
     --primary-hover-color: #2563eb;
@@ -14,7 +13,6 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: var(--font-family
 .main-container { display: flex; height: 100vh; }
 .content { flex: 1; padding: 2rem; overflow-y: auto; background-color: #e9ecef; }
 
-/* SIDEBAR */
 .sidebar { width: 240px; background-color: #ffffff; color: #333; display: flex; flex-direction: column; border-right: 1px solid var(--border-color);}
 .sidebar-logo-area { display: flex; align-items: center; gap: 12px; padding: 20px; }
 .sidebar-logo { height: 40px; width: auto; }
@@ -28,7 +26,6 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: var(--font-family
 .logout-btn { background: none; border: 1px solid var(--danger-color); color: var(--danger-color); width: 100%; padding: 10px; border-radius: 6px; cursor: pointer; transition: all 0.3s;}
 .logout-btn:hover { background-color: var(--danger-color); color: white; }
 
-/* ESTILOS DE PÁGINA (HEADER, TÍTULOS, BOTÕES) */
 .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; }
 .page-title { font-size: 1.75rem; font-weight: 600; color: #1f2937; margin: 0; }
 .page-subtitle { margin: 4px 0 0 0; color: var(--text-light-color); }
@@ -37,7 +34,6 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: var(--font-family
 .btn-icon { width: 20px; height: 20px; }
 .btn-icon-sm { width: 16px; height: 16px; }
 
-/* CARDS DE RESUMO (DASHBOARD & UNIDADES) */
 .summary-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.5rem; margin-bottom: 1.5rem; }
 .summary-cards.dashboard-cards { grid-template-columns: repeat(4, 1fr); }
 .card { background-color: var(--card-bg-color); padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 1rem; transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
@@ -45,15 +41,15 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: var(--font-family
 .card .label { color: var(--text-light-color); font-size: 0.9rem; }
 .card-icon { width: 48px; height: 48px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;}
 .card-icon svg, .card-icon i { width: 24px; height: 24px; }
-.icon-total, .icon-unidades { background-color: #e0e7ff; color: #4338ca; }
-.icon-ocupantes { background-color: #dcfce7; color: #166534; }
-.icon-vazias { background-color: #fef9c3; color: #854d0e; }
+.icon-total, .icon-unidades, .icon-total-contratos { background-color: #e0e7ff; color: #4338ca; }
+.icon-ocupantes, .icon-ativos { background-color: #dcfce7; color: #166534; }
+.icon-vazias, .icon-a-vencer { background-color: #fef9c3; color: #854d0e; }
 .icon-multipropriedade { background-color: #f3e8ff; color: #581c87; }
-.icon-reforma { background-color: #fee2e2; color: #b91c1c; }
+.icon-reforma, .icon-rescindidos { background-color: #fee2e2; color: #b91c1c; }
 .icon-funcionarios { background-color: #cffafe; color: #0e7490; }
 .icon-contratos { background-color: #fef3c7; color: #b45309; }
+.icon-finalizados { background-color: #e5e7eb; color: #64748b; }
 
-/* FILTROS E GRID (UNIDADES & OCUPANTES) */
 .toolbar { display: flex; justify-content: flex-start; align-items: center; margin-bottom: 1rem; }
 .search-form { display: flex; gap: 8px; }
 .search-form input { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; width: 300px; }
@@ -63,7 +59,8 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: var(--font-family
 .filter-tabs a.active { background-color: #3498db; color: white; border-color: #3498db; }
 .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
 
-.unit-card {
+.unit-card,
+.contrato-card {
     background-color: var(--card-bg-color);
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
@@ -78,14 +75,16 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: var(--font-family
 .condo-badge { background-color: #e5e7eb; color: var(--text-light-color); padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; display: inline-block; margin-bottom: 6px; text-transform: uppercase; }
 .status { padding: 4px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; color: white; text-transform: uppercase; }
 .status-ocupada { background-color: #27ae60; } .status-vazia { background-color: #f1c40f; color: #333; } .status-em_reforma { background-color: #e67e22; } .status-multipropriedade { background-color: #8e44ad; }
-.card-body { padding: 16px; flex-grow: 1; } .card-body p { margin: 0 0 10px 0; font-size: 0.85rem; color: var(--text-light-color); display: flex; align-items: center; gap: 8px;} .card-body p strong { color: var(--text-color); }
+.card-body { padding: 16px; flex-grow: 1; }
+.card-body p { margin: 0 0 10px 0; font-size: 0.85rem; color: var(--text-light-color); display: flex; align-items: center; gap: 8px;}
+.card-body p:last-child { margin-bottom: 0; }
+.card-body p strong { color: var(--text-color); }
 .info-icon { width: 16px; height: 16px; flex-shrink: 0; color: #9ca3af; }
 .card-footer { padding: 12px 16px; text-align: right; background-color: #f9fafb; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 8px;}
 .card-footer form { margin: 0; }
 .btn-edit, .btn-delete { font-size: 0.8rem; padding: 6px 12px; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; background-color: #fff; display: flex; align-items: center; gap: 6px; transition: background-color 0.2s, color 0.2s, border-color 0.2s; }
 .btn-delete { border-color: var(--danger-color); color: var(--danger-color); }
 
-/* MODAL */
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
 .modal-content { background-color: #fff; padding: 24px; border-radius: 8px; width: 90%; max-width: 600px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
 .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 20px; }
@@ -97,8 +96,7 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: var(--font-family
 .modal-form input, .modal-form select, .modal-form textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
 .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding-top: 20px; border-top: 1px solid var(--border-color); margin-top: 20px; }
 
-/* EFEITOS DE HOVER */
-.card:hover, .unit-card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+.card:hover, .unit-card:hover, .contrato-card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
 .filter-tabs a:not(.active):hover { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
 .btn-edit:hover { background-color: var(--primary-color); border-color: var(--primary-color); color: white; }
 .btn-delete:hover { background-color: var(--danger-color); border-color: var(--danger-color); color: white; }
@@ -111,7 +109,6 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: var(--font-family
     color: var(--primary-color);
 }
 
-/* WIDGETS DASHBOARD */
 .dashboard-widgets { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
 .widget-card { background-color: var(--card-bg-color); padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 .widget-card .card-title { font-size: 1.1rem; font-weight: 600; color: var(--text-color); margin-top: 0; margin-bottom: 1rem; }
@@ -121,7 +118,6 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: var(--font-family
 .widget-card .widget-details { font-size: 0.9rem; color: var(--text-light-color); margin: 0; }
 .widget-card .widget-details span { display: block; margin-top: 4px; }
 
-/* --- ESTILOS PARA A PÁGINA DE OCUPANTES (INCLUI CORREÇÃO DE OVERFLOW) --- */
 .status-proprietario { background-color: #3b82f6; }
 .status-locatario { background-color: #22c55e; }
 .status-promitente_comprador { background-color: #eab308; color: #333; }
@@ -138,58 +134,24 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: var(--font-family
 .filter-container .search-form { display: flex; gap: 1rem; width: 100%; align-items: center; }
 .filter-container .search-form input, .filter-container .search-form select { padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; flex-grow: 1; }
 .filter-container .search-form button { flex-grow: 0; padding: 10px 20px; }
-.unit-card .card-footer .btn-edit, .unit-card .card-footer .btn-delete { color: var(--text-light-color); border-color: #d1d5db; }
+.unit-card .card-footer .btn-edit, .unit-card .card-footer .btn-delete,
+.contrato-card .card-footer .btn-edit, .contrato-card .card-footer .btn-delete {
+    color: var(--text-light-color); border-color: #d1d5db;
+}
 .info-item span { word-wrap: break-word; overflow-wrap: break-word; word-break: break-all; min-width: 0; }
 
-/*
-================================================================================
-  INÍCIO DAS CORREÇÕES E ESTILOS ESPECÍFICOS PARA A PÁGINA DE CONTRATOS
-================================================================================
-*/
-
-/* 1. Herança de Estilo para o Card de Contrato */
-/* Faz o .contrato-card ter a mesma base do .unit-card */
-.contrato-card {
-    background-color: var(--card-bg-color);
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    display: flex;
-    flex-direction: column;
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-.contrato-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-}
-
-/* 2. Cores dos Status dos Contratos (usado no card e na tabela) */
 .status-ativo { background-color: #27ae60; }
 .status-a_vencer { background-color: #f1c40f; color: #333; }
 .status-finalizado { background-color: #95a5a6; }
 .status-rescindido { background-color: var(--danger-color); }
 
-/* 3. Layout interno do Card de Contrato para ficar igual ao Card de Unidade */
-.contrato-card .card-body > p { /* Apenas o parágrafo do "serviço" */
+.contrato-card .card-body > p:first-of-type {
     margin-bottom: 1rem;
 }
 .contrato-card .info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Duas colunas */
-    gap: 10px; /* Espaçamento entre os itens */
-}
-.contrato-card .info-grid p {
-    margin-bottom: 0; /* Remove a margem padrão para alinhar o grid */
-    word-break: break-word; /* Força a quebra de texto para evitar overflow */
-    overflow-wrap: break-word;
-}
-.contrato-card .info-grid p span { /* Garante que o texto dentro do span também quebre */
-    word-break: break-word;
-    overflow-wrap: break-word;
-    min-width: 0;
+    display: block;
 }
 
-
-/* 4. Estilos da Tabela de Histórico (Escopo .contratos-page) */
 .contratos-page .table {
     width: 100%;
     border-collapse: collapse;
@@ -231,11 +193,5 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: var(--font-family
 }
 .contratos-page .table .badge.status-ativo { background-color: #27ae60; }
 .contratos-page .table .badge.status-a_vencer { background-color: #f1c40f; color: #333; }
-.contratos-page .table .badge.status-finalizado { background-color: #95a5a6; }
+.contratos-page .table .badge.status-finalizado { background-color: #95a6a6; }
 .contratos-page .table .badge.status-rescindido { background-color: var(--danger-color); }
-
-/*
-================================================================================
-  FIM DAS CORREÇÕES
-================================================================================
-*/

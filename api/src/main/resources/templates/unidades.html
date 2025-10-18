@@ -8,8 +8,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        .btn-details { font-size: 0.8rem; padding: 6px 12px; border-radius: 4px; border: 1px solid #3b82f6; cursor: pointer; background-color: #3b82f6; color: white; display: flex; align-items: center; gap: 6px; transition: background-color 0.2s, color 0.2s, border-color 0.2s; }
-        .btn-details:hover { background-color: #2563eb; border-color: #2563eb; }
         .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
         .details-section h3 { font-size: 1.1rem; color: #3b82f6; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; margin-top: 20px; margin-bottom: 15px;}
         .details-section .info-item { margin-bottom: 12px; }
@@ -75,7 +73,10 @@
                     <div class="card-header">
                         <div>
                             <div th:if="${showCondominioInfo}" class="condo-badge" th:text="${unidade.condominio.conNome}"></div>
-                            <h3 th:text="'Unidade ' + ${unidade.uniNumero}"></h3>
+                            <h3 class="clickable-title"
+                                th:text="'Unidade ' + ${unidade.uniNumero}"
+                                th:onclick="'openDetails(' + ${unidade.uniCod} + ')'"
+                                title="Clique para ver os detalhes"></h3>
                         </div>
                         <span class="status" th:if="${unidade.uniStatusOcupacao != null}" th:text="${unidade.uniStatusOcupacao.getDescricao()}" th:classappend="${'status-' + #strings.toLowerCase(unidade.uniStatusOcupacao.name())}"></span>
                     </div>
@@ -86,10 +87,6 @@
                         <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-2 0c0 .993-.241 1.929-.668 2.754l-1.524-1.525a.75.75 0 0 0-1.06 1.06l1.524 1.525A4.483 4.483 0 0 1 10 14.5a4.5 4.5 0 0 1-2.754-.668l-1.525 1.524a.75.75 0 0 0 1.06 1.06l1.525-1.524A4.483 4.483 0 0 1 5.5 10c0-.993.241-1.929.668-2.754l1.524 1.525a.75.75 0 0 0 1.06-1.06l-1.524-1.525A4.483 4.483 0 0 1 10 5.5a4.5 4.5 0 0 1 2.754.668l1.525-1.524a.75.75 0 0 0-1.06-1.06l-1.525 1.524A4.483 4.483 0 0 1 14.5 10Z" clip-rule="evenodd" /></svg><strong>Tipo:</strong> <span th:text="${unidade.unidadeTipo != null ? unidade.unidadeTipo.getDescricao() : 'Não definido'}"></span></p>
                     </div>
                     <div class="card-footer">
-                        <button class="btn-details" th:onclick="'openDetails(' + ${unidade.uniCod} + ')'">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon-sm"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0ZM9.25 9.25a.75.75 0 0 0-1.5 0v4.5a.75.75 0 0 0 1.5 0v-4.5Zm1.25.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" /></svg>
-                            Detalhes
-                        </button>
                         <th:block th:if="${isGerencial}">
                             <button class="btn-edit" th:onclick="'openForm(\'/unidades/editar/' + ${unidade.uniCod} + '\')'"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon-sm"><path d="m2.695 14.762-1.262 3.155a.5.5 0 0 0 .65.65l3.155-1.262a4 4 0 0 0 1.343-.885l11.516-11.515a2.5 2.5 0 0 0-3.536-3.536L3.58 13.42a4 4 0 0 0-.885 1.343Z" /></svg>Editar</button>
                             <form th:action="@{'/unidades/excluir/' + ${unidade.uniCod}}" method="post" style="display:inline;"><button type="submit" class="btn-delete" onclick="return confirm('Deseja excluir esta unidade?');"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon-sm"><path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.58.22-2.365.468a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" /></svg>Excluir</button></form>
@@ -105,6 +102,7 @@
     </div>
     
     <script>
+        // Script permanece o mesmo da versão anterior
         const modal = document.getElementById('formModal');
         const modalContent = document.getElementById('modalContent');
 

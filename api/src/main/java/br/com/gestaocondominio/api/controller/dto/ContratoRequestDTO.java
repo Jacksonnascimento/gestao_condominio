@@ -4,6 +4,8 @@ import br.com.gestaocondominio.api.domain.entity.Contrato;
 import br.com.gestaocondominio.api.domain.enums.StatusContrato;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -18,8 +20,13 @@ public class ContratoRequestDTO {
     private BigDecimal valor;
     private String responsavel;
     private StatusContrato status;
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate dataInicio;
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate dataFim;
+    
     private String observacoes;
 
     public void fromEntity(Contrato contrato) {

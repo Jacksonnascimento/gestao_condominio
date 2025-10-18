@@ -6,6 +6,7 @@ import br.com.gestaocondominio.api.domain.enums.TipoPeriodoOcupante;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
@@ -24,8 +25,13 @@ public class OcupanteRequestDTO {
     private String pesTelefone;
     private Integer unidadeId;
     private OcupanteVinculo vinculo;
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate inicioOcupacao;
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate fimOcupacao;
+    
     private String periodoUso;
     private TipoPeriodoOcupante tipoPeriodo;
 

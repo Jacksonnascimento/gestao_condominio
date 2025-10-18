@@ -39,10 +39,11 @@
         </div>
         <div class="form-group">
             <label for="status">Status</label>
-            <select id="status" th:field="*{status}" 
-                    th:disabled="${contrato.id != null and contrato.status.name() != 'ATIVO'}">
-                 <option value="ATIVO">ATIVO</option>
-                 <option value="RESCINDIDO">RESCINDIDO</option>
+            <select id="status" th:field="*{status}">
+                <option value="">Ativo</option>
+                <option th:each="s : ${statusDisponiveis}"
+                        th:if="${s.name() == 'FINALIZADO' or s.name() == 'RESCINDIDO'}"
+                        th:value="${s}" th:text="${s.descricao}"></option>
             </select>
         </div>
     </div>

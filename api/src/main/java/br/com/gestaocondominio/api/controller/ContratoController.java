@@ -30,7 +30,7 @@ public class ContratoController {
             @RequestParam(required = false) StatusContrato status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim) {
-        return ResponseEntity.ok(contratoService.listarContratos(condominioId, busca, status, dataInicio, dataFim));
+        return ResponseEntity.ok(contratoService.listarContratos(condominioId, busca, status, null, null, dataInicio, dataFim));
     }
 
     @GetMapping("/{id}")

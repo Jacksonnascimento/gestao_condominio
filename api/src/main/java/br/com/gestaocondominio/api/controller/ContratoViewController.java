@@ -12,12 +12,14 @@ import br.com.gestaocondominio.api.domain.service.ContratoService;
 import br.com.gestaocondominio.api.domain.service.PessoaService;
 import br.com.gestaocondominio.api.domain.service.UsuarioCondominioService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +39,7 @@ public class ContratoViewController {
         model.addAttribute("nomeUsuarioLogado", usuarioLogado.getPesNome());
         model.addAttribute("currentPage", "contratos");
         model.addAttribute("isGlobalAdmin", usuarioLogado.getPesIsGlobalAdmin());
+        model.addAttribute("statusDisponiveis", StatusContrato.values());
     }
 
     private void checarPermissaoAcesso(Pessoa usuarioLogado) {
@@ -58,6 +61,9 @@ public class ContratoViewController {
     public String listarContratos(Model model,
                                   @RequestParam(required = false) Integer condominioId,
                                   @RequestParam(required = false) String busca,
+                                  @RequestParam(required = false) StatusContrato status,
+                                  @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicioApos,
+                                  @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fimAntes,
                                   @RequestParam(required = false, defaultValue = "ativos") String filtro) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         checarPermissaoAcesso(usuarioLogado);
@@ -69,7 +75,9 @@ public class ContratoViewController {
 
         boolean isProximoVencimento = "a-vencer".equals(filtro);
         boolean isHistorico = "historico".equals(filtro);
-        StatusContrato statusFiltro = "ativos".equals(filtro) ? StatusContrato.ATIVO : null;
+        StatusContrato statusAba = "ativos".equals(filtro) ? StatusContrato.ATIVO : null;
+
+        Integer idCondominioParaFiltrar = condominioId;
 
         if (usuarioLogado.getPesIsGlobalAdmin()) {
             List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(true);
@@ -77,19 +85,19 @@ public class ContratoViewController {
             if (condominiosDisponiveis.size() > 1) {
                 showCondominioInfo = true;
             }
-            contratos = contratoService.listarContratos(condominioId, busca, statusFiltro, isProximoVencimento, isHistorico);
-            totais = contratoService.contarContratosPorStatus(condominioId);
-            model.addAttribute("condominioFiltro", condominioId);
         } else {
-            Integer idCondoUsuario = usuarioCondominioService.findByPessoa(usuarioLogado).stream()
+            idCondominioParaFiltrar = usuarioCondominioService.findByPessoa(usuarioLogado).stream()
                 .findFirst().map(uc -> uc.getCondominio().getConCod()).orElse(null);
-            if (idCondoUsuario == null) {
-                contratos = Collections.emptyList();
-                totais = Collections.emptyMap();
-            } else {
-                contratos = contratoService.listarContratos(idCondoUsuario, busca, statusFiltro, isProximoVencimento, isHistorico);
-                totais = contratoService.contarContratosPorStatus(idCondoUsuario);
-            }
+        }
+        
+        if (idCondominioParaFiltrar == null && !usuarioLogado.getPesIsGlobalAdmin()) {
+            contratos = Collections.emptyList();
+            totais = Collections.emptyMap();
+        } else {
+            // Se o filtro for Histórico, o filtro de Status pode ser usado. Senão, usamos o status da aba.
+            StatusContrato statusFinal = isHistorico ? status : statusAba;
+            contratos = contratoService.listarContratos(idCondominioParaFiltrar, busca, statusFinal, isProximoVencimento, isHistorico, inicioApos, fimAntes);
+            totais = contratoService.contarContratosPorStatus(idCondominioParaFiltrar);
         }
 
         model.addAttribute("contratos", contratos);
@@ -98,7 +106,12 @@ public class ContratoViewController {
         model.addAttribute("totalAVencer", totais.getOrDefault(StatusContrato.A_VENCER, 0L));
         model.addAttribute("totalFinalizados", totais.getOrDefault(StatusContrato.FINALIZADO, 0L));
         model.addAttribute("totalRescindidos", totais.getOrDefault(StatusContrato.RESCINDIDO, 0L));
+        
         model.addAttribute("buscaFiltro", busca);
+        model.addAttribute("statusFiltro", status);
+        model.addAttribute("inicioAposFiltro", inicioApos);
+        model.addAttribute("fimAntesFiltro", fimAntes);
+        model.addAttribute("condominioFiltro", condominioId);
         model.addAttribute("filtroAtivo", filtro);
         model.addAttribute("showCondominioInfo", showCondominioInfo);
 
@@ -109,6 +122,7 @@ public class ContratoViewController {
     public String mostrarFormNovo(Model model, @RequestParam(required = false) Integer condominioId) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         checarPermissaoAcesso(usuarioLogado);
+        carregarDadosPadrao(model, usuarioLogado);
         ContratoRequestDTO contratoDTO = new ContratoRequestDTO();
 
         if (usuarioLogado.getPesIsGlobalAdmin()) {
@@ -122,7 +136,6 @@ public class ContratoViewController {
         }
         
         model.addAttribute("contrato", contratoDTO);
-        model.addAttribute("isGlobalAdmin", usuarioLogado.getPesIsGlobalAdmin());
         return "fragments/contrato-form :: contratoForm";
     }
 
@@ -137,12 +150,12 @@ public class ContratoViewController {
     public String mostrarFormEditar(@PathVariable Long id, Model model) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         checarPermissaoAcesso(usuarioLogado);
+        carregarDadosPadrao(model, usuarioLogado);
         Contrato contrato = contratoService.obterPorId(id);
         ContratoRequestDTO dto = new ContratoRequestDTO();
         dto.fromEntity(contrato);
         
         model.addAttribute("contrato", dto);
-        model.addAttribute("isGlobalAdmin", usuarioLogado.getPesIsGlobalAdmin());
         if (usuarioLogado.getPesIsGlobalAdmin()) {
             model.addAttribute("condominiosDisponiveis", condominioService.listarTodosCondominios(true));
         }

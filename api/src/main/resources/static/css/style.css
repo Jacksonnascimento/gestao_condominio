@@ -45,7 +45,7 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: var(--font-family
 .card .label { color: var(--text-light-color); font-size: 0.9rem; }
 .card-icon { width: 48px; height: 48px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;}
 .card-icon svg, .card-icon i { width: 24px; height: 24px; }
-.icon-total, .icon-unidades { background-color: #e0e7ff; color: #4338ca; } 
+.icon-total, .icon-unidades { background-color: #e0e7ff; color: #4338ca; }
 .icon-ocupantes { background-color: #dcfce7; color: #166534; }
 .icon-vazias { background-color: #fef9c3; color: #854d0e; }
 .icon-multipropriedade { background-color: #f3e8ff; color: #581c87; }
@@ -63,11 +63,11 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: var(--font-family
 .filter-tabs a.active { background-color: #3498db; color: white; border-color: #3498db; }
 .units-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
 
-.unit-card { 
-    background-color: var(--card-bg-color); 
-    border-radius: 8px; 
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-    display: flex; 
+.unit-card {
+    background-color: var(--card-bg-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
     flex-direction: column;
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
@@ -141,31 +141,101 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: var(--font-family
 .unit-card .card-footer .btn-edit, .unit-card .card-footer .btn-delete { color: var(--text-light-color); border-color: #d1d5db; }
 .info-item span { word-wrap: break-word; overflow-wrap: break-word; word-break: break-all; min-width: 0; }
 
-/* --- ESTILOS ESPECÍFICOS PARA A PÁGINA DE CONTRATOS --- */
-.contratos-page .card-icon.icon-total-contratos { background-color: #e0e7ff; color: #4338ca; }
-.contratos-page .card-icon.icon-ativos { background-color: #dcfce7; color: #166534; }
-.contratos-page .card-icon.icon-a-vencer { background-color: #fef9c3; color: #854d0e; }
-.contratos-page .card-icon.icon-finalizados { background-color: #f3f4f6; color: #4b5563; }
-.contratos-page .card-icon.icon-rescindidos { background-color: #fee2e2; color: #b91c1c; }
-.contrato-card { background-color: var(--card-bg-color); border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
-.contrato-card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-.contrato-card .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
-.contrato-card .card-header h3 { font-size: 1.1rem; font-weight: 600; color: var(--text-color); margin: 0; }
-.contrato-card .status { padding: 4px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; color: white; text-transform: uppercase; }
-.contrato-card .status-ativo { background-color: #27ae60; }
-.contrato-card .status-a_vencer { background-color: #f1c40f; color: #333; }
-.contrato-card .card-body p { margin: 0 0 12px 0; }
-.contrato-card .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.85rem; color: var(--text-light-color); }
-.contrato-card .info-grid strong { color: var(--text-color); }
+/*
+================================================================================
+  INÍCIO DAS CORREÇÕES E ESTILOS ESPECÍFICOS PARA A PÁGINA DE CONTRATOS
+================================================================================
+*/
 
-.contrato-card .info-grid p span {
-    word-wrap: break-word;
+/* 1. Herança de Estilo para o Card de Contrato */
+/* Faz o .contrato-card ter a mesma base do .unit-card */
+.contrato-card {
+    background-color: var(--card-bg-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.contrato-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+/* 2. Cores dos Status dos Contratos (usado no card e na tabela) */
+.status-ativo { background-color: #27ae60; }
+.status-a_vencer { background-color: #f1c40f; color: #333; }
+.status-finalizado { background-color: #95a5a6; }
+.status-rescindido { background-color: var(--danger-color); }
+
+/* 3. Layout interno do Card de Contrato para ficar igual ao Card de Unidade */
+.contrato-card .card-body > p { /* Apenas o parágrafo do "serviço" */
+    margin-bottom: 1rem;
+}
+.contrato-card .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Duas colunas */
+    gap: 10px; /* Espaçamento entre os itens */
+}
+.contrato-card .info-grid p {
+    margin-bottom: 0; /* Remove a margem padrão para alinhar o grid */
+    word-break: break-word; /* Força a quebra de texto para evitar overflow */
     overflow-wrap: break-word;
-    word-break: break-all;
+}
+.contrato-card .info-grid p span { /* Garante que o texto dentro do span também quebre */
+    word-break: break-word;
+    overflow-wrap: break-word;
     min-width: 0;
 }
 
-/* Ajustes para a tabela de histórico */
-.contratos-page .table .badge { font-size: 0.8em; padding: 0.5em 0.8em; }
-.contratos-page .table .text-end { text-align: right; }
-.contratos-page .table .btn-edit, .contratos-page .table .btn-delete { margin-left: 5px; }
+
+/* 4. Estilos da Tabela de Histórico (Escopo .contratos-page) */
+.contratos-page .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+.contratos-page .table th,
+.contratos-page .table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+.contratos-page .table th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    color: var(--text-light-color);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+}
+.contratos-page .table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+.contratos-page .table .text-end {
+    text-align: right;
+}
+.contratos-page .table .btn-edit,
+.contratos-page .table .btn-delete {
+    padding: 5px 8px;
+    margin-left: 5px;
+}
+.contratos-page .table .badge {
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: white;
+}
+.contratos-page .table .badge.status-ativo { background-color: #27ae60; }
+.contratos-page .table .badge.status-a_vencer { background-color: #f1c40f; color: #333; }
+.contratos-page .table .badge.status-finalizado { background-color: #95a5a6; }
+.contratos-page .table .badge.status-rescindido { background-color: var(--danger-color); }
+
+/*
+================================================================================
+  FIM DAS CORREÇÕES
+================================================================================
+*/

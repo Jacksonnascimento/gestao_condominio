@@ -3,98 +3,93 @@
 <body>
 <div th:fragment="form-modal-content">
     <div class="modal-header">
-        <h2 th:text="${ocupanteId != null ? 'Editar Ocupante' : 'Novo Ocupante'}"></h2>
-        <button class="close-btn" onclick="closeModal()">&times;</button>
+        <h5 class="modal-title" th:text="${ocupanteId != null ? 'Editar Ocupante' : 'Novo Ocupante'}"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
-
-    <form id="ocupanteForm" class="modal-form" th:object="${ocupanteRequestDTO}"
+    <form id="ocupanteForm" th:object="${ocupanteRequestDTO}"
           th:action="${ocupanteId != null ? '/ocupantes/editar/' + ocupanteId : '/ocupantes/salvar'}"
           method="post">
-
-        <div class="form-row">
-            <div class="form-group">
-                <label for="pesCpfCnpj">CPF/CNPJ *</label>
-                <input type="text" id="pesCpfCnpj" th:field="*{pesCpfCnpj}" required th:readonly="${ocupanteId != null}">
-            </div>
-            <div class="form-group">
-                <label for="pesNome">Nome Completo *</label>
-                <input type="text" id="pesNome" th:field="*{pesNome}" required>
-            </div>
-        </div>
-        <div class="form-row">
-            <div class="form-group">
-                <label for="pesEmail">Email *</label>
-                <input type="email" id="pesEmail" th:field="*{pesEmail}" required>
-            </div>
-            <div class="form-group">
-                <label for="pesTelefone">Telefone</label>
-                <input type="text" id="pesTelefone" th:field="*{pesTelefone}">
-            </div>
-            <div class="form-group" th:if="${ocupanteId == null}">
-                <label for="pesTipo">Tipo</label>
-                <select id="pesTipo" th:field="*{pesTipo}">
-                    <option value="F">Física</option>
-                    <option value="J">Jurídica</option>
-                </select>
-            </div>
-        </div>
-
-        <hr style="margin: 20px 0;">
-
-        <div class="form-row">
-            <div class="form-group" th:if="${isGlobalAdmin and showCondominioInfo}">
-                <label for="condominioId">Condomínio *</label>
-                <select id="condominioId" th:field="*{condominioId}" required>
-                    <option value="">Selecione...</option>
-                    <option th:each="condo : ${condominiosDisponiveis}" th:value="${condo.conCod}" th:text="${condo.conNome}"></option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="unidadeId">Unidade *</label>
-                <select id="unidadeId" th:field="*{unidadeId}" required th:disabled="${ocupanteId != null and !isGlobalAdmin}">
-                    <option value="">Selecione...</option>
-                    <option th:each="unidade : ${unidadesDisponiveis}" th:value="${unidade.uniCod}" th:text="${unidade.uniNumero}" th:selected="${unidade.uniCod == ocupanteRequestDTO.unidadeId}"></option>
-                </select>
-            </div>
-        </div>
-        
-        <div class="form-row">
-            <div class="form-group">
-                <label for="vinculo">Vínculo *</label>
-                <select id="vinculo" th:field="*{vinculo}" required>
-                    <option value="">Selecione...</option>
-                    <option th:each="v : ${vinculosDisponiveis}" th:value="${v.name()}" th:text="${v.getDescricao()}"></option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="inicioOcupacao">Início da Ocupação *</label>
-                <input type="date" id="inicioOcupacao" th:field="*{inicioOcupacao}" required>
-            </div>
-            <div class="form-group">
-                <label for="fimOcupacao">Fim da Ocupação</label>
-                <input type="date" id="fimOcupacao" th:field="*{fimOcupacao}">
-            </div>
-        </div>
-
-        <div id="multipropriedade-fields" style="display:none;">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="periodoUso">Período de Uso</label>
-                    <input type="text" id="periodoUso" th:field="*{periodoUso}" placeholder="Ex: Semana 1-4, Janeiro">
+        <div class="modal-body">
+            <h6 class="section-title">Dados Pessoais</h6>
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label for="pesCpfCnpj" class="form-label">CPF/CNPJ *</label>
+                    <input type="text" class="form-control" id="pesCpfCnpj" th:field="*{pesCpfCnpj}" required th:readonly="${ocupanteId != null}">
                 </div>
-                <div class="form-group">
-                    <label for="tipoPeriodo">Tipo do Período</label>
-                    <select id="tipoPeriodo" th:field="*{tipoPeriodo}">
+                <div class="col-md-6" th:if="${ocupanteId == null}">
+                    <label for="pesTipo" class="form-label">Tipo</label>
+                    <select id="pesTipo" class="form-select" th:field="*{pesTipo}">
+                        <option value="F">Física</option>
+                        <option value="J">Jurídica</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label for="pesNome" class="form-label">Nome Completo *</label>
+                    <input type="text" class="form-control" id="pesNome" th:field="*{pesNome}" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="pesEmail" class="form-label">Email *</label>
+                    <input type="email" class="form-control" id="pesEmail" th:field="*{pesEmail}" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="pesTelefone" class="form-label">Telefone</label>
+                    <input type="text" class="form-control" id="pesTelefone" th:field="*{pesTelefone}">
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <h6 class="section-title">Vínculo com a Unidade</h6>
+            <div class="row g-3">
+                <div class="col-md-6" th:if="${isGlobalAdmin and showCondominioInfo}">
+                    <label for="condominioId" class="form-label">Condomínio *</label>
+                    <select id="condominioId" class="form-select" th:field="*{condominioId}" required>
+                        <option value="">Selecione...</option>
+                        <option th:each="condo : ${condominiosDisponiveis}" th:value="${condo.conCod}" th:text="${condo.conNome}"></option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="unidadeId" class="form-label">Unidade *</label>
+                    <select id="unidadeId" class="form-select" th:field="*{unidadeId}" required th:disabled="${ocupanteId != null and !isGlobalAdmin}">
+                        <option value="">Selecione...</option>
+                        <option th:each="unidade : ${unidadesDisponiveis}" th:value="${unidade.uniCod}" th:text="${unidade.uniNumero}" th:selected="${unidade.uniCod == ocupanteRequestDTO.unidadeId}"></option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="vinculo" class="form-label">Vínculo *</label>
+                    <select id="vinculo" class="form-select" th:field="*{vinculo}" required>
+                        <option value="">Selecione...</option>
+                        <option th:each="v : ${vinculosDisponiveis}" th:value="${v.name()}" th:text="${v.getDescricao()}"></option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="inicioOcupacao" class="form-label">Início da Ocupação *</label>
+                    <input type="date" class="form-control" id="inicioOcupacao" th:field="*{inicioOcupacao}" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="fimOcupacao" class="form-label">Fim da Ocupação</label>
+                    <input type="date" class="form-control" id="fimOcupacao" th:field="*{fimOcupacao}">
+                </div>
+            </div>
+
+            <div id="multipropriedade-fields" class="row g-3 mt-1" style="display:none;">
+                 <div class="col-md-6">
+                    <label for="tipoPeriodo" class="form-label">Tipo do Período</label>
+                    <select id="tipoPeriodo" class="form-select" th:field="*{tipoPeriodo}">
                         <option value="">Selecione...</option>
                         <option th:each="t : ${tiposPeriodoDisponiveis}" th:value="${t.name()}" th:text="${t.getDescricao()}"></option>
                     </select>
                 </div>
+                <div class="col-md-6">
+                    <label for="periodoUso" class="form-label">Período de Uso</label>
+                    <input type="text" class="form-control" id="periodoUso" th:field="*{periodoUso}" placeholder="Ex: Semana 1-4, Janeiro">
+                </div>
             </div>
-        </div>
 
+        </div>
         <div class="modal-footer">
-            <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
-            <button type="submit" class="btn-primary" th:text="${ocupanteId != null ? 'Salvar Alterações' : 'Salvar Ocupante'}"></button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary" th:text="${ocupanteId != null ? 'Salvar Alterações' : 'Salvar Ocupante'}"></button>
         </div>
     </form>
 </div>

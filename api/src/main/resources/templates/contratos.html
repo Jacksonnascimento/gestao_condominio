@@ -2,152 +2,146 @@
 <html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CONDOFLOW - Gestão de Contratos</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="contratos-page">
-<div class="main-container">
+<div class="main-wrapper">
     <div th:replace="~{fragments/sidebar :: sidebar}"></div>
-    <div class="content">
-        <div class="page-header">
-            <div>
-                <h1 class="page-title">Gestão de Contratos</h1>
-                <p class="page-subtitle">Visualize, cadastre e gerencie os contratos do condomínio.</p>
-            </div>
-            <button class="btn-primary" th:onclick="'openContratoForm(\'/contratos/novo?condominioId=' + (${condominioFiltro} ?: '') + '\')'">
-                <i class="fa-solid fa-plus btn-icon"></i>
-                Novo Contrato
-            </button>
-        </div>
 
-        <div class="summary-cards" style="grid-template-columns: repeat(5, 1fr);">
-            <div class="card"><div class="card-icon icon-total-contratos"><i class="fa-solid fa-file-invoice-dollar"></i></div><div><span class="label">Total</span><span class="value" th:text="${totalContratos}">0</span></div></div>
-            <div class="card"><div class="card-icon icon-ativos"><i class="fa-solid fa-check-circle"></i></div><div><span class="label">Ativos</span><span class="value" th:text="${totalAtivos}">0</span></div></div>
-            <div class="card"><div class="card-icon icon-a-vencer"><i class="fa-solid fa-exclamation-triangle"></i></div><div><span class="label">A Vencer</span><span class="value" th:text="${totalAVencer}">0</span></div></div>
-            <div class="card"><div class="card-icon icon-finalizados"><i class="fa-solid fa-archive"></i></div><div><span class="label">Finalizados</span><span class="value" th:text="${totalFinalizados}">0</span></div></div>
-            <div class="card"><div class="card-icon icon-rescindidos"><i class="fa-solid fa-times-circle"></i></div><div><span class="label">Rescindidos</span><span class="value" th:text="${totalRescindidos}">0</span></div></div>
-        </div>
+    <div class="main-content">
+        <header class="mobile-header">
+            <button class="btn" id="sidebar-toggle-btn"><i class='bx bx-menu'></i></button>
+            <span class="mobile-header-title">Gestão de Contratos</span>
+        </header>
 
-        <div class="filter-tabs">
-            <a th:href="@{/contratos(filtro='ativos')}" th:classappend="${filtroAtivo == 'ativos' or filtroAtivo == null} ? 'active'">Contratos Ativos</a>
-            <a th:href="@{/contratos(filtro='a-vencer')}" th:classappend="${filtroAtivo == 'a-vencer'} ? 'active'">Próximos a Vencer</a>
-            <a th:href="@{/contratos(filtro='historico')}" th:classappend="${filtroAtivo == 'historico'} ? 'active'">Histórico</a>
-        </div>
-
-        <div class="filter-container">
-            <form th:action="@{/contratos}" method="get" class="search-form" style="flex-wrap: wrap;">
-                <input type="hidden" name="filtro" th:value="${filtroAtivo}" />
-
-                <input type="search" name="busca" placeholder="Buscar por empresa ou serviço..." th:value="${buscaFiltro}" style="flex-basis: 100%; margin-bottom: 10px;">
-
-                <select th:if="${isGlobalAdmin and condominiosDisponiveis.size() > 1}" name="condominioId">
-                    <option value="">Todos os Condomínios</option>
-                    <option th:each="c : ${condominiosDisponiveis}" th:value="${c.conCod}" th:text="${c.conNome}" th:selected="${c.conCod == condominioFiltro}"></option>
-                </select>
-
-                <select name="status" th:if="${filtroAtivo == 'historico'}">
-                    <option value="">Todos os Status</option>
-                    <option th:each="s : ${statusDisponiveis}" th:if="${s.name() == 'FINALIZADO' or s.name() == 'RESCINDIDO'}"
-                            th:value="${s}" th:text="${s.descricao}" th:selected="${s == statusFiltro}"></option>
-                </select>
-
-                <input type="date" name="inicioApos" th:value="${inicioAposFiltro}" title="Início após...">
-                <input type="date" name="fimAntes" th:value="${fimAntesFiltro}" title="Fim antes de...">
-
-                <button type="submit" class="btn-secondary" style="gap: 5px;"><i class="fa-solid fa-filter"></i> Filtrar</button>
-                <a th:href="@{/contratos(filtro=${filtroAtivo})}" class="btn-secondary" style="text-decoration: none; gap: 5px;"><i class="fa-solid fa-eraser"></i> Limpar</a>
-            </form>
-        </div>
-        
-        <div th:if="${#lists.isEmpty(contratos)}" class="empty-state">
-            <i class="fa-solid fa-folder-open"></i>
-            <p>Nenhum contrato encontrado para os filtros selecionados.</p>
-        </div>
-
-        <div th:if="${not #lists.isEmpty(contratos) and filtroAtivo != 'historico'}" class="units-grid">
-            <div th:each="contrato : ${contratos}" class="contrato-card">
-                <div class="card-header">
-                    <div>
-                        <span th:if="${showCondominioInfo}" class="condo-badge" th:text="${contrato.condominio.conNome}"></span>
-                        <h3 th:text="${contrato.empresa}">Nome da Empresa</h3>
-                    </div>
-                    <span class="status" th:classappend="'status-' + ${contrato.status.toString().toLowerCase()}" th:text="${contrato.status.descricao}"></span>
+        <div class="content-body p-4">
+            <div class="page-header d-flex flex-column flex-md-row justify-content-md-between align-items-md-center mb-4">
+                <div class="text-center text-md-start">
+                    <h1 class="page-title">Gestão de Contratos</h1>
+                    <p class="page-subtitle d-none d-md-block">Visualize, cadastre e gerencie os contratos do condomínio.</p>
                 </div>
-                <div class="card-body">
-                    <p style="margin-bottom: 1rem;"><strong th:text="${contrato.servico}">Descrição do Serviço Prestado</strong></p>
-                    <div class="info-grid">
-                        <p><i class="fa-solid fa-dollar-sign info-icon"></i> <strong>Valor:</strong> <span th:text="${'R$ ' + #numbers.formatDecimal(contrato.valor, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</span></p>
-                        <p><i class="fa-solid fa-user-tie info-icon"></i> <strong>Responsável:</strong> <span th:text="${contrato.responsavel}"></span></p>
-                        <p><i class="fa-solid fa-calendar-check info-icon"></i> <strong>Início:</strong> <span th:text="${#temporals.format(contrato.dataInicio, 'dd/MM/yyyy')}"></span></p>
-                        <p><i class="fa-solid fa-calendar-times info-icon"></i> <strong>Fim:</strong> <span th:text="${#temporals.format(contrato.dataFim, 'dd/MM/yyyy')}"></span></p>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <button class="btn-edit" th:onclick="'openContratoForm(\'/contratos/editar/' + ${contrato.id} + '\')'">
-                        <i class="fa-solid fa-pencil-alt btn-icon-sm"></i> Editar
+                <div class="d-grid d-md-block mt-3 mt-md-0">
+                    <button class="btn btn-primary" id="btnNovoContrato">
+                        <i class='bx bx-plus'></i> Novo Contrato
                     </button>
-                    <form th:action="@{/contratos/excluir/{id}(id=${contrato.id})}" method="post" onsubmit="return confirm('Tem certeza que deseja excluir este contrato?');" style="display: inline;">
-                        <button type="submit" class="btn-delete">
-                            <i class="fa-solid fa-trash-alt btn-icon-sm"></i> Excluir
-                        </button>
+                </div>
+            </div>
+
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xxl-5 g-4 mb-4 d-none d-lg-flex">
+                <div class="col"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="card-icon icon-total-contratos"><i class='bx bxs-collection'></i></div><div><span class="label">Total</span><span class="value" th:text="${totalContratos}">0</span></div></div></div></div>
+                <div class="col"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="card-icon icon-ativos"><i class='bx bxs-check-circle'></i></div><div><span class="label">Ativos</span><span class="value" th:text="${totalAtivos}">0</span></div></div></div></div>
+                <div class="col"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="card-icon icon-a-vencer"><i class='bx bxs-alarm-exclamation'></i></div><div><span class="label">A Vencer</span><span class="value" th:text="${totalAVencer}">0</span></div></div></div></div>
+                <div class="col"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="card-icon icon-finalizados"><i class='bx bxs-archive-in'></i></div><div><span class="label">Finalizados</span><span class="value" th:text="${totalFinalizados}">0</span></div></div></div></div>
+                <div class="col"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="card-icon icon-rescindidos"><i class='bx bxs-x-circle'></i></div><div><span class="label">Rescindidos</span><span class="value" th:text="${totalRescindidos}">0</span></div></div></div></div>
+            </div>
+
+            <ul class="nav nav-pills filter-tabs mb-4">
+                <li class="nav-item"><a class="nav-link" th:href="@{/contratos(filtro='ativos')}" th:classappend="${filtroAtivo == 'ativos' or filtroAtivo == null} ? 'active'">Contratos Ativos</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/contratos(filtro='a-vencer')}" th:classappend="${filtroAtivo == 'a-vencer'} ? 'active'">Próximos a Vencer</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/contratos(filtro='historico')}" th:classappend="${filtroAtivo == 'historico'} ? 'active'">Histórico</a></li>
+            </ul>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form th:action="@{/contratos}" method="get" class="row g-2 align-items-end">
+                        <input type="hidden" name="filtro" th:value="${filtroAtivo}" />
+                        <div class="col-12 col-lg"><label class="form-label">Busca</label><input type="search" name="busca" class="form-control" placeholder="Buscar por empresa ou serviço..." th:value="${buscaFiltro}"></div>
+                        <div class="col-12 col-lg-3" th:if="${isGlobalAdmin and condominiosDisponiveis.size() > 1}"><label class="form-label">Condomínio</label><select name="condominioId" class="form-select"><option value="">Todos</option><option th:each="c : ${condominiosDisponiveis}" th:value="${c.conCod}" th:text="${c.conNome}" th:selected="${c.conCod == condominioFiltro}"></option></select></div>
+                        <div class="col-12 col-lg-2" th:if="${filtroAtivo == 'historico'}"><label class="form-label">Status</label><select name="status" class="form-select"><option value="">Todos</option><option th:each="s : ${statusDisponiveis}" th:if="${s.name() == 'FINALIZADO' or s.name() == 'RESCINDIDO'}" th:value="${s}" th:text="${s.descricao}" th:selected="${s == statusFiltro}"></option></select></div>
+                        <div class="col-12 col-lg-auto"><button type="submit" class="btn btn-secondary w-100"><i class='bx bx-filter-alt'></i> Filtrar</button></div>
+                        <div class="col-12 col-lg-auto"><a th:href="@{/contratos(filtro=${filtroAtivo})}" class="btn btn-outline-secondary w-100"><i class='bx bx-eraser'></i> Limpar</a></div>
                     </form>
                 </div>
             </div>
-        </div>
 
-        <div th:if="${not #lists.isEmpty(contratos) and filtroAtivo == 'historico'}" class="widget-card" style="padding: 0;">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th th:if="${showCondominioInfo}">Condomínio</th>
-                        <th>Empresa/Serviço</th>
-                        <th>Responsável</th>
-                        <th>Valor</th>
-                        <th>Período</th>
-                        <th>Status</th>
-                        <th class="text-end">Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="contrato : ${contratos}">
-                        <td th:if="${showCondominioInfo}" th:text="${contrato.condominio.conNome}"></td>
-                        <td>
-                            <strong th:text="${contrato.empresa}"></strong><br>
-                            <small th:text="${contrato.servico}"></small>
-                        </td>
-                        <td th:text="${contrato.responsavel}"></td>
-                        <td th:text="${'R$ ' + #numbers.formatDecimal(contrato.valor, 1, 'POINT', 2, 'COMMA')}"></td>
-                        <td th:text="${#temporals.format(contrato.dataInicio, 'dd/MM/yy')} + ' a ' + ${#temporals.format(contrato.dataFim, 'dd/MM/yy')}"></td>
-                        <td><span class="badge" th:classappend="'status-' + ${contrato.status.toString().toLowerCase()}" th:text="${contrato.status.descricao}"></span></td>
-                        <td class="text-end">
-                            <button class="btn-edit" th:onclick="'openContratoForm(\'/contratos/editar/' + ${contrato.id} + '\')'">
-                                <i class="fa-solid fa-pencil-alt"></i>
-                            </button>
-                             <form th:action="@{/contratos/excluir/{id}(id=${contrato.id})}" method="post" onsubmit="return confirm('Tem certeza que deseja excluir este contrato?');" style="display: inline;">
-                                 <button type="submit" class="btn-delete">
-                                     <i class="fa-solid fa-trash-alt"></i>
-                                 </button>
-                             </form>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <div th:if="${#lists.isEmpty(contratos)}" class="text-center p-5">
+                <i class='bx bx-folder-open' style="font-size: 4rem; color: #ccc;"></i>
+                <p class="mt-3">Nenhum contrato encontrado para os filtros selecionados.</p>
+            </div>
+
+            <div th:if="${not #lists.isEmpty(contratos) and filtroAtivo != 'historico'}" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+                <div th:each="contrato : ${contratos}" class="col">
+                    <div class="card unit-card h-100">
+                        <div class="card-header">
+                            <div>
+                                <span th:if="${showCondominioInfo}" class="badge bg-secondary mb-1" th:text="${contrato.condominio.conNome}"></span>
+                                <h3 class="card-title h6 mb-0" th:text="${contrato.empresa}"></h3>
+                            </div>
+                            <span class="status-badge" th:classappend="'status-' + ${#strings.toLowerCase(contrato.status)}" th:text="${contrato.status.descricao}"></span>
+                        </div>
+                        <div class="card-body">
+                            <p class="fw-bold" style="margin-bottom: 1rem;" th:text="${contrato.servico}"></p>
+                            <p class="info-item"><i class='bx bxs-dollar-circle'></i><strong>Valor:</strong> <span th:text="${'R$ ' + #numbers.formatDecimal(contrato.valor, 1, 'POINT', 2, 'COMMA')}"></span></p>
+                            <p class="info-item"><i class='bx bxs-user-pin'></i><strong>Responsável:</strong> <span th:text="${contrato.responsavel}"></span></p>
+                            <p class="info-item"><i class='bx bxs-calendar-check'></i><strong>Início:</strong> <span th:text="${#temporals.format(contrato.dataInicio, 'dd/MM/yyyy')}"></span></p>
+                            <p class="info-item"><i class='bx bxs-calendar-x'></i><strong>Fim:</strong> <span th:text="${#temporals.format(contrato.dataFim, 'dd/MM/yyyy')}"></span></p>
+                        </div>
+                        <div class="card-footer">
+                            <button class="btn btn-sm btn-outline-primary btn-edit" th:data-url="'/contratos/editar/' + ${contrato.id}"><i class='bx bxs-edit'></i> Editar</button>
+                            <form th:action="@{/contratos/excluir/{id}(id=${contrato.id})}" method="post" onsubmit="return confirm('Tem certeza?');" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class='bx bxs-trash'></i> Excluir</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${not #lists.isEmpty(contratos) and filtroAtivo == 'historico'}" class="card responsive-table-container">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead>
+                            <tr>
+                                <th th:if="${showCondominioInfo}">Condomínio</th>
+                                <th>Empresa</th>
+                                <th>Serviço</th>
+                                <th>Responsável</th>
+                                <th>Valor</th>
+                                <th>Período</th>
+                                <th>Status</th>
+                                <th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="contrato : ${contratos}">
+                                <td th:if="${showCondominioInfo}" data-label="Condomínio" th:text="${contrato.condominio.conNome}"></td>
+                                <td data-label="Empresa" th:text="${contrato.empresa}"></td>
+                                <td data-label="Serviço" th:text="${contrato.servico}"></td>
+                                <td data-label="Responsável" th:text="${contrato.responsavel}"></td>
+                                <td data-label="Valor" th:text="${'R$ ' + #numbers.formatDecimal(contrato.valor, 1, 'POINT', 2, 'COMMA')}"></td>
+                                <td data-label="Período" th:text="${#temporals.format(contrato.dataInicio, 'dd/MM/yy')} + ' a ' + ${#temporals.format(contrato.dataFim, 'dd/MM/yy')}"></td>
+                                <td data-label="Status"><span class="status-badge" th:classappend="'status-' + ${#strings.toLowerCase(contrato.status)}" th:text="${contrato.status.descricao}"></span></td>
+                                <td data-label="Ações" class="text-end">
+                                    <button class="btn btn-sm btn-outline-primary btn-edit" th:data-url="'/contratos/editar/' + ${contrato.id}"><i class='bx bxs-edit'></i></button>
+                                    <form th:action="@{/contratos/excluir/{id}(id=${contrato.id})}" method="post" onsubmit="return confirm('Tem certeza?');" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class='bx bxs-trash'></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-        
     </div>
 </div>
 
-<div id="formModal" class="modal">
-    <div class="modal-content" id="modalContent"></div>
+<div class="modal fade" id="formModal" tabindex="-1" aria-labelledby="formModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" id="modalContent"></div>
+    </div>
 </div>
 
-<script th:src="@{/js/modal.js}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+<script th:src="@{/js/app.js}"></script>
 <script th:src="@{/js/contratos.js}"></script>
-
 </body>
 </html>

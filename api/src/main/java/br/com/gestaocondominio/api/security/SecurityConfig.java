@@ -40,11 +40,11 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/login", "/css/**", "/js/**", "/images/**",
+                    "/login", "/css/**", "/js/**", "/images/**", "/webjars/**",
                     "/api/auth/**",
                     "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
                 ).permitAll()
-                .requestMatchers("/ocupantes/**", "/unidades/**").authenticated() // REGRA EXPLÍCITA ADICIONADA
+                .requestMatchers("/ocupantes/**", "/unidades/**").authenticated()
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().authenticated()
             )

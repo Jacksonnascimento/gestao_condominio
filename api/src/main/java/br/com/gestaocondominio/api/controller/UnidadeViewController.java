@@ -125,7 +125,7 @@ public class UnidadeViewController {
     public ResponseEntity<?> salvarUnidade(@ModelAttribute("unidade") UnidadeRequestDTO dto) {
         try {
             Unidade novaUnidade = unidadeService.cadastrarUnidade(dto);
-            return ResponseEntity.ok(novaUnidade);
+            return ResponseEntity.ok(new UnidadeRequestDTO(novaUnidade));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Collections.singletonMap("message", e.getMessage()));
         }
@@ -136,7 +136,7 @@ public class UnidadeViewController {
     public ResponseEntity<?> atualizarUnidade(@PathVariable("id") Integer id, @ModelAttribute("unidade") UnidadeRequestDTO dto) {
         try {
             Unidade unidadeAtualizada = unidadeService.atualizarUnidade(id, dto);
-            return ResponseEntity.ok(unidadeAtualizada);
+            return ResponseEntity.ok(new UnidadeRequestDTO(unidadeAtualizada));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Collections.singletonMap("message", e.getMessage()));
         }

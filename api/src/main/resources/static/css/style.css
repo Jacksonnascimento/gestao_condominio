@@ -10,9 +10,21 @@
     --font-family: 'Poppins', sans-serif;
 }
 
+[data-bs-theme="dark"] {
+    --primary-color: #3b82f6;
+    --primary-hover-color: #2563eb;
+    --danger-color: #e74c3c;
+    --page-bg-color: #0f172a;
+    --text-color: #f8fafc;
+    --text-light-color: #94a3b8;
+    --border-color: #334155;
+    --card-bg-color: #1e293b;
+}
+
 body, html {
     font-family: var(--font-family);
     background-color: var(--page-bg-color);
+    color: var(--text-color);
     height: 100%;
     overflow-x: hidden;
 }
@@ -28,18 +40,24 @@ body, html {
 .sidebar-title { font-size: 24px; font-weight: bold; color: var(--text-color); }
 .sidebar .nav-link { font-weight: 500; font-size: 0.95rem; display: flex; align-items: center; gap: 10px; }
 .sidebar .nav-link .bx { font-size: 1.2rem; }
-.sidebar .nav-pills .nav-link.active { background-color: var(--primary-color); }
-.sidebar .nav-pills .nav-link:not(.active):hover { background-color: #f1f5f9; }
+.sidebar .nav-pills .nav-link.active { background-color: var(--primary-color); color: #fff; }
+.sidebar .nav-pills .nav-link:not(.active) { color: var(--text-light-color); }
+.sidebar .nav-pills .nav-link:not(.active):hover { background-color: rgba(255, 255, 255, 0.05); color: var(--text-color); }
+.sidebar .sidebar-footer { border-top: 1px solid var(--border-color); }
+
+[data-bs-theme="light"] .sidebar .nav-pills .nav-link:not(.active):hover {
+    background-color: #f1f5f9;
+}
 
 /* --- Mobile Header --- */
 .mobile-header { display: none; }
 
 /* --- Page Header --- */
-.page-title { font-size: 1.75rem; font-weight: 600; color: #1f2937; margin: 0; }
+.page-title { font-size: 1.75rem; font-weight: 600; color: var(--text-color); margin: 0; }
 .page-subtitle { margin: 4px 0 0 0; color: var(--text-light-color); }
 
 /* --- Cards --- */
-.card { border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+.card { border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.05); background-color: var(--card-bg-color); transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
 .card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
 .card .value { font-size: 1.75rem; font-weight: 700; display: block; color: var(--text-color); line-height: 1; }
 .card .label { color: var(--text-light-color); font-size: 0.9rem; }
@@ -71,12 +89,12 @@ body, html {
 .filter-tabs .nav-link.active { background-color: var(--primary-color); color: white; }
 
 /* --- Unit/Contrato Cards --- */
-.unit-card .card-header { background-color: #f9fafb; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: flex-start; }
+.unit-card .card-header { background-color: rgba(128, 128, 128, 0.05); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: flex-start; }
 .unit-card .card-title { font-weight: 600; }
 .unit-card .card-body .info-item { display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem; color: var(--text-light-color); font-size: 0.9rem; }
 .unit-card .card-body .info-item i { font-size: 1.1rem; }
 .unit-card .card-body .info-item strong { color: var(--text-color); }
-.unit-card .card-footer { background-color: #f9fafb; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 8px; }
+.unit-card .card-footer { background-color: rgba(128, 128, 128, 0.05); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 8px; }
 .clickable-title { cursor: pointer; transition: color 0.2s ease-in-out; }
 .clickable-title:hover { color: var(--primary-color); }
 
@@ -96,7 +114,7 @@ body, html {
 .status-dependente { background-color: #14b8a6; }
 
 /* --- Details Modal --- */
-.details-section .section-title { font-size: 1.1rem; font-weight: 600; color: var(--primary-color); border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; margin-bottom: 1rem; }
+.details-section .section-title { font-size: 1.1rem; font-weight: 600; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 1rem; }
 .details-section .info-item strong { color: var(--text-color); }
 
 /* --- Responsive Styles --- */
@@ -107,7 +125,6 @@ body, html {
     #sidebar-toggle-btn { font-size: 1.5rem; color: var(--text-color); }
     .mobile-header-title { font-weight: 600; font-size: 1.2rem; color: var(--text-color); margin-left: 1rem; }
 
-    /* --- Responsive Table --- */
     .responsive-table-container table thead { display: none; }
     .responsive-table-container table tr { display: block; margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     .responsive-table-container table td { display: flex; justify-content: space-between; align-items: center; text-align: right; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }

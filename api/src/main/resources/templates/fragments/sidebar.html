@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
 <body>
 <div id="sidebar" class="sidebar d-flex flex-column flex-shrink-0 p-3" th:fragment="sidebar">
     <a th:href="@{/dashboard}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-decoration-none sidebar-logo-area">
@@ -9,46 +9,52 @@
     <hr>
     <ul class="nav nav-pills flex-column mb-auto">
         <li class="nav-item">
-            <a th:href="@{/dashboard}" class="nav-link" th:classappend="${currentPage == 'dashboard' ? 'active' : 'link-dark'}">
+            <a th:href="@{/dashboard}" class="nav-link" th:classappend="${currentPage == 'dashboard' ? 'active' : ''}">
                 <i class='bx bxs-dashboard'></i> Dashboard
             </a>
         </li>
         <li>
-            <a th:href="@{/unidades}" class="nav-link" th:classappend="${currentPage == 'unidades' ? 'active' : 'link-dark'}">
+            <a th:href="@{/unidades}" class="nav-link" th:classappend="${currentPage == 'unidades' ? 'active' : ''}">
                 <i class='bx bxs-building-house'></i> Unidades
             </a>
         </li>
         <li>
-            <a th:href="@{/ocupantes}" class="nav-link" th:classappend="${currentPage == 'ocupantes' ? 'active' : 'link-dark'}">
+            <a th:href="@{/ocupantes}" class="nav-link" th:classappend="${currentPage == 'ocupantes' ? 'active' : ''}">
                 <i class='bx bxs-group'></i> Ocupantes
             </a>
         </li>
         <li th:if="${usuarioPodeGerenciar}">
-            <a th:href="@{/contratos}" class="nav-link" th:classappend="${currentPage == 'contratos' ? 'active' : 'link-dark'}">
+            <a th:href="@{/contratos}" class="nav-link" th:classappend="${currentPage == 'contratos' ? 'active' : ''}">
                 <i class='bx bxs-file-doc'></i> Contratos
             </a>
         </li>
         <li>
-            <a href="#" class="nav-link link-dark">
+            <a href="#" class="nav-link">
                 <i class='bx bxs-user-badge'></i> Funcionários
             </a>
         </li>
         <li>
-            <a href="#" class="nav-link link-dark">
+            <a href="#" class="nav-link">
                 <i class='bx bxs-megaphone'></i> Comunicados
             </a>
         </li>
         <li>
-            <a href="#" class="nav-link link-dark">
+            <a href="#" class="nav-link">
                 <i class='bx bxs-institution'></i> Assembleias
             </a>
         </li>
     </ul>
-    <hr>
-    <div class="sidebar-footer">
-        <div class="user-info mb-2">
-            <span class="fw-bold" th:text="${nomeUsuarioLogado}">Nome do Usuário</span>
+    <div class="sidebar-footer pt-3 mt-auto">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="user-info">
+                <span class="fw-bold" th:text="${nomeUsuarioLogado}">Nome do Usuário</span>
+            </div>
+            <button class="btn btn-outline-secondary" id="theme-toggler" type="button" aria-label="Toggle theme">
+                <i class='bx bxs-sun' id="theme-toggler-light"></i>
+                <i class='bx bxs-moon d-none' id="theme-toggler-dark"></i>
+            </button>
         </div>
+        <hr>
         <form th:action="@{/logout}" method="post" class="d-grid">
             <button type="submit" class="btn btn-danger">
                 <i class='bx bx-log-out'></i> Sair

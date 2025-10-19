@@ -35,11 +35,11 @@ public class UnidadeServiceImpl implements UnidadeService {
     private final SolicitacaoManutencaoRepository solicitacaoManutencaoRepository;
 
     public UnidadeServiceImpl(UnidadeRepository unidadeRepository,
-                              CondominioRepository condominioRepository,
-                              OcupanteRepository ocupanteRepository,
-                              FinanceiroCobrancaRepository financeiroCobrancaRepository,
-                              ReservaAreaComumRepository reservaAreaComumRepository,
-                              SolicitacaoManutencaoRepository solicitacaoManutencaoRepository) {
+                                  CondominioRepository condominioRepository,
+                                  OcupanteRepository ocupanteRepository,
+                                  FinanceiroCobrancaRepository financeiroCobrancaRepository,
+                                  ReservaAreaComumRepository reservaAreaComumRepository,
+                                  SolicitacaoManutencaoRepository solicitacaoManutencaoRepository) {
         this.unidadeRepository = unidadeRepository;
         this.condominioRepository = condominioRepository;
         this.ocupanteRepository = ocupanteRepository;
@@ -56,6 +56,7 @@ public class UnidadeServiceImpl implements UnidadeService {
     }
 
     @Override
+    @Transactional
     public Unidade cadastrarUnidade(UnidadeRequestDTO dto) {
         Integer condominioId = dto.getConCod();
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -81,8 +82,8 @@ public class UnidadeServiceImpl implements UnidadeService {
             throw new IllegalArgumentException("Número da unidade não pode ser vazio.");
         }
 
-        unidadeRepository.findByUniNumeroAndCondominio(dto.getUniNumero(), condominio).ifPresent(u -> {
-            throw new IllegalArgumentException("Já existe uma unidade com este número para o condomínio informado: " + u.getUniNumero());
+        unidadeRepository.findByCondominioAndUniNumeroAndBlocoAndUnidadeTipo(condominio, dto.getUniNumero(), dto.getBloco(), dto.getUnidadeTipo()).ifPresent(u -> {
+            throw new IllegalArgumentException("Já existe uma unidade com este número, bloco e tipo para o condomínio informado.");
         });
 
         Unidade unidade = new Unidade();
@@ -120,14 +121,14 @@ public class UnidadeServiceImpl implements UnidadeService {
             } else { // Assume MORADOR ou outro papel restrito
                 List<Ocupante> vinculosOcupante = ocupanteRepository.findByPessoa(userDetails.getPessoa());
                 unidadesAutorizadas = vinculosOcupante.stream()
-                                         .map(Ocupante::getUnidade)
-                                         .collect(Collectors.toList());
+                                             .map(Ocupante::getUnidade)
+                                             .collect(Collectors.toList());
             }
 
             if (!incluirInativas) {
                 unidadesAutorizadas = unidadesAutorizadas.stream()
-                                         .filter(u -> u.getUniAtiva() != null && u.getUniAtiva())
-                                         .collect(Collectors.toList());
+                                             .filter(u -> u.getUniAtiva() != null && u.getUniAtiva())
+                                             .collect(Collectors.toList());
             }
         }
 
@@ -158,20 +159,22 @@ public class UnidadeServiceImpl implements UnidadeService {
     }
 
     @Override
+    @Transactional
     public Unidade atualizarUnidade(Integer id, UnidadeRequestDTO dto) {
         Unidade unidadeExistente = unidadeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + id));
 
         checkAdminOrSindicoPermissionForCondominio(unidadeExistente.getCondominio().getConCod());
 
-        if (dto.getUniNumero() != null && !dto.getUniNumero().equalsIgnoreCase(unidadeExistente.getUniNumero())) {
-            unidadeRepository.findByUniNumeroAndCondominio(dto.getUniNumero(), unidadeExistente.getCondominio()).ifPresent(u -> {
-                if (!u.getUniCod().equals(id))
-                    throw new IllegalArgumentException("Novo número de unidade já cadastrado para o condomínio: " + u.getUniNumero());
-            });
-            unidadeExistente.setUniNumero(dto.getUniNumero());
-        }
+        unidadeRepository.findByCondominioAndUniNumeroAndBlocoAndUnidadeTipo(
+            unidadeExistente.getCondominio(), dto.getUniNumero(), dto.getBloco(), dto.getUnidadeTipo()
+        ).ifPresent(u -> {
+            if (!u.getUniCod().equals(id)) {
+                throw new IllegalArgumentException("Já existe uma unidade com este número, bloco e tipo para o condomínio informado.");
+            }
+        });
 
+        unidadeExistente.setUniNumero(dto.getUniNumero());
         unidadeExistente.setUnidadeTipo(dto.getUnidadeTipo());
         unidadeExistente.setUniStatusOcupacao(dto.getUniStatusOcupacao());
         unidadeExistente.setBloco(dto.getBloco());
@@ -189,6 +192,7 @@ public class UnidadeServiceImpl implements UnidadeService {
     }
 
     @Override
+    @Transactional
     public Unidade inativarUnidade(Integer id) {
         Unidade unidade = unidadeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + id));
@@ -214,6 +218,7 @@ public class UnidadeServiceImpl implements UnidadeService {
     }
 
     @Override
+    @Transactional
     public Unidade ativarUnidade(Integer id) {
         Unidade unidade = unidadeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada com o ID: " + id));

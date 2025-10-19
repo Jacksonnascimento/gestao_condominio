@@ -7,6 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/imask"></script>
     <style>
         .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
         .details-section h3 { font-size: 1.1rem; color: #3b82f6; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; margin-top: 20px; margin-bottom: 15px;}
@@ -82,7 +84,7 @@
                     </div>
                     <div class="card-body">
                         <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5ZM10 8a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75v-.008c0-.414.336-.75.75-.75h.008ZM10 13.5a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75v-.008Z" clip-rule="evenodd" /></svg><strong>Bloco:</strong> <span th:text="${unidade.bloco}"></span></p>
-                        <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3.75a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75Z" /><path fill-rule="evenodd" d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16ZM5.932 4.043a.75.75 0 0 1 0 1.06l-1.8 1.8a.75.75 0 1 1-1.06-1.06l1.8-1.8a.75.75 0 0 1 1.06 0Zm10.136 0a.75.75 0 0 1 1.06 0l1.8 1.8a.75.75 0 1 1-1.06 1.06l-1.8-1.8a.75.75 0 0 1 0-1.06ZM10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" clip-rule="evenodd" /></svg><strong>Fração Ideal:</strong> <span th:text="${unidade.fracaoIdeal != null ? #numbers.formatDecimal(unidade.fracaoIdeal * 100, 1, 4) + '%' : 'N/A'}"></span></p>
+                        <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3.75a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75Z" /><path fill-rule="evenodd" d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16ZM5.932 4.043a.75.75 0 0 1 0 1.06l-1.8 1.8a.75.75 0 1 1-1.06-1.06l1.8-1.8a.75.75 0 0 1 1.06 0Zm10.136 0a.75.75 0 0 1 1.06 0l1.8 1.8a.75.75 0 1 1-1.06 1.06l-1.8-1.8a.75.75 0 0 1 0-1.06ZM10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" clip-rule="evenodd" /></svg><strong>Fração Ideal:</strong> <span th:text="${unidade.fracaoIdeal != null ? #numbers.formatDecimal(unidade.fracaoIdeal, 1, 4, 'COMMA') + '%' : 'N/A'}"></span></p>
                         <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2.5 5.5A2.5 2.5 0 0 1 5 3h10a2.5 2.5 0 0 1 2.5 2.5v10A2.5 2.5 0 0 1 15 18H5a2.5 2.5 0 0 1-2.5-2.5v-10Z" /><path d="M5 4.5a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5v-10a.5.5 0 0 0-.5-.5H5Z" /></svg><strong>Área:</strong> <span th:text="${unidade.areaPrivada != null ? unidade.areaPrivada + ' m²' : 'N/A'}"></span></p>
                         <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-2 0c0 .993-.241 1.929-.668 2.754l-1.524-1.525a.75.75 0 0 0-1.06 1.06l1.524 1.525A4.483 4.483 0 0 1 10 14.5a4.5 4.5 0 0 1-2.754-.668l-1.525 1.524a.75.75 0 0 0 1.06 1.06l1.525-1.524A4.483 4.483 0 0 1 5.5 10c0-.993.241-1.929.668-2.754l1.524 1.525a.75.75 0 0 0 1.06-1.06l-1.524-1.525A4.483 4.483 0 0 1 10 5.5a4.5 4.5 0 0 1 2.754.668l1.525-1.524a.75.75 0 0 0-1.06-1.06l-1.525 1.524A4.483 4.483 0 0 1 14.5 10Z" clip-rule="evenodd" /></svg><strong>Tipo:</strong> <span th:text="${unidade.unidadeTipo != null ? unidade.unidadeTipo.getDescricao() : 'Não definido'}"></span></p>
                     </div>
@@ -102,23 +104,87 @@
     </div>
     
     <script>
-        // Script permanece o mesmo da versão anterior
         const modal = document.getElementById('formModal');
         const modalContent = document.getElementById('modalContent');
+        let fracaoIdealMask = null;
 
         async function openForm(url) {
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('Falha ao carregar o formulário.');
                 modalContent.innerHTML = await response.text();
+                
+                const form = document.getElementById('unidadeForm');
+                if(form) {
+                    form.addEventListener('submit', handleFormSubmit);
+                }
+                
+                document.dispatchEvent(new Event('formLoaded'));
+                
                 modal.style.display = 'flex';
             } catch (error) {
                 console.error('Erro:', error);
-                alert('Não foi possível carregar o formulário.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: 'Não foi possível carregar o formulário.',
+                });
+            }
+        }
+
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            const form = event.target;
+            const url = form.action;
+            const formData = new FormData(form);
+            const method = form.method;
+
+            if (fracaoIdealMask) {
+                formData.set('fracaoIdeal', fracaoIdealMask.unmaskedValue);
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: method.toUpperCase(),
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams(formData)
+                });
+
+                const responseData = await response.json();
+
+                if (response.ok) {
+                    closeModal();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sucesso!',
+                        text: 'Unidade salva com sucesso.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro ao Salvar',
+                        text: responseData.message || 'Ocorreu um erro desconhecido.',
+                    });
+                }
+            } catch (error) {
+                console.error('Erro na submissão:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro de Conexão',
+                    text: 'Não foi possível conectar ao servidor.',
+                });
             }
         }
 
         function closeModal() {
+            if (fracaoIdealMask) {
+                fracaoIdealMask.destroy();
+                fracaoIdealMask = null;
+            }
             modal.style.display = 'none';
             modalContent.innerHTML = '';
         }
@@ -164,13 +230,16 @@
                         const ocupacaoInicio = formatDate(o.inicioOcupacao) || NA;
 
                         return `
-                        <li>
-                            <span class="ocupante-header">${o.nomeCompleto || NA} ${vinculo}</span>
-                            <span class="ocupante-details">${o.email || NA} | ${o.telefone || NA}</span>
-                            <span class="ocupante-details">Ocupação: ${ocupacaoInicio} até ${ocupacaoFim}</span>
-                        </li>
-                    `}).join('') + '</ul>';
+                            <li>
+                                <span class="ocupante-header">${o.nomeCompleto || NA} ${vinculo}</span>
+                                <span class="ocupante-details">${o.email || NA} | ${o.telefone || NA}</span>
+                                <span class="ocupante-details">Ocupação: ${ocupacaoInicio} até ${ocupacaoFim}</span>
+                            </li>
+                        `}).join('') + '</ul>';
                 }
+
+                const fracaoIdealFormatted = unidade.fracaoIdeal ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 4 }).format(unidade.fracaoIdeal) + '%' : NA;
+                const areaPrivadaFormatted = unidade.areaPrivada ? new Intl.NumberFormat('pt-BR').format(unidade.areaPrivada) + ' m²' : NA;
 
                 const detailsHtml = `
                     <div class="modal-header">
@@ -182,8 +251,8 @@
                         <div class="details-grid">
                             <p class="info-item"><strong>Bloco:</strong> <span>${unidade.bloco || NA}</span></p>
                             <p class="info-item"><strong>Andar:</strong> <span>${unidade.andar || NA}</span></p>
-                            <p class="info-item"><strong>Fração Ideal:</strong> <span>${unidade.fracaoIdeal ? (unidade.fracaoIdeal * 100).toFixed(4).replace('.', ',') + '%' : NA}</span></p>
-                            <p class="info-item"><strong>Área:</strong> <span>${unidade.areaPrivada ? unidade.areaPrivada + ' m²' : NA}</span></p>
+                            <p class="info-item"><strong>Fração Ideal:</strong> <span>${fracaoIdealFormatted}</span></p>
+                            <p class="info-item"><strong>Área:</strong> <span>${areaPrivadaFormatted}</span></p>
                             <p class="info-item"><strong>Tipo:</strong> <span>${unidade.unidadeTipo ? unidade.unidadeTipo.descricao : NA}</span></p>
                             <p class="info-item"><strong>Status:</strong> <span>${unidade.uniStatusOcupacao ? unidade.uniStatusOcupacao.descricao : NA}</span></p>
                         </div>

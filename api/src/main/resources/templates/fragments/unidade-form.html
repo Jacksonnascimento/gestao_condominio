@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-    <div th:fragment="form-modal-content">
+    <th:block th:fragment="form-modal-content">
         <div class="modal-header">
             <h2 th:text="${unidadeId != null ? 'Editar Unidade ' + unidade.uniNumero : 'Nova Unidade'}">Título do Modal</h2>
             <button class="close-btn" onclick="closeModal()">&times;</button>
@@ -38,7 +38,7 @@
                 </div>
                 <div class="form-group">
                     <label for="fracaoIdeal">Fração Ideal</label>
-                    <input type="number" id="fracaoIdeal" step="0.0001" th:field="*{fracaoIdeal}">
+                    <input type="text" id="fracaoIdeal" th:value="*{fracaoIdeal}" placeholder="0,0000">
                 </div>
             </div>
 
@@ -73,6 +73,29 @@
                 <button type="submit" class="btn-primary" th:text="${unidadeId != null ? 'Salvar Alterações' : 'Salvar'}">Salvar</button>
             </div>
         </form>
-    </div>
+
+        <script th:inline="javascript">
+            // Garante que o script só rode depois que o formulário for carregado
+            document.addEventListener('formLoaded', function() {
+                const fracaoInput = document.getElementById('fracaoIdeal');
+                if (fracaoInput && !fracaoIdealMask) { // Evita criar a máscara múltiplas vezes
+                    fracaoIdealMask = IMask(fracaoInput, {
+                        mask: Number,
+                        scale: 4,
+                        radix: ',',
+                        mapToRadix: ['.'],
+                        normalizeZeros: true,
+                        padFractionalZeros: false // Não preenche com zeros ao carregar
+                    });
+                    
+                    let valorInicial = /*[[${unidade.fracaoIdeal}]]*/ null;
+                    if (valorInicial) {
+                        // Formata o valor inicial para o padrão brasileiro
+                        fracaoIdealMask.value = String(valorInicial).replace('.', ',');
+                    }
+                }
+            }, { once: true });
+        </script>
+    </th:block>
 </body>
 </html>

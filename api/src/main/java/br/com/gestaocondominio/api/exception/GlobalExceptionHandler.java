@@ -39,9 +39,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, WebRequest request) {
         String path = request.getDescription(false).replace("uri=", "");
         ErrorResponse errorResponse = new ErrorResponse(
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            "Ocorreu um erro inesperado no servidor. Por favor, tente novamente mais tarde.",
-            path
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Ocorreu um erro inesperado no servidor. Por favor, tente novamente mais tarde.",
+                path
         );
 
         System.err.println("Erro interno do servidor em " + path + ": " + ex.getMessage());

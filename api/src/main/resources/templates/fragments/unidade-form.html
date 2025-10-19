@@ -38,14 +38,14 @@
                 </div>
                 <div class="form-group">
                     <label for="fracaoIdeal">Fração Ideal</label>
-                    <input type="text" id="fracaoIdeal" th:value="*{fracaoIdeal}" placeholder="0,0000">
+                    <input type="number" id="fracaoIdeal" th:field="*{fracaoIdeal}" placeholder="Ex: 1.2345" step="0.0001" min="0">
                 </div>
             </div>
 
             <div class="form-row">
                  <div class="form-group">
                     <label for="areaPrivada">Área Privativa (m²)</label>
-                    <input type="number" id="areaPrivada" step="0.01" th:field="*{areaPrivada}">
+                    <input type="number" id="areaPrivada" th:field="*{areaPrivada}" placeholder="Ex: 70.50" step="0.01" min="0">
                 </div>
                 <div class="form-group">
                     <label for="unidadeTipo">Tipo da Unidade *</label>
@@ -73,29 +73,6 @@
                 <button type="submit" class="btn-primary" th:text="${unidadeId != null ? 'Salvar Alterações' : 'Salvar'}">Salvar</button>
             </div>
         </form>
-
-        <script th:inline="javascript">
-            // Garante que o script só rode depois que o formulário for carregado
-            document.addEventListener('formLoaded', function() {
-                const fracaoInput = document.getElementById('fracaoIdeal');
-                if (fracaoInput && !fracaoIdealMask) { // Evita criar a máscara múltiplas vezes
-                    fracaoIdealMask = IMask(fracaoInput, {
-                        mask: Number,
-                        scale: 4,
-                        radix: ',',
-                        mapToRadix: ['.'],
-                        normalizeZeros: true,
-                        padFractionalZeros: false // Não preenche com zeros ao carregar
-                    });
-                    
-                    let valorInicial = /*[[${unidade.fracaoIdeal}]]*/ null;
-                    if (valorInicial) {
-                        // Formata o valor inicial para o padrão brasileiro
-                        fracaoIdealMask.value = String(valorInicial).replace('.', ',');
-                    }
-                }
-            }, { once: true });
-        </script>
     </th:block>
 </body>
 </html>

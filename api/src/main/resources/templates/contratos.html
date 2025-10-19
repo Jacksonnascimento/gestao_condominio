@@ -19,7 +19,7 @@
                 <h1 class="page-title">Gestão de Contratos</h1>
                 <p class="page-subtitle">Visualize, cadastre e gerencie os contratos do condomínio.</p>
             </div>
-            <button class="btn-primary" th:onclick="'openForm(\'/contratos/novo?condominioId=' + (${condominioFiltro} ?: '') + '\')'">
+            <button class="btn-primary" th:onclick="'openContratoForm(\'/contratos/novo?condominioId=' + (${condominioFiltro} ?: '') + '\')'">
                 <i class="fa-solid fa-plus btn-icon"></i>
                 Novo Contrato
             </button>
@@ -88,7 +88,7 @@
                     </div>
                 </div>
                 <div class="card-footer">
-                    <button class="btn-edit" th:onclick="'openForm(\'/contratos/editar/' + ${contrato.id} + '\')'">
+                    <button class="btn-edit" th:onclick="'openContratoForm(\'/contratos/editar/' + ${contrato.id} + '\')'">
                         <i class="fa-solid fa-pencil-alt btn-icon-sm"></i> Editar
                     </button>
                     <form th:action="@{/contratos/excluir/{id}(id=${contrato.id})}" method="post" onsubmit="return confirm('Tem certeza que deseja excluir este contrato?');" style="display: inline;">
@@ -125,7 +125,7 @@
                         <td th:text="${#temporals.format(contrato.dataInicio, 'dd/MM/yy')} + ' a ' + ${#temporals.format(contrato.dataFim, 'dd/MM/yy')}"></td>
                         <td><span class="badge" th:classappend="'status-' + ${contrato.status.toString().toLowerCase()}" th:text="${contrato.status.descricao}"></span></td>
                         <td class="text-end">
-                            <button class="btn-edit" th:onclick="'openForm(\'/contratos/editar/' + ${contrato.id} + '\')'">
+                            <button class="btn-edit" th:onclick="'openContratoForm(\'/contratos/editar/' + ${contrato.id} + '\')'">
                                 <i class="fa-solid fa-pencil-alt"></i>
                             </button>
                              <form th:action="@{/contratos/excluir/{id}(id=${contrato.id})}" method="post" onsubmit="return confirm('Tem certeza que deseja excluir este contrato?');" style="display: inline;">
@@ -146,79 +146,8 @@
     <div class="modal-content" id="modalContent"></div>
 </div>
 
-<script>
-    const modal = document.getElementById('formModal');
-    const modalContent = document.getElementById('modalContent');
-
-    async function openForm(url) {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Falha ao carregar o formulário.');
-            // O conteúdo do modal foi alterado para ser 'modalContent' e não 'formContent'
-            modalContent.innerHTML = await response.text();
-            
-            const form = document.getElementById('contratoForm');
-            if(form) {
-                form.addEventListener('submit', handleFormSubmit);
-            }
-            
-            modal.style.display = 'flex';
-        } catch (error) {
-            console.error('Erro ao carregar o formulário:', error);
-            Swal.fire('Erro', 'Não foi possível carregar o formulário.', 'error');
-        }
-    }
-
-    async function handleFormSubmit(event) {
-        event.preventDefault();
-        const form = event.target;
-        const url = form.action;
-        const formData = new FormData(form);
-        const method = form.method;
-
-        try {
-            const response = await fetch(url, {
-                method: method.toUpperCase(),
-                body: new URLSearchParams(formData)
-            });
-            
-            if (response.ok) {
-                closeModal();
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Sucesso!',
-                    text: 'Contrato salvo com sucesso.',
-                    timer: 2000,
-                    showConfirmButton: false
-                }).then(() => {
-                    window.location.reload();
-                });
-            } else {
-                const errorData = await response.json();
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erro ao Salvar',
-                    text: errorData.message || 'Ocorreu um erro desconhecido.',
-                });
-            }
-        } catch (error) {
-            console.error('Erro ao enviar formulário:', error);
-            Swal.fire('Erro', 'Não foi possível comunicar com o servidor.', 'error');
-        }
-    }
-
-    function closeModal() {
-        modal.style.display = 'none';
-        modalContent.innerHTML = '';
-    }
-
-    /*
-    window.onclick = function(event) {
-        if (event.target === modal) {
-            closeModal();
-        }
-    }*/
-</script>
+<script th:src="@{/js/modal.js}"></script>
+<script th:src="@{/js/contratos.js}"></script>
 
 </body>
 </html>

@@ -20,7 +20,7 @@
                     <p class="page-subtitle" th:if="${isGerencial}">Controle e gerencie os vínculos dos ocupantes com as unidades.</p>
                     <p class="page-subtitle" th:unless="${isGerencial}" th:if="${unidadeDoMorador != null}">Gerencie os ocupantes da sua unidade: <strong th:text="${unidadeDoMorador.uniNumero}"></strong></p>
                 </div>
-                <button class="btn-primary" onclick="openForm('/ocupantes/novo')">
+                <button class="btn-primary" onclick="openOcupanteForm('/ocupantes/novo')">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
                     Novo Ocupante
                 </button>
@@ -37,16 +37,16 @@
             
             <div class="filter-container">
                  <form th:action="@{/ocupantes}" method="get" class="search-form">
-                     <input type="search" name="busca" placeholder="Buscar por nome ou email..." th:value="${buscaFiltro}">
-                     <select name="vinculo">
-                         <option value="">Todos os Vínculos</option>
-                         <option th:each="v : ${vinculosDisponiveis}" th:value="${v.name()}" th:text="${v.getDescricao()}" th:selected="${v == vinculoFiltro}"></option>
-                     </select>
-                     <select name="unidadeId" th:if="${isGerencial}">
-                         <option value="">Todas as Unidades</option>
-                         <option th:each="u : ${unidadesDisponiveis}" th:value="${u.uniCod}" th:text="${u.uniNumero}" th:selected="${u.uniCod == unidadeFiltro}"></option>
-                     </select>
-                     <button type="submit" class="btn-secondary">Filtrar</button>
+                      <input type="search" name="busca" placeholder="Buscar por nome ou email..." th:value="${buscaFiltro}">
+                      <select name="vinculo">
+                          <option value="">Todos os Vínculos</option>
+                          <option th:each="v : ${vinculosDisponiveis}" th:value="${v.name()}" th:text="${v.getDescricao()}" th:selected="${v == vinculoFiltro}"></option>
+                      </select>
+                      <select name="unidadeId" th:if="${isGerencial}">
+                          <option value="">Todas as Unidades</option>
+                          <option th:each="u : ${unidadesDisponiveis}" th:value="${u.uniCod}" th:text="${u.uniNumero}" th:selected="${u.uniCod == unidadeFiltro}"></option>
+                      </select>
+                      <button type="submit" class="btn-secondary">Filtrar</button>
                  </form>
             </div>
 
@@ -66,7 +66,7 @@
                          <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5a.75.75 0 0 0 0 1.5h10.5a.75.75 0 0 0 0-1.5H4.75Z" clip-rule="evenodd" /></svg><strong>Início:</strong> <span th:text="${#temporals.format(ocupante.inicioOcupacao, 'dd/MM/yyyy')}"></span></p>
                     </div>
                     <div class="card-footer">
-                        <button class="btn-edit" th:onclick="'openForm(\'/ocupantes/editar/' + ${ocupante.id} + '\')'"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon-sm"><path d="m2.695 14.762-1.262 3.155a.5.5 0 0 0 .65.65l3.155-1.262a4 4 0 0 0 1.343-.885l11.516-11.515a2.5 2.5 0 0 0-3.536-3.536L3.58 13.42a4 4 0 0 0-.885 1.343Z" /></svg>Editar</button>
+                        <button class="btn-edit" th:onclick="'openOcupanteForm(\'/ocupantes/editar/' + ${ocupante.id} + '\')'"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon-sm"><path d="m2.695 14.762-1.262 3.155a.5.5 0 0 0 .65.65l3.155-1.262a4 4 0 0 0 1.343-.885l11.516-11.515a2.5 2.5 0 0 0-3.536-3.536L3.58 13.42a4 4 0 0 0-.885 1.343Z" /></svg>Editar</button>
                         <form th:action="@{/ocupantes/excluir/{id}(id=${ocupante.id})}" method="post" style="display:inline;">
                             <button type="submit" class="btn-delete" onclick="return confirm('Deseja excluir este ocupante?');"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon-sm"><path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.58.22-2.365.468a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" /></svg>Excluir</button>
                         </form>
@@ -80,162 +80,7 @@
         <div class="modal-content" id="modalContent"></div>
     </div>
     
-    <script>
-        const modal = document.getElementById('formModal');
-        const modalContent = document.getElementById('modalContent');
-    
-        async function openForm(url) {
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('Falha ao carregar o formulário.');
-                modalContent.innerHTML = await response.text();
-                
-                const form = document.getElementById('ocupanteForm');
-                if (form) {
-                    form.addEventListener('submit', handleFormSubmit);
-                }
-
-                modal.style.display = 'flex';
-                
-                // Dispara um evento para scripts dentro do fragmento saberem que o form foi carregado
-                document.dispatchEvent(new Event('formLoaded'));
-            } catch (error) {
-                console.error('Erro:', error);
-                Swal.fire('Erro', 'Não foi possível carregar o formulário.', 'error');
-            }
-        }
-
-        async function handleFormSubmit(event) {
-            event.preventDefault();
-            const form = event.target;
-            const url = form.action;
-            const formData = new FormData(form);
-            const method = form.method;
-
-            try {
-                const response = await fetch(url, {
-                    method: method.toUpperCase(),
-                    body: new URLSearchParams(formData)
-                });
-                
-                const responseData = await response.json();
-
-                if (response.ok) {
-                    closeModal();
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Sucesso!',
-                        text: 'Ocupante salvo com sucesso.',
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        window.location.reload();
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Erro ao Salvar',
-                        text: responseData.message || 'Ocorreu um erro desconhecido.',
-                    });
-                }
-            } catch (error) {
-                console.error('Erro ao enviar formulário:', error);
-                Swal.fire('Erro', 'Não foi possível comunicar com o servidor.', 'error');
-            }
-        }
-    
-        function closeModal() {
-            modal.style.display = 'none';
-            modalContent.innerHTML = '';
-        }
-        
-        /*
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                closeModal();
-            }
-        }*/
-    
-        document.addEventListener('blur', function(event) {
-            if (event.target.matches('#pesCpfCnpj')) {
-                buscarPessoaPorCpf(event.target);
-            }
-        }, true);
-    
-        document.addEventListener('change', function(event) {
-            const target = event.target;
-            if (target.matches('#vinculo')) {
-                toggleMultipropriedadeFields();
-            }
-            if (target.matches('#condominioId')) {
-                carregarUnidadesPorCondominio(target.value);
-            }
-        });
-
-        // Essas funções precisam ser globais para serem acessadas pelo HTML injetado
-        async function carregarUnidadesPorCondominio(condominioId) {
-            const unidadeSelect = document.getElementById('unidadeId');
-            if (!unidadeSelect) return;
-            unidadeSelect.innerHTML = '<option value="">Carregando...</option>';
-            if (!condominioId) {
-                unidadeSelect.innerHTML = '<option value="">Selecione um condomínio</option>';
-                return;
-            }
-            try {
-                const response = await fetch(`/api/unidades/por-condominio/${condominioId}`);
-                if (!response.ok) throw new Error('Falha ao buscar unidades.');
-                const unidades = await response.json();
-                unidadeSelect.innerHTML = '<option value="">Selecione...</option>';
-                unidades.forEach(unidade => {
-                    unidadeSelect.innerHTML += `<option value="${unidade.uniCod}">${unidade.uniNumero}</option>`;
-                });
-            } catch (error) {
-                console.error('Erro na função carregarUnidadesPorCondominio:', error);
-                unidadeSelect.innerHTML = '<option value="">Erro ao carregar</option>';
-            }
-        }
-        
-        async function buscarPessoaPorCpf(cpfInput) {
-            const cpf = cpfInput.value;
-            const h2 = document.querySelector('.modal-content h2');
-            if ((h2 && h2.textContent.startsWith('Editar')) || !cpf || cpf.length < 11) {
-                return;
-            }
-            try {
-                const response = await fetch(`/api/pessoas/por-cpf/${cpf}`);
-                const nomeInput = document.getElementById('pesNome');
-                const emailInput = document.getElementById('pesEmail');
-                const telefoneInput = document.getElementById('pesTelefone');
-                
-                const fieldsToToggle = [nomeInput, emailInput, telefoneInput];
-
-                if (response.ok) {
-                    const pessoa = await response.json();
-                    nomeInput.value = pessoa.pesNome;
-                    emailInput.value = pessoa.pesEmail;
-                    telefoneInput.value = pessoa.pesTelefone;
-                    fieldsToToggle.forEach(field => field.readOnly = true);
-                } else {
-                    fieldsToToggle.forEach(field => {
-                        if (field !== cpfInput) field.value = '';
-                        field.readOnly = false;
-                    });
-                }
-            } catch (error) {
-                console.error('Erro ao buscar pessoa:', error);
-            }
-        }
-    
-        function toggleMultipropriedadeFields() {
-            const vinculoSelect = document.getElementById('vinculo');
-            const fields = document.getElementById('multipropriedade-fields');
-            if (vinculoSelect && fields) {
-                fields.style.display = (vinculoSelect.value === 'MULTIPROPRIETARIO') ? 'block' : 'none';
-            }
-        }
-
-        // Garante que o toggle seja chamado quando o form é carregado
-        document.addEventListener('formLoaded', toggleMultipropriedadeFields);
-    </script>
+    <script th:src="@{/js/modal.js}"></script>
+    <script th:src="@{/js/ocupantes.js}"></script>
 </body>
 </html>

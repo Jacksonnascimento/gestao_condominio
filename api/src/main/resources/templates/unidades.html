@@ -30,7 +30,7 @@
                     <h1 class="page-title">Gestão de Unidades</h1>
                     <p class="page-subtitle">Controle e acompanhe todas as unidades do condomínio</p>
                 </div>
-                <button th:if="${isGerencial}" class="btn-primary" onclick="openForm('/unidades/novo')">
+                <button th:if="${isGerencial}" class="btn-primary" onclick="openUnidadeForm('/unidades/novo')">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
                     Nova Unidade
                 </button>
@@ -89,7 +89,7 @@
                     </div>
                     <div class="card-footer">
                         <th:block th:if="${isGerencial}">
-                            <button class="btn-edit" th:onclick="'openForm(\'/unidades/editar/' + ${unidade.uniCod} + '\')'"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon-sm"><path d="m2.695 14.762-1.262 3.155a.5.5 0 0 0 .65.65l3.155-1.262a4 4 0 0 0 1.343-.885l11.516-11.515a2.5 2.5 0 0 0-3.536-3.536L3.58 13.42a4 4 0 0 0-.885 1.343Z" /></svg>Editar</button>
+                            <button class="btn-edit" th:onclick="'openUnidadeForm(\'/unidades/editar/' + ${unidade.uniCod} + '\')'"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon-sm"><path d="m2.695 14.762-1.262 3.155a.5.5 0 0 0 .65.65l3.155-1.262a4 4 0 0 0 1.343-.885l11.516-11.515a2.5 2.5 0 0 0-3.536-3.536L3.58 13.42a4 4 0 0 0-.885 1.343Z" /></svg>Editar</button>
                             <form th:action="@{'/unidades/excluir/' + ${unidade.uniCod}}" method="post" style="display:inline;"><button type="submit" class="btn-delete" onclick="return confirm('Deseja excluir esta unidade?');"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon-sm"><path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.58.22-2.365.468a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" /></svg>Excluir</button></form>
                         </th:block>
                     </div>
@@ -102,169 +102,8 @@
         <div class="modal-content" id="modalContent"></div>
     </div>
     
-    <script>
-        const modal = document.getElementById('formModal');
-        const modalContent = document.getElementById('modalContent');
+    <script th:src="@{/js/modal.js}"></script>
+    <script th:src="@{/js/unidades.js}"></script>
 
-        async function openForm(url) {
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('Falha ao carregar o formulário.');
-                modalContent.innerHTML = await response.text();
-                
-                const form = document.getElementById('unidadeForm');
-                if(form) {
-                    form.addEventListener('submit', handleFormSubmit);
-                }
-                
-                modal.style.display = 'flex';
-            } catch (error) {
-                console.error('Erro:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: 'Não foi possível carregar o formulário.',
-                });
-            }
-        }
-
-        async function handleFormSubmit(event) {
-            event.preventDefault();
-            const form = event.target;
-            const url = form.action;
-            const formData = new FormData(form);
-            const method = form.method;
-
-            try {
-                const response = await fetch(url, {
-                    method: method.toUpperCase(),
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams(formData)
-                });
-
-                const responseData = await response.json();
-
-                if (response.ok) {
-                    closeModal();
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Sucesso!',
-                        text: 'Unidade salva com sucesso.',
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        window.location.reload();
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Erro ao Salvar',
-                        text: responseData.message || 'Ocorreu um erro desconhecido.',
-                    });
-                }
-            } catch (error) {
-                console.error('Erro na submissão:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erro de Conexão',
-                    text: 'Não foi possível conectar ao servidor.',
-                });
-            }
-        }
-
-        function closeModal() {
-            modal.style.display = 'none';
-            modalContent.innerHTML = '';
-        }
-        
-        /*
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                closeModal();
-            }
-        }*/
-
-        async function openDetails(unidadeId) {
-            modalContent.innerHTML = '<div class="modal-header"><h2>Carregando Detalhes...</h2></div>';
-            modal.style.display = 'flex';
-
-            const NA = 'N/A';
-
-            const formatDate = (dateString) => {
-                if (!dateString) return null;
-                const date = new Date(dateString);
-                const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
-                return `${day}/${month}/${year}`;
-            };
-
-            try {
-                const [unidadeResponse, ocupantesResponse] = await Promise.all([
-                    fetch(`/api/unidades/${unidadeId}`),
-                    fetch(`/api/ocupantes?unidadeId=${unidadeId}`)
-                ]);
-
-                if (!unidadeResponse.ok) throw new Error(`Erro ao buscar unidade: ${unidadeResponse.statusText}`);
-                if (!ocupantesResponse.ok) throw new Error(`Erro ao buscar ocupantes: ${ocupantesResponse.statusText}`);
-
-                const unidade = await unidadeResponse.json();
-                const ocupantes = await ocupantesResponse.json();
-                
-                let ocupantesHtml = '<p class="no-ocupantes">Nenhum ocupante encontrado para esta unidade.</p>';
-                if (ocupantes.length > 0) {
-                    ocupantesHtml = '<ul>' + ocupantes.map(o => {
-                        const vinculo = o.vinculo && o.vinculo.descricao ? `(${o.vinculo.descricao})` : '';
-                        const ocupacaoFim = formatDate(o.fimOcupacao) || 'Atual';
-                        const ocupacaoInicio = formatDate(o.inicioOcupacao) || NA;
-
-                        return `
-                            <li>
-                                <span class="ocupante-header">${o.nomeCompleto || NA} ${vinculo}</span>
-                                <span class="ocupante-details">${o.email || NA} | ${o.telefone || NA}</span>
-                                <span class="ocupante-details">Ocupação: ${ocupacaoInicio} até ${ocupacaoFim}</span>
-                            </li>
-                        `}).join('') + '</ul>';
-                }
-
-                const fracaoIdealFormatted = unidade.fracaoIdeal ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 4 }).format(unidade.fracaoIdeal) + '%' : NA;
-                const areaPrivadaFormatted = unidade.areaPrivada ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(unidade.areaPrivada) + ' m²' : NA;
-
-                const detailsHtml = `
-                    <div class="modal-header">
-                        <h2>Detalhes da Unidade ${unidade.uniNumero || ''}</h2>
-                        <button onclick="closeModal()" class="close-btn">&times;</button>
-                    </div>
-                    <div class="details-section">
-                        <h3>Informações da Unidade</h3>
-                        <div class="details-grid">
-                            <p class="info-item"><strong>Bloco:</strong> <span>${unidade.bloco || NA}</span></p>
-                            <p class="info-item"><strong>Andar:</strong> <span>${unidade.andar || NA}</span></p>
-                            <p class="info-item"><strong>Fração Ideal:</strong> <span>${fracaoIdealFormatted}</span></p>
-                            <p class="info-item"><strong>Área:</strong> <span>${areaPrivadaFormatted}</span></p>
-                            <p class="info-item"><strong>Tipo:</strong> <span>${unidade.unidadeTipo ? unidade.unidadeTipo.descricao : NA}</span></p>
-                            <p class="info-item"><strong>Status:</strong> <span>${unidade.uniStatusOcupacao ? unidade.uniStatusOcupacao.descricao : NA}</span></p>
-                        </div>
-                        <p class="info-item"><strong>Observações:</strong> <span>${unidade.observacao || 'Nenhuma'}</span></p>
-                    </div>
-                    <div class="details-section ocupantes-list">
-                        <h3>Ocupantes</h3>
-                        ${ocupantesHtml}
-                    </div>
-                `;
-                
-                modalContent.innerHTML = detailsHtml;
-
-            } catch (error) {
-                console.error('Erro ao abrir detalhes:', error);
-                modalContent.innerHTML = `
-                    <div class="modal-header">
-                        <h2>Erro ao Carregar</h2>
-                        <button onclick="closeModal()" class="close-btn">&times;</button>
-                    </div>
-                    <p>Não foi possível carregar os detalhes da unidade. Por favor, tente novamente.</p>`;
-            }
-        }
-    </script>
 </body>
 </html>

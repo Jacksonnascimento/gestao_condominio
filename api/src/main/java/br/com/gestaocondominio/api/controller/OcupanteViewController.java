@@ -15,6 +15,7 @@ import br.com.gestaocondominio.api.domain.service.PessoaService;
 import br.com.gestaocondominio.api.domain.service.UnidadeService;
 import br.com.gestaocondominio.api.domain.service.UsuarioCondominioService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -44,10 +45,10 @@ public class OcupanteViewController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public String listarOcupantes(Model model,
-                                    @RequestParam(required = false) Integer condominioId,
-                                    @RequestParam(required = false) String busca,
-                                    @RequestParam(required = false) OcupanteVinculo vinculo,
-                                    @RequestParam(required = false) Integer unidadeId) {
+                                      @RequestParam(required = false) Integer condominioId,
+                                      @RequestParam(required = false) String busca,
+                                      @RequestParam(required = false) OcupanteVinculo vinculo,
+                                      @RequestParam(required = false) Integer unidadeId) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         carregarDadosPadrao(model);
 
@@ -109,7 +110,7 @@ public class OcupanteViewController {
         boolean isGerencial = usuarioLogado.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuarioLogado, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM);
         
         model.addAttribute("isGerencial", isGerencial);
-        model.addAttribute("isGlobalAdmin", usuarioLogado.getPesIsGlobalAdmin()); // CORREÇÃO AQUI
+        model.addAttribute("isGlobalAdmin", usuarioLogado.getPesIsGlobalAdmin());
         
         if (isGerencial) {
              if (usuarioLogado.getPesIsGlobalAdmin()) {
@@ -122,11 +123,11 @@ public class OcupanteViewController {
                  } else {
                      model.addAttribute("unidadesDisponiveis", Collections.emptyList());
                  }
-            } else {
+             } else {
                  Integer idCondoUsuario = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
                  dto.setCondominioId(idCondoUsuario);
                  model.addAttribute("unidadesDisponiveis", unidadeService.findByCondominioId(idCondoUsuario));
-            }
+             }
         } else { // MORADOR
              ocupanteService.findUnidadeByMorador(usuarioLogado).ifPresent(unidade -> {
                  dto.setCondominioId(unidade.getCondominio().getConCod());
@@ -143,14 +144,14 @@ public class OcupanteViewController {
     }
 
     @PostMapping("/salvar")
-    public String salvarOcupante(OcupanteRequestDTO ocupanteRequestDTO, RedirectAttributes redirectAttributes) {
+    @ResponseBody
+    public ResponseEntity<?> salvarOcupante(OcupanteRequestDTO ocupanteRequestDTO) {
         try {
-            ocupanteService.cadastrarOcupante(ocupanteRequestDTO);
-            redirectAttributes.addFlashAttribute("successMessage", "Ocupante salvo com sucesso!");
+            Ocupante novoOcupante = ocupanteService.cadastrarOcupante(ocupanteRequestDTO);
+            return ResponseEntity.ok(new OcupanteResponseDTO(novoOcupante));
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Erro ao salvar ocupante: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
-        return "redirect:/ocupantes";
     }
 
     @GetMapping("/editar/{id}")
@@ -164,7 +165,7 @@ public class OcupanteViewController {
         model.addAttribute("ocupanteRequestDTO", dto);
         model.addAttribute("ocupanteId", id);
         model.addAttribute("isGerencial", isGerencial);
-        model.addAttribute("isGlobalAdmin", usuarioLogado.getPesIsGlobalAdmin()); // CORREÇÃO AQUI
+        model.addAttribute("isGlobalAdmin", usuarioLogado.getPesIsGlobalAdmin());
         model.addAttribute("vinculosDisponiveis", OcupanteVinculo.values());
         model.addAttribute("tiposPeriodoDisponiveis", TipoPeriodoOcupante.values());
         
@@ -185,14 +186,14 @@ public class OcupanteViewController {
     }
 
     @PostMapping("/editar/{id}")
-    public String atualizarOcupante(@PathVariable Integer id, OcupanteRequestDTO ocupanteRequestDTO, RedirectAttributes redirectAttributes) {
+    @ResponseBody
+    public ResponseEntity<?> atualizarOcupante(@PathVariable Integer id, OcupanteRequestDTO ocupanteRequestDTO) {
         try {
-            ocupanteService.editarOcupante(id, ocupanteRequestDTO, pessoaService.getLoggedInUser());
-            redirectAttributes.addFlashAttribute("successMessage", "Ocupante atualizado com sucesso!");
+            Ocupante ocupanteAtualizado = ocupanteService.editarOcupante(id, ocupanteRequestDTO, pessoaService.getLoggedInUser());
+            return ResponseEntity.ok(new OcupanteResponseDTO(ocupanteAtualizado));
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Erro ao atualizar ocupante: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
-        return "redirect:/ocupantes";
     }
 
     @PostMapping("/excluir/{id}")

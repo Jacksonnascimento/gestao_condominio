@@ -14,6 +14,7 @@ import br.com.gestaocondominio.api.domain.service.UsuarioCondominioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -94,7 +95,6 @@ public class ContratoViewController {
             contratos = Collections.emptyList();
             totais = Collections.emptyMap();
         } else {
-            // Se o filtro for Histórico, o filtro de Status pode ser usado. Senão, usamos o status da aba.
             StatusContrato statusFinal = isHistorico ? status : statusAba;
             contratos = contratoService.listarContratos(idCondominioParaFiltrar, busca, statusFinal, isProximoVencimento, isHistorico, inicioApos, fimAntes);
             totais = contratoService.contarContratosPorStatus(idCondominioParaFiltrar);
@@ -140,10 +140,17 @@ public class ContratoViewController {
     }
 
     @PostMapping("/novo")
-    public String salvarNovoContrato(ContratoRequestDTO contratoDTO) {
-        checarPermissaoAcesso(pessoaService.getLoggedInUser());
-        contratoService.criarContrato(contratoDTO.getCondominioId(), contratoDTO);
-        return "redirect:/contratos";
+    @ResponseBody
+    public ResponseEntity<?> salvarNovoContrato(ContratoRequestDTO contratoDTO) {
+        try {
+            checarPermissaoAcesso(pessoaService.getLoggedInUser());
+            Contrato novoContrato = contratoService.criarContrato(contratoDTO.getCondominioId(), contratoDTO);
+            ContratoRequestDTO responseDto = new ContratoRequestDTO();
+            responseDto.fromEntity(novoContrato);
+            return ResponseEntity.ok(responseDto);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
     @GetMapping("/editar/{id}")
@@ -163,10 +170,17 @@ public class ContratoViewController {
     }
 
     @PostMapping("/editar/{id}")
-    public String salvarEdicaoContrato(@PathVariable Long id, ContratoRequestDTO contratoDTO) {
-        checarPermissaoAcesso(pessoaService.getLoggedInUser());
-        contratoService.atualizarContrato(id, contratoDTO);
-        return "redirect:/contratos";
+    @ResponseBody
+    public ResponseEntity<?> salvarEdicaoContrato(@PathVariable Long id, ContratoRequestDTO contratoDTO) {
+        try {
+            checarPermissaoAcesso(pessoaService.getLoggedInUser());
+            Contrato contratoAtualizado = contratoService.atualizarContrato(id, contratoDTO);
+            ContratoRequestDTO responseDto = new ContratoRequestDTO();
+            responseDto.fromEntity(contratoAtualizado);
+            return ResponseEntity.ok(responseDto);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
     @PostMapping("/excluir/{id}")

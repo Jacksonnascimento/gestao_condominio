@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
     <div class="main-container">
@@ -60,9 +61,9 @@
                     </div>
                     <div class="card-body">
                          <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2.5 5.5A2.5 2.5 0 0 1 5 3h10a2.5 2.5 0 0 1 2.5 2.5v10A2.5 2.5 0 0 1 15 18H5a2.5 2.5 0 0 1-2.5-2.5v-10Z" /><path d="M5 4.5a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5v-10a.5.5 0 0 0-.5-.5H5Z" /></svg><strong>Unidade:</strong> <span th:text="${ocupante.unidadeNumero} + (${ocupante.unidadeBloco != null ? ' / ' + ocupante.unidadeBloco : ''})"></span></p>
-                        <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a2 2 0 0 0-2 2v1.161l8.441 4.221a1.25 1.25 0 0 0 1.118 0L19 7.162V6a2 2 0 0 0-2-2H3Z" /><path d="M19 8.839l-7.77 3.885a2.75 2.75 0 0 1-2.46 0L1 8.839V14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.839Z" /></svg><strong>Email:</strong> <span th:text="${ocupante.email}"></span></p>
-                        <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 3.5A1.5 1.5 0 0 1 3.5 2h1.148a1.5 1.5 0 0 1 1.465 1.175l.716 3.223a1.5 1.5 0 0 1-1.052 1.767l-.933.267c-.41.117-.643.555-.48.95a11.542 11.542 0 0 0 6.254 6.254c.395.163.833-.07.95-.48l.267-.933a1.5 1.5 0 0 1 1.767-1.052l3.223.716A1.5 1.5 0 0 1 18 15.352V16.5a1.5 1.5 0 0 1-1.5 1.5h-2.148a1.5 1.5 0 0 1-1.465-1.175l-.716-3.223a1.5 1.5 0 0 1 1.052-1.767l.933-.267c.41-.117.643.555.48-.95A11.542 11.542 0 0 0 9.048 3.95c-.395-.163-.833.07-.95.48l-.267.933a1.5 1.5 0 0 1-1.767 1.052l-3.223-.716A1.5 1.5 0 0 1 2 4.648V3.5Z" clip-rule="evenodd" /></svg><strong>Telefone:</strong> <span th:text="${ocupante.telefone}"></span></p>
-                        <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5a.75.75 0 0 0 0 1.5h10.5a.75.75 0 0 0 0-1.5H4.75Z" clip-rule="evenodd" /></svg><strong>Início:</strong> <span th:text="${#temporals.format(ocupante.inicioOcupacao, 'dd/MM/yyyy')}"></span></p>
+                         <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a2 2 0 0 0-2 2v1.161l8.441 4.221a1.25 1.25 0 0 0 1.118 0L19 7.162V6a2 2 0 0 0-2-2H3Z" /><path d="M19 8.839l-7.77 3.885a2.75 2.75 0 0 1-2.46 0L1 8.839V14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.839Z" /></svg><strong>Email:</strong> <span th:text="${ocupante.email}"></span></p>
+                         <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 3.5A1.5 1.5 0 0 1 3.5 2h1.148a1.5 1.5 0 0 1 1.465 1.175l.716 3.223a1.5 1.5 0 0 1-1.052 1.767l-.933.267c-.41.117-.643.555-.48.95a11.542 11.542 0 0 0 6.254 6.254c.395.163.833-.07.95-.48l.267-.933a1.5 1.5 0 0 1 1.767-1.052l3.223.716A1.5 1.5 0 0 1 18 15.352V16.5a1.5 1.5 0 0 1-1.5 1.5h-2.148a1.5 1.5 0 0 1-1.465-1.175l-.716-3.223a1.5 1.5 0 0 1 1.052-1.767l.933-.267c.41-.117.643.555.48-.95A11.542 11.542 0 0 0 9.048 3.95c-.395-.163-.833.07-.95.48l-.267.933a1.5 1.5 0 0 1-1.767 1.052l-3.223-.716A1.5 1.5 0 0 1 2 4.648V3.5Z" clip-rule="evenodd" /></svg><strong>Telefone:</strong> <span th:text="${ocupante.telefone}"></span></p>
+                         <p class="info-item"><svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5a.75.75 0 0 0 0 1.5h10.5a.75.75 0 0 0 0-1.5H4.75Z" clip-rule="evenodd" /></svg><strong>Início:</strong> <span th:text="${#temporals.format(ocupante.inicioOcupacao, 'dd/MM/yyyy')}"></span></p>
                     </div>
                     <div class="card-footer">
                         <button class="btn-edit" th:onclick="'openForm(\'/ocupantes/editar/' + ${ocupante.id} + '\')'"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="btn-icon-sm"><path d="m2.695 14.762-1.262 3.155a.5.5 0 0 0 .65.65l3.155-1.262a4 4 0 0 0 1.343-.885l11.516-11.515a2.5 2.5 0 0 0-3.536-3.536L3.58 13.42a4 4 0 0 0-.885 1.343Z" /></svg>Editar</button>
@@ -88,16 +89,58 @@
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('Falha ao carregar o formulário.');
                 modalContent.innerHTML = await response.text();
+                
+                const form = document.getElementById('ocupanteForm');
+                if (form) {
+                    form.addEventListener('submit', handleFormSubmit);
+                }
+
                 modal.style.display = 'flex';
                 
-                // Inicializa os campos dinâmicos após carregar o formulário
-                const vinculoSelect = document.getElementById('vinculo');
-                if(vinculoSelect) {
-                    toggleMultipropriedadeFields();
-                }
+                // Dispara um evento para scripts dentro do fragmento saberem que o form foi carregado
+                document.dispatchEvent(new Event('formLoaded'));
             } catch (error) {
                 console.error('Erro:', error);
-                alert('Não foi possível carregar o formulário.');
+                Swal.fire('Erro', 'Não foi possível carregar o formulário.', 'error');
+            }
+        }
+
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            const form = event.target;
+            const url = form.action;
+            const formData = new FormData(form);
+            const method = form.method;
+
+            try {
+                const response = await fetch(url, {
+                    method: method.toUpperCase(),
+                    body: new URLSearchParams(formData)
+                });
+                
+                const responseData = await response.json();
+
+                if (response.ok) {
+                    closeModal();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sucesso!',
+                        text: 'Ocupante salvo com sucesso.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro ao Salvar',
+                        text: responseData.message || 'Ocorreu um erro desconhecido.',
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao enviar formulário:', error);
+                Swal.fire('Erro', 'Não foi possível comunicar com o servidor.', 'error');
             }
         }
     
@@ -111,31 +154,6 @@
                 closeModal();
             }
         }
-    
-        // Delegação de eventos para elementos carregados dinamicamente
-        document.addEventListener('submit', async function(event) {
-            if (event.target.matches('#ocupanteForm')) {
-                event.preventDefault();
-                const form = event.target;
-                const formData = new FormData(form);
-                const url = form.action;
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        body: new URLSearchParams(formData)
-                    });
-                    if (response.redirected) {
-                        window.location.href = response.url;
-                    } else {
-                        const errorData = await response.text();
-                        alert('Erro: ' + (errorData || 'Ocorreu um problema ao salvar.'));
-                    }
-                } catch (error) {
-                    console.error('Erro ao enviar formulário:', error);
-                    alert('Não foi possível comunicar com o servidor.');
-                }
-            }
-        });
     
         document.addEventListener('blur', function(event) {
             if (event.target.matches('#pesCpfCnpj')) {
@@ -152,7 +170,8 @@
                 carregarUnidadesPorCondominio(target.value);
             }
         });
-    
+
+        // Essas funções precisam ser globais para serem acessadas pelo HTML injetado
         async function carregarUnidadesPorCondominio(condominioId) {
             const unidadeSelect = document.getElementById('unidadeId');
             if (!unidadeSelect) return;
@@ -213,6 +232,9 @@
                 fields.style.display = (vinculoSelect.value === 'MULTIPROPRIETARIO') ? 'block' : 'none';
             }
         }
+
+        // Garante que o toggle seja chamado quando o form é carregado
+        document.addEventListener('formLoaded', toggleMultipropriedadeFields);
     </script>
 </body>
 </html>

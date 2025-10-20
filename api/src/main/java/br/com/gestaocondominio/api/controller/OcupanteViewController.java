@@ -114,26 +114,26 @@ public class OcupanteViewController {
         
         if (isGerencial) {
              if (usuarioLogado.getPesIsGlobalAdmin()) {
-                 List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(true);
-                 model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
-                 model.addAttribute("showCondominioInfo", condominiosDisponiveis.size() > 1);
-                 if (condominioId != null) {
-                     dto.setCondominioId(condominioId);
-                     model.addAttribute("unidadesDisponiveis", unidadeService.findByCondominioId(condominioId));
-                 } else {
-                     model.addAttribute("unidadesDisponiveis", Collections.emptyList());
-                 }
+                  List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(true);
+                  model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
+                  model.addAttribute("showCondominioInfo", condominiosDisponiveis.size() > 1);
+                  if (condominioId != null) {
+                        dto.setCondominioId(condominioId);
+                        model.addAttribute("unidadesDisponiveis", unidadeService.findByCondominioId(condominioId));
+                  } else {
+                        model.addAttribute("unidadesDisponiveis", Collections.emptyList());
+                  }
              } else {
-                 Integer idCondoUsuario = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
-                 dto.setCondominioId(idCondoUsuario);
-                 model.addAttribute("unidadesDisponiveis", unidadeService.findByCondominioId(idCondoUsuario));
+                  Integer idCondoUsuario = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
+                  dto.setCondominioId(idCondoUsuario);
+                  model.addAttribute("unidadesDisponiveis", unidadeService.findByCondominioId(idCondoUsuario));
              }
         } else { // MORADOR
              ocupanteService.findUnidadeByMorador(usuarioLogado).ifPresent(unidade -> {
-                 dto.setCondominioId(unidade.getCondominio().getConCod());
-                 dto.setUnidadeId(unidade.getUniCod());
-                 model.addAttribute("unidadesDisponiveis", Collections.singletonList(unidade));
-                 model.addAttribute("unidadeDoMorador", unidade);
+                  dto.setCondominioId(unidade.getCondominio().getConCod());
+                  dto.setUnidadeId(unidade.getUniCod());
+                  model.addAttribute("unidadesDisponiveis", Collections.singletonList(unidade));
+                  model.addAttribute("unidadeDoMorador", unidade);
              });
         }
 
@@ -147,8 +147,8 @@ public class OcupanteViewController {
     @ResponseBody
     public ResponseEntity<?> salvarOcupante(OcupanteRequestDTO ocupanteRequestDTO) {
         try {
-            Ocupante novoOcupante = ocupanteService.cadastrarOcupante(ocupanteRequestDTO);
-            return ResponseEntity.ok(new OcupanteResponseDTO(novoOcupante));
+            OcupanteResponseDTO responseDTO = ocupanteService.cadastrarOcupante(ocupanteRequestDTO);
+            return ResponseEntity.ok(responseDTO);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
@@ -189,8 +189,8 @@ public class OcupanteViewController {
     @ResponseBody
     public ResponseEntity<?> atualizarOcupante(@PathVariable Integer id, OcupanteRequestDTO ocupanteRequestDTO) {
         try {
-            Ocupante ocupanteAtualizado = ocupanteService.editarOcupante(id, ocupanteRequestDTO, pessoaService.getLoggedInUser());
-            return ResponseEntity.ok(new OcupanteResponseDTO(ocupanteAtualizado));
+            OcupanteResponseDTO responseDTO = ocupanteService.editarOcupante(id, ocupanteRequestDTO, pessoaService.getLoggedInUser());
+            return ResponseEntity.ok(responseDTO);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }

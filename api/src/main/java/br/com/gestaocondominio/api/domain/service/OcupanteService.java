@@ -64,7 +64,6 @@ public class OcupanteService {
         return Collections.emptyList();
     }
 
-    // Assinatura sobrecarregada para não quebrar o controller antigo
     public List<OcupanteResponseDTO> consultarOcupantesPorUsuario(Pessoa usuario, Integer condominioId, String busca,
             OcupanteVinculo vinculo) {
         return this.consultarOcupantesPorUsuario(usuario, condominioId, busca, vinculo, null);
@@ -77,9 +76,8 @@ public class OcupanteService {
                 .collect(Collectors.groupingBy(Ocupante::getOcuVinculo, Collectors.counting()));
     }
 
-    // O restante da classe permanece igual...
     @Transactional
-    public Ocupante cadastrarOcupante(OcupanteRequestDTO dto) {
+    public OcupanteResponseDTO cadastrarOcupante(OcupanteRequestDTO dto) {
         if (dto.getUnidadeId() == null || dto.getVinculo() == null || dto.getInicioOcupacao() == null
                 || dto.getPesCpfCnpj() == null || dto.getPesCpfCnpj().isBlank()) {
             throw new IllegalArgumentException("CPF/CNPJ, Unidade, Vínculo e Início da Ocupação são obrigatórios.");
@@ -119,11 +117,12 @@ public class OcupanteService {
         novoOcupante.setOcuDtCadastro(LocalDateTime.now());
         novoOcupante.setOcuDtAtualizacao(LocalDateTime.now());
 
-        return ocupanteRepository.save(novoOcupante);
+        Ocupante ocupanteSalvo = ocupanteRepository.save(novoOcupante);
+        return new OcupanteResponseDTO(ocupanteSalvo);
     }
 
     @Transactional
-    public Ocupante editarOcupante(Integer id, OcupanteRequestDTO dto, Pessoa usuarioLogado) {
+    public OcupanteResponseDTO editarOcupante(Integer id, OcupanteRequestDTO dto, Pessoa usuarioLogado) {
         Ocupante ocupanteExistente = buscarPorIdEValidarAcesso(id, usuarioLogado);
 
         Pessoa pessoaParaAtualizar = ocupanteExistente.getPessoa();
@@ -145,7 +144,8 @@ public class OcupanteService {
         }
 
         ocupanteExistente.setOcuDtAtualizacao(LocalDateTime.now());
-        return ocupanteRepository.save(ocupanteExistente);
+        Ocupante ocupanteAtualizado = ocupanteRepository.save(ocupanteExistente);
+        return new OcupanteResponseDTO(ocupanteAtualizado);
     }
 
     @Transactional

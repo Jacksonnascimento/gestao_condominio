@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Controller
 @RequestMapping("/ocupantes")
@@ -76,13 +75,10 @@ public class OcupanteViewController {
                     unidadesDisponiveis = unidadeService.findByCondominioId(idCondoUsuario);
                 }
             }
-        } else { // MORADOR
-            Optional<Unidade> unidadeDoMoradorOpt = ocupanteService.findUnidadeByMorador(usuarioLogado);
-            if (unidadeDoMoradorOpt.isPresent()) {
-                Unidade unidadeDoMorador = unidadeDoMoradorOpt.get();
-                unidadesDisponiveis.add(unidadeDoMorador);
-                model.addAttribute("unidadeDoMorador", unidadeDoMorador);
-            }
+        } else {
+            List<Unidade> unidadesDoMorador = ocupanteService.findUnidadesByMorador(usuarioLogado);
+            unidadesDisponiveis.addAll(unidadesDoMorador);
+            model.addAttribute("unidadesDoMorador", unidadesDoMorador);
         }
         
         model.addAttribute("isGerencial", isGerencial);
@@ -128,13 +124,10 @@ public class OcupanteViewController {
                   dto.setCondominioId(idCondoUsuario);
                   model.addAttribute("unidadesDisponiveis", unidadeService.findByCondominioId(idCondoUsuario));
              }
-        } else { // MORADOR
-             ocupanteService.findUnidadeByMorador(usuarioLogado).ifPresent(unidade -> {
-                  dto.setCondominioId(unidade.getCondominio().getConCod());
-                  dto.setUnidadeId(unidade.getUniCod());
-                  model.addAttribute("unidadesDisponiveis", Collections.singletonList(unidade));
-                  model.addAttribute("unidadeDoMorador", unidade);
-             });
+        } else {
+            List<Unidade> unidadesDoMorador = ocupanteService.findUnidadesByMorador(usuarioLogado);
+            model.addAttribute("unidadesDisponiveis", unidadesDoMorador);
+            model.addAttribute("unidadesDoMorador", unidadesDoMorador);
         }
 
         model.addAttribute("ocupanteRequestDTO", dto);
@@ -178,8 +171,9 @@ public class OcupanteViewController {
             Integer condominioDoOcupanteId = ocupante.getUnidade().getCondominio().getConCod();
             model.addAttribute("unidadesDisponiveis", unidadeService.findByCondominioId(condominioDoOcupanteId));
         } else {
-             model.addAttribute("unidadesDisponiveis", Collections.singletonList(ocupante.getUnidade()));
-             model.addAttribute("unidadeDoMorador", ocupante.getUnidade());
+             List<Unidade> unidadesDoMorador = ocupanteService.findUnidadesByMorador(usuarioLogado);
+             model.addAttribute("unidadesDisponiveis", unidadesDoMorador);
+             model.addAttribute("unidadesDoMorador", unidadesDoMorador);
         }
 
         return "fragments/ocupante-form :: form-modal-content";

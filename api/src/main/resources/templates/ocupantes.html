@@ -26,7 +26,7 @@
                 <div class="text-center text-md-start">
                     <h1 class="page-title">Gestão de Ocupantes</h1>
                     <p class="page-subtitle d-none d-md-block" th:if="${isGerencial}">Controle e gerencie os vínculos dos ocupantes com as unidades.</p>
-                    <p class="page-subtitle d-none d-md-block" th:unless="${isGerencial}" th:if="${unidadeDoMorador != null}">Gerencie os ocupantes da sua unidade: <strong th:text="${unidadeDoMorador.uniNumero}"></strong></p>
+                    <p class="page-subtitle d-none d-md-block" th:unless="${isGerencial}">Gerencie os ocupantes das suas unidades.</p>
                 </div>
                 <div class="d-grid d-md-block mt-3 mt-md-0">
                     <button class="btn btn-primary" id="btnNovoOcupante">
@@ -44,15 +44,15 @@
                 <div class="col"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="card-icon icon-multiproprietario"><i class='bx bxs-share-alt'></i></div><div><span class="label">Multiprop.</span><span class="value" th:text="${totalMultiproprietarios}">0</span></div></div></div></div>
             </div>
 
-            <div class="card mb-4" th:if="${isGerencial}">
+            <div class="card mb-4">
                 <div class="card-body">
                     <form th:action="@{/ocupantes}" method="get" class="d-flex flex-wrap gap-2">
                         <input type="search" name="busca" class="form-control" placeholder="Buscar por nome ou email..." th:value="${buscaFiltro}" style="flex: 1 1 200px;">
-                        <select name="vinculo" class="form-select" style="flex: 1 1 180px;">
+                        <select name="vinculo" class="form-select" style="flex: 1 1 180px;" th:if="${isGerencial}">
                             <option value="">Todos os Vínculos</option>
                             <option th:each="v : ${vinculosDisponiveis}" th:value="${v.name()}" th:text="${v.getDescricao()}" th:selected="${v == vinculoFiltro}"></option>
                         </select>
-                        <select name="unidadeId" class="form-select" th:if="${isGerencial}" style="flex: 1 1 180px;">
+                        <select name="unidadeId" class="form-select" style="flex: 1 1 180px;" th:if="${isGerencial or (#lists.size(unidadesDoMorador) > 1)}">
                             <option value="">Todas as Unidades</option>
                             <option th:each="u : ${unidadesDisponiveis}" th:value="${u.uniCod}" th:text="${u.uniNumero}" th:selected="${u.uniCod == unidadeFiltro}"></option>
                         </select>

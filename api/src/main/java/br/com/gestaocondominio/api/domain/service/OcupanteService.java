@@ -22,7 +22,6 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service("ocupanteService")
@@ -55,10 +54,17 @@ public class OcupanteService {
             Specification<Ocupante> spec = OcupanteSpecification.comFiltros(condominioId, busca, vinculo, unidadeId);
             return ocupanteRepository.findAll(spec);
         } else {
-            Optional<Ocupante> ocupanteOpt = ocupanteRepository.findByPessoa(usuario).stream().findFirst();
-            if (ocupanteOpt.isPresent()) {
-                Unidade unidadeDoMorador = ocupanteOpt.get().getUnidade();
-                return ocupanteRepository.findByUnidade(unidadeDoMorador);
+            List<Unidade> unidadesDoMorador = findUnidadesByMorador(usuario);
+            if (!unidadesDoMorador.isEmpty()) {
+                if (unidadeId != null) {
+                    boolean temAcesso = unidadesDoMorador.stream().anyMatch(u -> u.getUniCod().equals(unidadeId));
+                    if (temAcesso) {
+                        Specification<Ocupante> spec = OcupanteSpecification.comFiltros(null, busca, vinculo, unidadeId);
+                        return ocupanteRepository.findAll(spec);
+                    }
+                } else {
+                     return ocupanteRepository.findByUnidadeIn(unidadesDoMorador);
+                }
             }
         }
         return Collections.emptyList();
@@ -165,8 +171,9 @@ public class OcupanteService {
         }
 
         if (usuarioCondominioService.possuiRole(usuario, UserRole.MORADOR)) {
-            Optional<Ocupante> moradorOcupanteOpt = ocupanteRepository.findByPessoa(usuario).stream().findFirst();
-            if (moradorOcupanteOpt.isPresent() && moradorOcupanteOpt.get().getUnidade().equals(ocupante.getUnidade())) {
+            boolean pertence = findUnidadesByMorador(usuario).stream()
+                .anyMatch(unidade -> unidade.equals(ocupante.getUnidade()));
+            if (pertence) {
                 return ocupante;
             }
         }
@@ -175,10 +182,11 @@ public class OcupanteService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<Unidade> findUnidadeByMorador(Pessoa morador) {
+    public List<Unidade> findUnidadesByMorador(Pessoa morador) {
         return ocupanteRepository.findByPessoa(morador)
                 .stream()
-                .findFirst()
-                .map(Ocupante::getUnidade);
+                .map(Ocupante::getUnidade)
+                .distinct()
+                .collect(Collectors.toList());
     }
 }

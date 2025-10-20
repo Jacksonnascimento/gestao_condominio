@@ -23,5 +23,6 @@ public interface OcupanteRepository extends JpaRepository<Ocupante, Integer>, Jp
 
     Optional<Ocupante> findByPessoaAndUnidade(Pessoa pessoa, Unidade unidade);
 
-    
+    List<Ocupante> findByUnidadeIn(List<Unidade> unidades);
+
 }

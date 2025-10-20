@@ -1,12 +1,15 @@
 package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.domain.entity.Condominio;
-import br.com.gestaocondominio.api.domain.repository.*;
+import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
+import br.com.gestaocondominio.api.domain.repository.UnidadeRepository;
+import br.com.gestaocondominio.api.domain.repository.UsuarioCondominioRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -16,33 +19,19 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class CondominioService {
 
     private final CondominioRepository condominioRepository;
     private final UnidadeRepository unidadeRepository;
-    private final GestaoComunicacaoRepository gestaoComunicacaoRepository;
-    private final AssembleiaRepository assembleiaRepository;
-    private final AreaComumRepository areaComumRepository;
-    private final SolicitacaoManutencaoRepository solicitacaoManutencaoRepository;
     private final UsuarioCondominioRepository usuarioCondominioRepository;
-    private final DocumentoRepository documentoRepository;
 
     public CondominioService(CondominioRepository condominioRepository,
                              UnidadeRepository unidadeRepository,
-                             GestaoComunicacaoRepository gestaoComunicacaoRepository,
-                             AssembleiaRepository assembleiaRepository,
-                             AreaComumRepository areaComumRepository,
-                             SolicitacaoManutencaoRepository solicitacaoManutencaoRepository,
-                             UsuarioCondominioRepository usuarioCondominioRepository,
-                             DocumentoRepository documentoRepository) {
+                             UsuarioCondominioRepository usuarioCondominioRepository) {
         this.condominioRepository = condominioRepository;
         this.unidadeRepository = unidadeRepository;
-        this.gestaoComunicacaoRepository = gestaoComunicacaoRepository;
-        this.assembleiaRepository = assembleiaRepository;
-        this.areaComumRepository = areaComumRepository;
-        this.solicitacaoManutencaoRepository = solicitacaoManutencaoRepository;
         this.usuarioCondominioRepository = usuarioCondominioRepository;
-        this.documentoRepository = documentoRepository;
     }
     
     public List<Condominio> listarTodosCondominios(boolean incluirInativas) {
@@ -64,9 +53,10 @@ public class CondominioService {
         List<Condominio> condominiosPermitidos = condominioRepository.findAllById(condoIds);
 
         if (!incluirInativas) {
+           
             return condominiosPermitidos.stream()
-                    .filter(condo -> condo.getConAtivo() != null && condo.getConAtivo())
-                    .collect(Collectors.toList());
+                        .filter(condo -> condo.getConAtivo() != null && condo.getConAtivo())
+                        .collect(Collectors.toList());
         }
         return condominiosPermitidos;
     }
@@ -140,12 +130,9 @@ public class CondominioService {
         if (condominioAtualizado.getConAtivo() != null) {
             condominioExistente.setConAtivo(condominioAtualizado.getConAtivo());
         }
-        if (condominioAtualizado.getConGeracaoAutoAtiva() != null) {
-            condominioExistente.setConGeracaoAutoAtiva(condominioAtualizado.getConGeracaoAutoAtiva());
-        }
-        if (condominioAtualizado.getConDiaGeracaoCobranca() != null) {
-            condominioExistente.setConDiaGeracaoCobranca(condominioAtualizado.getConDiaGeracaoCobranca());
-        }
+        
+       
+        
         condominioExistente.setConDtAtualizacao(LocalDateTime.now());
         return condominioRepository.save(condominioExistente);
     }
@@ -159,23 +146,9 @@ public class CondominioService {
         if (!unidadeRepository.findByCondominio(condominio).isEmpty()) {
             throw new IllegalStateException("Não é possível inativar o condomínio, pois existem unidades vinculadas a ele.");
         }
-        if (!gestaoComunicacaoRepository.findByCondominio(condominio).isEmpty()) {
-            throw new IllegalStateException("Não é possível inativar o condomínio, pois existem comunicados vinculados a ele.");
-        }
-        if (!assembleiaRepository.findByCondominio(condominio).isEmpty()) {
-            throw new IllegalStateException("Não é possível inativar o condomínio, pois existem assembleias vinculadas a ele.");
-        }
-        if (!areaComumRepository.findByCondominio(condominio).isEmpty()) {
-            throw new IllegalStateException("Não é possível inativar o condomínio, pois existem áreas comuns vinculadas a ele.");
-        }
-        if (!solicitacaoManutencaoRepository.findByCondominio(condominio).isEmpty()) {
-            throw new IllegalStateException("Não é possível inativar o condomínio, pois existem solicitações de manutenção vinculadas a ele.");
-        }
+
         if (!usuarioCondominioRepository.findByCondominio(condominio).isEmpty()) {
             throw new IllegalStateException("Não é possível inativar o condomínio, pois existem usuários/papéis vinculados a ele.");
-        }
-        if (!documentoRepository.findByCondominio(condominio).isEmpty()) {
-            throw new IllegalStateException("Não é possível inativar o condomínio, pois existem documentos vinculados a ele.");
         }
 
         condominio.setConAtivo(false);
@@ -206,7 +179,7 @@ public class CondominioService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (hasAuthority(authentication, "ROLE_GLOBAL_ADMIN")) return;
         
-        boolean hasAnyRoleInCondo = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_", "ROLE_MORADOR_")
+        boolean hasAnyRoleInCondo = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_", "ROLE_MORADOR_", "ROLE_FUNCIONARIO_ADM_", "ROLE_PORTEIRO_")
                                         .contains(condominio.getConCod());
         if (hasAnyRoleInCondo) return;
         

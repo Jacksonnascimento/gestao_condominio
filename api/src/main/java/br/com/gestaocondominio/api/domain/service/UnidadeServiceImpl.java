@@ -1,12 +1,13 @@
 package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.controller.dto.UnidadeRequestDTO;
-import br.com.gestaocondominio.api.domain.entity.*;
-import br.com.gestaocondominio.api.domain.enums.CobrancaStatus;
-import br.com.gestaocondominio.api.domain.enums.ReservaAreaComumStatus;
-import br.com.gestaocondominio.api.domain.enums.SolicitacaoManutencaoStatus;
+import br.com.gestaocondominio.api.domain.entity.Condominio;
+import br.com.gestaocondominio.api.domain.entity.Ocupante;
+import br.com.gestaocondominio.api.domain.entity.Unidade;
 import br.com.gestaocondominio.api.domain.enums.UnidadeStatusOcupacao;
-import br.com.gestaocondominio.api.domain.repository.*;
+import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
+import br.com.gestaocondominio.api.domain.repository.OcupanteRepository;
+import br.com.gestaocondominio.api.domain.repository.UnidadeRepository;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
@@ -30,22 +31,14 @@ public class UnidadeServiceImpl implements UnidadeService {
     private final UnidadeRepository unidadeRepository;
     private final CondominioRepository condominioRepository;
     private final OcupanteRepository ocupanteRepository;
-    private final FinanceiroCobrancaRepository financeiroCobrancaRepository;
-    private final ReservaAreaComumRepository reservaAreaComumRepository;
-    private final SolicitacaoManutencaoRepository solicitacaoManutencaoRepository;
 
     public UnidadeServiceImpl(UnidadeRepository unidadeRepository,
-                                  CondominioRepository condominioRepository,
-                                  OcupanteRepository ocupanteRepository,
-                                  FinanceiroCobrancaRepository financeiroCobrancaRepository,
-                                  ReservaAreaComumRepository reservaAreaComumRepository,
-                                  SolicitacaoManutencaoRepository solicitacaoManutencaoRepository) {
+                              CondominioRepository condominioRepository,
+                              OcupanteRepository ocupanteRepository) {
         this.unidadeRepository = unidadeRepository;
         this.condominioRepository = condominioRepository;
         this.ocupanteRepository = ocupanteRepository;
-        this.financeiroCobrancaRepository = financeiroCobrancaRepository;
-        this.reservaAreaComumRepository = reservaAreaComumRepository;
-        this.solicitacaoManutencaoRepository = solicitacaoManutencaoRepository;
+       
     }
 
     @Override
@@ -202,15 +195,8 @@ public class UnidadeServiceImpl implements UnidadeService {
         if (!ocupanteRepository.findByUnidade(unidade).isEmpty()) {
             throw new IllegalArgumentException("Não é possível inativar a unidade, pois existem ocupantes vinculados a ela.");
         }
-        if (!financeiroCobrancaRepository.findByUnidadeAndFicStatusPagamentoNotIn(unidade, Arrays.asList(CobrancaStatus.PAGA, CobrancaStatus.CANCELADA)).isEmpty()) {
-            throw new IllegalArgumentException("Não é possível inativar a unidade, pois existem cobranças financeiras ativas ou pendentes vinculadas a ela.");
-        }
-        if (!reservaAreaComumRepository.findByUnidadeAndStatusNotIn(unidade, Arrays.asList(ReservaAreaComumStatus.REALIZADA, ReservaAreaComumStatus.CANCELADA)).isEmpty()) {
-            throw new IllegalArgumentException("Não é possível inativar a unidade, pois existem reservas de áreas comuns ativas ou futuras vinculadas a ela.");
-        }
-        if (!solicitacaoManutencaoRepository.findByUnidadeAndStatusNotIn(unidade, Arrays.asList(SolicitacaoManutencaoStatus.CONCLUIDA, SolicitacaoManutencaoStatus.CANCELADA)).isEmpty()) {
-            throw new IllegalArgumentException("Não é possível inativar a unidade, pois existem solicitações de manutenção ativas ou pendentes vinculadas a ela.");
-        }
+        
+      
 
         unidade.setUniAtiva(false);
         unidade.setUniDtAtualizacao(LocalDateTime.now());

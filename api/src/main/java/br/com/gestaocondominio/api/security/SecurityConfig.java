@@ -44,8 +44,7 @@ public class SecurityConfig {
                     "/api/auth/**",
                     "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
                 ).permitAll()
-                .requestMatchers("/ocupantes/**", "/unidades/**").authenticated()
-                .requestMatchers("/api/**").authenticated()
+                // Apenas requer autenticação para o resto das requisições, incluindo /unidades, /ocupantes, /contratos, /dashboard e /api/**.
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))

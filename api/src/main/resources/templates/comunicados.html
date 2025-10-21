@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    </head>
+</head>
 <body>
 
 <div class="main-wrapper">
@@ -23,7 +23,7 @@
         </header>
         <div class="content-body p-4">
             <div class="page-header d-flex flex-column flex-md-row justify-content-md-between align-items-md-center mb-4">
-                 <div class="text-center text-md-start">
+                <div class="text-center text-md-start">
                     <h1 class="page-title">Mural de Comunicados</h1>
                     <p class="page-subtitle d-none d-md-block">Visualize e gerencie os comunicados.</p>
                 </div>
@@ -34,15 +34,8 @@
                 </div>
             </div>
 
-            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xxl-4 g-4 mb-4 d-none d-lg-flex">
-                 <div class="col"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="card-icon icon-unidades"><i class='bx bxs-message-dots'></i></div><div><span class="label">Total</span><span class="value" th:text="${comunicadosPage.totalElements}">0</span></div></div></div></div>
-                 <div class="col"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="card-icon icon-reforma"><i class='bx bxs-error-circle'></i></div><div><span class="label">Urgentes</span><span class="value">0</span></div></div></div></div>
-                 <div class="col"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="card-icon icon-contratos"><i class='bx bxs-file-blank'></i></div><div><span class="label">Com Anexo</span><span class="value">0</span></div></div></div></div>
-                 <div class="col"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="card-icon icon-funcionarios"><i class='bx bxs-calendar-event'></i></div><div><span class="label">Últimos 30 dias</span><span class="value">0</span></div></div></div></div>
-            </div>
-
             <div class="card mb-4">
-                 <div class="card-body">
+                <div class="card-body">
                     <form th:action="@{/comunicados}" method="GET" class="row g-2 align-items-end">
                         <div class="col-12 col-lg"><label class="form-label">Título</label><input type="text" class="form-control" name="titulo" th:value="${filtroTitulo}" placeholder="Buscar por Título"></div>
                         <div class="col-12 col-lg"><label class="form-label">Mensagem</label><input type="text" class="form-control" name="mensagem" th:value="${filtroMensagem}" placeholder="Buscar na Mensagem"></div>
@@ -65,27 +58,28 @@
                 <i class='bx bx-message-alt-x' style="font-size: 4rem; color: #ccc;"></i>
                 <p class="mt-3">Nenhum comunicado encontrado para os filtros selecionados.</p>
             </div>
-            <div th:if="${not comunicadosPage.empty}" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
-                <div class="col" th:each="comunicado : ${comunicadosPage.content}">
-                    <div class="card unit-card h-100">
-                        <div class="card-header">
-                             <div>
-                                <span th:if="${isGlobalAdmin and allCondominios.size() > 1 and comunicado.condominios.size() == 1}" class="badge bg-secondary mb-1" th:text="${comunicado.condominios.iterator().next().conNome}"></span>
-                                <span th:if="${isGlobalAdmin and allCondominios.size() > 1 and comunicado.condominios.size() > 1}" class="badge bg-secondary mb-1">Múltiplos Condomínios</span>
-                                <h3 class="card-title h6 mb-0" th:text="${comunicado.titulo}">Título</h3>
-                            </div>
-                            <span class="badge bg-danger" th:if="${comunicado.isUrgente}">URGENTE</span>
+
+            <div th:if="${not comunicadosPage.empty}" id="lista-comunicados">
+                <div class="card mb-3" th:each="comunicado : ${comunicadosPage.content}">
+                    <div class="card-header d-flex justify-content-between align-items-center" th:classappend="${comunicado.isUrgente} ? 'bg-danger-subtle text-danger-emphasis'">
+                        <h5 class="mb-0 card-title-h5" th:text="${comunicado.titulo}">Título do Comunicado</h5>
+                        <small th:text="${#temporals.format(comunicado.dataCadastro, 'dd/MM/yyyy HH:mm')}"></small>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text preserve-line-breaks" th:text="${comunicado.mensagem}">Corpo da mensagem do comunicado.</p>
+                    </div>
+                    <div class="card-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="badge bg-primary-subtle text-primary-emphasis"><i class='bx bxs-user'></i> [[${comunicado.criador.pesNome}]]</span>
+                            <span class="badge bg-secondary-subtle text-secondary-emphasis"><i class='bx bxs-user-pin'></i> [[${comunicado.publicoDestino.getDescricao()}]]</span>
+                            <span th:if="${isGlobalAdmin and allCondominios.size() > 1 and comunicado.condominios.size() == 1}" class="badge bg-info-subtle text-info-emphasis" th:text="${comunicado.condominios.iterator().next().conNome}"></span>
+                            <span th:if="${isGlobalAdmin and allCondominios.size() > 1 and comunicado.condominios.size() > 1}" class="badge bg-info-subtle text-info-emphasis">Múltiplos Condomínios</span>
                         </div>
-                        <div class="card-body">
-                             <p class="info-item"><i class='bx bxs-calendar'></i><strong>Data:</strong> <span th:text="${#temporals.format(comunicado.dataCadastro, 'dd/MM/yyyy HH:mm')}"></span></p>
-                             <p class="info-item"><i class='bx bxs-user-pin'></i><strong>Público:</strong> <span th:text="${comunicado.publicoDestino.getDescricao()}"></span></p>
-                             <p class="info-item"><i class='bx bxs-user'></i><strong>Autor:</strong> <span th:text="${comunicado.criador.pesNome}"></span></p>
-                             <p class="mt-3" th:text="${comunicado.mensagem}">Mensagem...</p>
-                        </div>
-                        <div class="card-footer">
-                            <a th:if="${comunicado.caminhoAnexo}" th:href="@{/comunicados/anexo/{id}(id=${comunicado.comId})}" class="btn btn-sm btn-outline-secondary" target="_blank"><i class='bx bxs-file-blank'></i> Ver Anexo</a>
-                            <button th:if="${usuarioPodeGerenciar}" class="btn btn-sm btn-outline-primary btn-edit" th:data-id="${comunicado.comId}"><i class='bx bxs-edit'></i> Editar</button>
-                            <button th:if="${usuarioPodeGerenciar}" class="btn btn-sm btn-outline-danger btn-excluir" th:data-id="${comunicado.comId}"><i class='bx bxs-trash'></i> Excluir</button>
+                        <div class="d-flex gap-2">
+                            <button th:if="${comunicado.caminhoAnexo}" class="btn btn-sm btn-outline-secondary btn-ver-anexo" th:data-id="${comunicado.comId}"><i class='bx bxs-file-blank'></i> Ver Anexo</button>
+                            <button th:if="${comunicado.caminhoAnexo}" class="btn btn-sm btn-outline-success btn-baixar-anexo" th:data-id="${comunicado.comId}"><i class='bx bxs-download'></i> Baixar</button>
+                            <button th:if="${usuarioPodeGerenciar}" class="btn btn-sm btn-outline-primary btn-edit" th:data-id="${comunicado.comId}"><i class='bx bxs-edit'></i></button>
+                            <button th:if="${usuarioPodeGerenciar}" class="btn btn-sm btn-outline-danger btn-excluir" th:data-id="${comunicado.comId}"><i class='bx bxs-trash'></i></button>
                         </div>
                     </div>
                 </div>

@@ -131,3 +131,12 @@ body, html {
     .responsive-table-container table td:last-child { border-bottom: 0; }
     .responsive-table-container table td::before { content: attr(data-label); font-weight: 600; text-align: left; margin-right: 1rem; color: var(--text-color); }
 }
+
+.card-title-h5 {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.preserve-line-breaks {
+    white-space: pre-wrap;
+}

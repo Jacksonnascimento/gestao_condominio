@@ -6,14 +6,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     const modalContent = document.getElementById('modalContent');
-    const formModal = createStaticModal(modalElement); 
+    const formModal = createStaticModal(modalElement);
 
     const handleFormSubmit = async (event) => {
         event.preventDefault();
         const form = event.target;
         const url = form.action;
-        
-        const formData = new FormData(); 
+
+        const formData = new FormData();
 
         const anexoInput = form.querySelector('#comunicadoAnexo');
         if (anexoInput && anexoInput.files.length > 0) {
@@ -72,9 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (form) {
                 form.addEventListener('submit', handleFormSubmit);
             } else {
-                 console.error("Formulário #comunicadoForm não encontrado no fragmento carregado.");
-                 Swal.fire('Erro Interno', 'Não foi possível encontrar o formulário no conteúdo carregado.', 'error');
-                 formModal.hide();
+                console.error("Formulário #comunicadoForm não encontrado no fragmento carregado.");
+                Swal.fire('Erro Interno', 'Não foi possível encontrar o formulário no conteúdo carregado.', 'error');
+                formModal.hide();
             }
 
         } catch (error) {
@@ -84,25 +84,79 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const btnNovoComunicado = document.getElementById('btnNovoComunicado');
-    if (btnNovoComunicado) {
-        btnNovoComunicado.addEventListener('click', () => {
-            openComunicadoFormModal('/comunicados/novo');
-        });
-    }
+    const handleAnexoClick = async (id, action) => {
+        try {
+            const response = await fetch(`/comunicados/anexo/${id}`);
 
-    document.querySelectorAll('.btn-edit').forEach(button => {
-        button.addEventListener('click', (event) => {
-            const id = event.currentTarget.dataset.id;
-            if (id) {
-                openComunicadoFormModal(`/comunicados/editar/${id}`);
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Arquivo não encontrado.');
             }
-        });
-    });
 
-    document.querySelectorAll('.btn-excluir').forEach(button => {
-        button.addEventListener('click', (event) => {
-            const id = event.currentTarget.dataset.id;
+            const disposition = response.headers.get('Content-Disposition');
+            let filename = 'anexo';
+            if (disposition) {
+                const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                const matches = filenameRegex.exec(disposition);
+                if (matches != null && matches[1]) {
+                    filename = matches[1].replace(/['"]/g, '');
+                }
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+
+            if (action === 'download') {
+                a.download = filename;
+            } else { // 'view'
+                a.target = '_blank';
+            }
+
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+        } catch (error) {
+            Swal.fire('Erro!', error.message, 'error');
+        }
+    };
+
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+
+        if (target.matches('#btnNovoComunicado')) {
+            openComunicadoFormModal('/comunicados/novo');
+            return;
+        }
+
+        const btnEdit = target.closest('.btn-edit');
+        if (btnEdit) {
+            const id = btnEdit.dataset.id;
+            if (id) openComunicadoFormModal(`/comunicados/editar/${id}`);
+            return;
+        }
+
+        const btnVerAnexo = target.closest('.btn-ver-anexo');
+        if (btnVerAnexo) {
+            const id = btnVerAnexo.dataset.id;
+            if (id) handleAnexoClick(id, 'view');
+            return;
+        }
+
+        const btnBaixarAnexo = target.closest('.btn-baixar-anexo');
+        if (btnBaixarAnexo) {
+            const id = btnBaixarAnexo.dataset.id;
+            if (id) handleAnexoClick(id, 'download');
+            return;
+        }
+
+        const btnExcluir = target.closest('.btn-excluir');
+        if (btnExcluir) {
+            const id = btnExcluir.dataset.id;
             if (!id) return;
 
             Swal.fire({
@@ -117,9 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     try {
-                        const response = await fetch(`/comunicados/excluir/${id}`, {
-                            method: 'POST',
-                        });
+                        const response = await fetch(`/comunicados/excluir/${id}`, { method: 'POST' });
 
                         if (response.ok) {
                             Swal.fire({
@@ -139,6 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             });
-        });
+        }
     });
 });

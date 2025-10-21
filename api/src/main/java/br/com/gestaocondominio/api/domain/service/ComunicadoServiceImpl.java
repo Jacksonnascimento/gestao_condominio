@@ -58,98 +58,83 @@ public class ComunicadoServiceImpl implements ComunicadoService {
     public Page<Comunicado> consultar(
             String titulo,
             String mensagem,
-            String publicoDestinoFiltroTela, // Renomeado para clareza
+            String publicoDestinoFiltroTela,
             Boolean isUrgente,
             Pageable pageable) {
 
         Pessoa pessoaLogada = pessoaService.getLoggedInUser();
         Integer conCodAtivo = null;
         Set<PublicoDestino> publicosPermitidosParaVisualizar = new HashSet<>();
-        boolean isUsuarioAdminCondo = false; // Flag para admin/síndico do condomínio
+        boolean isUsuarioAdminCondo = false;
 
         if (Boolean.TRUE.equals(pessoaLogada.getPesIsGlobalAdmin())) {
-            // Admin Global: Não filtra condomínio nem público
-            conCodAtivo = null; // Indica que não deve filtrar por condomínio específico
-            publicosPermitidosParaVisualizar.addAll(TODOS_OS_PUBLICOS); // Pode ver todos
+            conCodAtivo = null;
+            publicosPermitidosParaVisualizar.addAll(TODOS_OS_PUBLICOS);
         } else {
-            // Usuário Não-Global: Precisa de condomínio ativo
             conCodAtivo = usuarioCondominioService.getCondominioIdDoUsuario(pessoaLogada);
             if (conCodAtivo == null) {
-                 // Sem condomínio ativo, não vê nada específico do condomínio
-                 Specification<Comunicado> spec = (root, query, cb) -> cb.disjunction();
-                 return comunicadoRepository.findAll(spec, pageable);
+                Specification<Comunicado> spec = (root, query, cb) -> cb.disjunction();
+                return comunicadoRepository.findAll(spec, pageable);
             }
 
-            final Integer finalConCodAtivo = conCodAtivo; // Para usar em lambdas
+            final Integer finalConCodAtivo = conCodAtivo;
 
-            // Busca papéis no condomínio ativo
             Set<UserRole> roles = usuarioCondominioRepository.findByPesCod(pessoaLogada.getPesCod())
                     .stream()
                     .filter(uc -> uc.getConCod().equals(finalConCodAtivo))
                     .map(UsuarioCondominio::getUscPapel)
                     .collect(Collectors.toSet());
 
-            // Verifica se é Admin ou Síndico do condomínio ativo
             isUsuarioAdminCondo = roles.contains(UserRole.ADMIN) || roles.contains(UserRole.SINDICO);
 
             if (isUsuarioAdminCondo) {
-                // Admin/Síndico do Condomínio: Vê todos os públicos DENTRO do seu condomínio
                 publicosPermitidosParaVisualizar.addAll(TODOS_OS_PUBLICOS);
             } else {
-                // Outros usuários (Morador, Funcionário, Porteiro)
-                publicosPermitidosParaVisualizar.add(PublicoDestino.TODOS); // Todos veem "TODOS"
+                publicosPermitidosParaVisualizar.add(PublicoDestino.TODOS);
 
-                // Funcionários (ADM ou Porteiro) veem "FUNCIONARIOS"
                 if (roles.contains(UserRole.FUNCIONARIO_ADM) || roles.contains(UserRole.PORTEIRO)) {
                     publicosPermitidosParaVisualizar.add(PublicoDestino.FUNCIONARIOS);
                 }
 
-                // Moradores (ou qualquer pessoa com vínculo de ocupante)
-                // Busca vínculos no condomínio ativo
                 Set<OcupanteVinculo> vinculos = ocupanteRepository.findByPessoa(pessoaLogada)
                         .stream()
                         .filter(oc -> oc.getUnidade() != null && oc.getUnidade().getCondominio() != null && oc.getUnidade().getCondominio().getConCod().equals(finalConCodAtivo))
                         .map(Ocupante::getOcuVinculo)
                         .collect(Collectors.toSet());
 
-                // Se tiver vínculo de PROPRIETARIO, adiciona público PROPRIETARIOS
                 if (vinculos.contains(OcupanteVinculo.PROPRIETARIO)) {
                     publicosPermitidosParaVisualizar.add(PublicoDestino.PROPRIETARIOS);
                 }
-                // Se tiver vínculo de LOCATARIO, adiciona público INQUILINOS
                 if (vinculos.contains(OcupanteVinculo.LOCATARIO)) {
                     publicosPermitidosParaVisualizar.add(PublicoDestino.INQUILINOS);
                 }
             }
         }
 
-        // Monta a especificação
         Specification<Comunicado> spec = ComunicadoSpecification.filtrar(
-                pessoaLogada, // Passa a pessoa para distinguir Global Admin
-                conCodAtivo, // ID do condomínio a filtrar (ou null para Global Admin)
-                publicosPermitidosParaVisualizar, // Públicos que este usuário PODE ver
-                isUsuarioAdminCondo, // Flag para saber se é admin/síndico do condo
-                titulo, // Filtro de tela
-                mensagem, // Filtro de tela
-                publicoDestinoFiltroTela, // Filtro de tela
-                isUrgente // Filtro de tela
+                pessoaLogada,
+                conCodAtivo,
+                publicosPermitidosParaVisualizar,
+                isUsuarioAdminCondo,
+                titulo,
+                mensagem,
+                publicoDestinoFiltroTela,
+                isUrgente
         );
 
         return comunicadoRepository.findAll(spec, pageable);
     }
 
-    // --- MÉTODOS getComunicadoById, criar, atualizar, excluir, getCondominiosAlvo permanecem os mesmos ---
     @Override
     @Transactional(readOnly = true)
     public Comunicado getComunicadoById(Integer id) {
-         return comunicadoRepository.findById(id)
+        return comunicadoRepository.findById(id)
                 .map(comunicado -> {
                     comunicado.getCondominios().size();
                     return comunicado;
-                 })
+                })
                 .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado. ID: " + id));
     }
-
 
     @Override
     @Transactional
@@ -158,7 +143,10 @@ public class ComunicadoServiceImpl implements ComunicadoService {
         String caminhoAnexo = null;
 
         try {
-            if (anexo != null && !anexo.isEmpty()) {
+            if (anexo != null) {
+                if (anexo.isEmpty()) {
+                    throw new IllegalArgumentException("Não é possível anexar um arquivo vazio.");
+                }
                 caminhoAnexo = fileStorageService.store(anexo, COMUNICADOS_DIR);
             }
 
@@ -190,17 +178,20 @@ public class ComunicadoServiceImpl implements ComunicadoService {
     public void atualizar(Integer id, ComunicadoRequestDTO dto, MultipartFile anexo) {
         Pessoa editor = pessoaService.getLoggedInUser();
         Comunicado comunicado = comunicadoRepository.findById(id)
-             .map(c -> {
-                 c.getCondominios().size();
-                 return c;
-             })
-            .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado para atualização. ID: " + id));
+                .map(c -> {
+                    c.getCondominios().size();
+                    return c;
+                })
+                .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado para atualização. ID: " + id));
 
         String novoCaminhoAnexo = null;
         String antigoCaminhoAnexo = comunicado.getCaminhoAnexo();
 
         try {
-            if (anexo != null && !anexo.isEmpty()) {
+            if (anexo != null) {
+                if (anexo.isEmpty()) {
+                    throw new IllegalArgumentException("Não é possível anexar um arquivo vazio.");
+                }
                 novoCaminhoAnexo = fileStorageService.store(anexo, COMUNICADOS_DIR);
                 comunicado.setCaminhoAnexo(novoCaminhoAnexo);
             }
@@ -229,23 +220,22 @@ public class ComunicadoServiceImpl implements ComunicadoService {
         }
     }
 
-
     @Override
     @Transactional
     public void excluir(Integer id) {
-         Comunicado comunicado = comunicadoRepository.findById(id)
-            .map(c -> {
-                 c.getCondominios().size();
-                 return c;
-             })
-             .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado para exclusão. ID: " + id));
+        Comunicado comunicado = comunicadoRepository.findById(id)
+                .map(c -> {
+                    c.getCondominios().size();
+                    return c;
+                })
+                .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado para exclusão. ID: " + id));
 
         String caminhoAnexo = comunicado.getCaminhoAnexo();
 
         try {
             comunicadoLeituraRepository.deleteByComunicadoId(id);
             comunicado.getCondominios().clear();
-             comunicadoRepository.save(comunicado);
+            comunicadoRepository.save(comunicado);
             comunicadoRepository.delete(comunicado);
 
             if (caminhoAnexo != null) {
@@ -256,7 +246,6 @@ public class ComunicadoServiceImpl implements ComunicadoService {
             throw new RuntimeException("Falha ao excluir comunicado ID " + id + ": " + e.getMessage(), e);
         }
     }
-
 
     private Set<Condominio> getCondominiosAlvo(Pessoa pessoa, List<Integer> condominioIds) {
         Set<Condominio> condominiosAlvo = new HashSet<>();

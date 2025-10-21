@@ -4,15 +4,18 @@ import br.com.gestaocondominio.api.controller.dto.ComunicadoRequestDTO;
 import br.com.gestaocondominio.api.domain.entity.Comunicado;
 import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
-import br.com.gestaocondominio.api.domain.entity.UsuarioCondominio; // Import necessário
-import br.com.gestaocondominio.api.domain.enums.UserRole; // Import necessário
+import br.com.gestaocondominio.api.domain.entity.UsuarioCondominio;
+import br.com.gestaocondominio.api.domain.enums.UserRole;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
-import br.com.gestaocondominio.api.domain.repository.UsuarioCondominioRepository; // Import necessário
+import br.com.gestaocondominio.api.domain.repository.UsuarioCondominioRepository;
 import br.com.gestaocondominio.api.domain.service.ComunicadoService;
 import br.com.gestaocondominio.api.domain.service.PessoaService;
+import br.com.gestaocondominio.api.exception.StorageException;
 import org.springframework.core.io.Resource;
 import br.com.gestaocondominio.api.domain.service.FileStorageService;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -21,7 +24,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import jakarta.servlet.http.HttpServletRequest;
 
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -33,18 +38,18 @@ public class ComunicadoController {
     private final PessoaService pessoaService;
     private final CondominioRepository condominioRepository;
     private final FileStorageService fileStorageService;
-    private final UsuarioCondominioRepository usuarioCondominioRepository; // Injetado
+    private final UsuarioCondominioRepository usuarioCondominioRepository;
 
     public ComunicadoController(ComunicadoService comunicadoService,
                                 PessoaService pessoaService,
                                 CondominioRepository condominioRepository,
                                 FileStorageService fileStorageService,
-                                UsuarioCondominioRepository usuarioCondominioRepository) { // Adicionado ao construtor
+                                UsuarioCondominioRepository usuarioCondominioRepository) {
         this.comunicadoService = comunicadoService;
         this.pessoaService = pessoaService;
         this.condominioRepository = condominioRepository;
         this.fileStorageService = fileStorageService;
-        this.usuarioCondominioRepository = usuarioCondominioRepository; // Atribuído
+        this.usuarioCondominioRepository = usuarioCondominioRepository;
     }
 
     @GetMapping
@@ -66,18 +71,16 @@ public class ComunicadoController {
         model.addAttribute("comunicadosPage", comunicadosPage);
         model.addAttribute("isGlobalAdmin", isGlobalAdmin);
 
-        // **CORREÇÃO AQUI**
         boolean usuarioPodeGerenciar;
         if (isGlobalAdmin) {
             usuarioPodeGerenciar = true;
         } else {
             List<UsuarioCondominio> associacoes = usuarioCondominioRepository.findByPesCod(pessoaLogada.getPesCod());
             usuarioPodeGerenciar = associacoes.stream()
-                .anyMatch(uc -> uc.getUscPapel() == UserRole.ADMIN ||
-                                 uc.getUscPapel() == UserRole.SINDICO);
+                    .anyMatch(uc -> uc.getUscPapel() == UserRole.ADMIN ||
+                                  uc.getUscPapel() == UserRole.SINDICO);
         }
         model.addAttribute("usuarioPodeGerenciar", usuarioPodeGerenciar);
-
 
         if (isGlobalAdmin) {
             List<Condominio> allCondominios = condominioRepository.findAll();
@@ -165,21 +168,32 @@ public class ComunicadoController {
 
     @GetMapping("/anexo/{id}")
     @ResponseBody
-    public ResponseEntity<Resource> getAnexo(@PathVariable Integer id) {
+    public ResponseEntity<?> getAnexo(@PathVariable Integer id, HttpServletRequest request) {
         try {
             Comunicado comunicado = comunicadoService.getComunicadoById(id);
             if (comunicado.getCaminhoAnexo() == null || comunicado.getCaminhoAnexo().isBlank()) {
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Este comunicado não possui anexo.");
             }
 
             String filename = Paths.get(comunicado.getCaminhoAnexo()).getFileName().toString();
             Resource file = fileStorageService.loadAsResource(filename, "comunicados");
 
+            String contentType = "application/octet-stream";
+            try {
+                contentType = request.getServletContext().getMimeType(file.getFile().getAbsolutePath());
+            } catch (IOException ex) {
+                // Log do erro se necessário, mas mantém o tipo padrão como fallback
+            }
+
             return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.getFilename() + "\"")
                     .body(file);
+
+        } catch (StorageException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Arquivo não encontrado no servidor. Pode ter sido excluído ou movido.");
         } catch (Exception e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ocorreu um erro inesperado ao tentar acessar o anexo.");
         }
     }
 }

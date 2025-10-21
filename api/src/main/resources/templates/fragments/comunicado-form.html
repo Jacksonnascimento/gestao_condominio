@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<body>
+<div th:fragment="comunicado-form-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="formModalLabel" th:text="${comunicadoDto.id == null} ? 'Novo Comunicado' : 'Editar Comunicado'">Novo Comunicado</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+         <form id="comunicadoForm" th:action="@{${comunicadoDto.id == null} ? '/comunicados' : '/comunicados/editar/' + ${comunicadoDto.id}}" th:object="${comunicadoDto}" method="post" enctype="multipart/form-data">
+            <input type="hidden" th:field="*{id}" />
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <label for="comunicadoTitulo" class="form-label">Título <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="comunicadoTitulo" th:field="*{titulo}" required>
+                </div>
+                <div class="col-12 mb-3">
+                    <label for="comunicadoMensagem" class="form-label">Mensagem <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="comunicadoMensagem" th:field="*{mensagem}" rows="5" required></textarea>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="comunicadoPublico" class="form-label">Público Destino <span class="text-danger">*</span></label>
+                    <select class="form-select" id="comunicadoPublico" th:field="*{publicoDestino}" required>
+                        <option th:each="publico : ${T(br.com.gestaocondominio.api.domain.enums.PublicoDestino).values()}"
+                                th:value="${publico}" th:text="${publico.getDescricao()}"
+                                th:selected="${publico.name() == 'TODOS'}">
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="comunicadoUrgente" class="form-label">Urgente? <span class="text-danger">*</span></label>
+                    <select class="form-select" id="comunicadoUrgente" th:field="*{isUrgente}" required>
+                        <option value="false">Não</option>
+                        <option value="true">Sim</option>
+                    </select>
+                </div>
+                <div class="col-12 mb-3">
+                    <label for="comunicadoAnexo" class="form-label">Anexo (Opcional)</label>
+                    <input class="form-control" type="file" id="comunicadoAnexo" name="anexo">
+                    <div class="form-text">Ao editar, enviar um novo anexo substituirá o antigo.</div>
+                </div>
+                <div class="col-12 mb-3" th:if="${isGlobalAdmin}">
+                    <hr>
+                    <label for="comunicadoCondominios" class="form-label">Selecionar Condomínios (Admin) <span class="text-danger">*</span></label>
+                    <select class="form-select" id="comunicadoCondominios" th:field="*{condominioIds}" multiple required size="5">
+                         <option th:each="condominio : ${allCondominios}"
+                                th:value="${condominio.conCod}"
+                                th:text="${condominio.conNome}">
+                        </option>
+                    </select>
+                    <div class="form-text">Segure Ctrl (ou Cmd) para selecionar múltiplos condomínios.</div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary" form="comunicadoForm">Salvar</button>
+    </div>
+</div>
+</body>
+</html>

@@ -33,10 +33,9 @@ body, html {
 .main-content { flex-grow: 1; display: flex; flex-direction: column; overflow-y: auto; }
 .content-body { overflow-y: auto; flex-grow: 1; }
 
-/* --- Sidebar --- */
 .sidebar { width: 260px; background-color: var(--card-bg-color); border-right: 1px solid var(--border-color); transition: margin-left 0.3s ease; }
-.sidebar-logo-area { gap: 12px; }
-.sidebar-logo { height: 40px; width: auto; }
+.sidebar-logo-area { gap: 8px; }
+.sidebar-logo { height: 70px; width: auto; }
 .sidebar-title { font-size: 24px; font-weight: bold; color: var(--text-color); }
 .sidebar .nav-link { font-weight: 500; font-size: 0.95rem; display: flex; align-items: center; gap: 10px; }
 .sidebar .nav-link .bx { font-size: 1.2rem; }
@@ -49,14 +48,11 @@ body, html {
     background-color: #f1f5f9;
 }
 
-/* --- Mobile Header --- */
 .mobile-header { display: none; }
 
-/* --- Page Header --- */
 .page-title { font-size: 1.75rem; font-weight: 600; color: var(--text-color); margin: 0; }
 .page-subtitle { margin: 4px 0 0 0; color: var(--text-light-color); }
 
-/* --- Cards --- */
 .card { border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.05); background-color: var(--card-bg-color); transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
 .card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
 .card .value { font-size: 1.75rem; font-weight: 700; display: block; color: var(--text-color); line-height: 1; }
@@ -76,7 +72,6 @@ body, html {
 .icon-promitente { background-color: #fef9c3; color: #eab308; }
 .icon-cessionario { background-color: #e2e8f0; color: #64748b; }
 
-/* --- Widgets --- */
 .widget-card .card-title { font-size: 1.1rem; font-weight: 600; color: var(--text-color); }
 .widget-card .widget-value { font-size: 2.5rem; font-weight: 700; color: var(--primary-color); line-height: 1; }
 .widget-card .widget-subtitle { color: var(--text-light-color); font-size: 0.9rem; }
@@ -84,11 +79,9 @@ body, html {
 .widget-card .widget-details p { margin-bottom: 0.25rem; font-size: 0.9rem; color: var(--text-light-color); }
 .widget-card .widget-details p:last-child { margin-bottom: 0; }
 
-/* --- Filter Tabs --- */
 .filter-tabs .nav-link { color: var(--text-light-color); font-weight: 500; }
 .filter-tabs .nav-link.active { background-color: var(--primary-color); color: white; }
 
-/* --- Unit/Contrato Cards --- */
 .unit-card .card-header { background-color: rgba(128, 128, 128, 0.05); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: flex-start; }
 .unit-card .card-title { font-weight: 600; }
 .unit-card .card-body .info-item { display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem; color: var(--text-light-color); font-size: 0.9rem; }
@@ -98,7 +91,6 @@ body, html {
 .clickable-title { cursor: pointer; transition: color 0.2s ease-in-out; }
 .clickable-title:hover { color: var(--primary-color); }
 
-/* --- Status Badges --- */
 .status-badge { font-size: 0.75rem; font-weight: 600; padding: 0.25em 0.6em; border-radius: 4px; color: #fff; text-transform: uppercase; }
 .status-ocupada, .status-ativo { background-color: #16a34a; }
 .status-vazia, .status-a_vencer { background-color: #facc15; color: #422006; }
@@ -113,11 +105,9 @@ body, html {
 .status-conjuge { background-color: #34495e; }
 .status-dependente { background-color: #14b8a6; }
 
-/* --- Details Modal --- */
 .details-section .section-title { font-size: 1.1rem; font-weight: 600; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 1rem; }
 .details-section .info-item strong { color: var(--text-color); }
 
-/* --- Responsive Styles --- */
 @media (max-width: 991.98px) {
     .sidebar { position: fixed; top: 0; left: 0; height: 100%; z-index: 1050; margin-left: -260px; }
     .sidebar.show { margin-left: 0; }

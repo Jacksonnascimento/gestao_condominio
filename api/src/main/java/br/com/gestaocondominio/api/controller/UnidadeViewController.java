@@ -49,7 +49,8 @@ public class UnidadeViewController {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         carregarDadosPadrao(model);
 
-        List<Unidade> unidades = unidadeService.listarTodasUnidades(true, statusFiltro, busca);
+        // CORREÇÃO: Altera o primeiro parâmetro para 'false' para não incluir inativas por padrão.
+        List<Unidade> unidades = unidadeService.listarTodasUnidades(false, statusFiltro, busca);
 
         if (condominioId != null) {
             unidades = unidades.stream()
@@ -60,7 +61,7 @@ public class UnidadeViewController {
         boolean isGerencial = usuarioLogado.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuarioLogado, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM);
         model.addAttribute("isGerencial", isGerencial);
 
-        List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false); // Usando o método existente
+        List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
         model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
         
         boolean showCondominioInfo = condominiosDisponiveis.size() > 1;
@@ -84,7 +85,7 @@ public class UnidadeViewController {
     public String mostrarFormularioNovaUnidade(Model model) {
         UnidadeRequestDTO dto = new UnidadeRequestDTO();
         
-        List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false); // Usando o método existente
+        List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
         model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
 
         boolean showCondominioInfo = condominiosDisponiveis.size() > 1;
@@ -106,7 +107,7 @@ public class UnidadeViewController {
             Unidade unidade = unidadeOpt.get();
             UnidadeRequestDTO dto = new UnidadeRequestDTO(unidade);
 
-            List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false); // Usando o método existente
+            List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
             model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
 
             boolean showCondominioInfo = condominiosDisponiveis.size() > 1;

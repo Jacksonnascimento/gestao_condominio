@@ -17,3 +17,8 @@ body, html {
     max-width: 380px;
     padding: 15px;
 }
+
+.login-logo {
+    max-width: 80px;
+    height: auto;
+}

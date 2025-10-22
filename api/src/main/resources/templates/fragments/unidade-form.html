@@ -33,8 +33,8 @@
                     <input type="text" class="form-control" id="andar" th:field="*{andar}">
                 </div>
                 <div class="col-md-6">
-                    <label for="fracaoIdeal" class="form-label">Fração Ideal</label>
-                    <input type="number" class="form-control" id="fracaoIdeal" th:field="*{fracaoIdeal}" placeholder="Ex: 1.2345" step="0.0001" min="0">
+                    <label for="fracaoIdeal" class="form-label">Fração Ideal (%)</label>
+                    <input type="number" class="form-control" id="fracaoIdeal" th:field="*{fracaoIdeal}" placeholder="Ex: 1.50" step="0.01" min="0" max="100">
                 </div>
                 <div class="col-md-6">
                     <label for="areaPrivada" class="form-label">Área Privativa (m²)</label>

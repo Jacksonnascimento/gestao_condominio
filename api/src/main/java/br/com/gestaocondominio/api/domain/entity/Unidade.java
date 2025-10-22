@@ -37,7 +37,7 @@ public class Unidade {
     @Column(name = "UNI_STATUS_OCUPACAO", length = 50)
     private UnidadeStatusOcupacao uniStatusOcupacao;
 
-    @Column(name = "UNI_FRACAO_IDEAL", precision = 5, scale = 4)
+    @Column(name = "UNI_FRACAO_IDEAL", precision = 5, scale = 2)
     private BigDecimal fracaoIdeal;
 
     @Column(name = "UNI_AREA_PRIVADA", precision = 10, scale = 2)

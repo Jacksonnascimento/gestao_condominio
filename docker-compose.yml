@@ -1,0 +1,16 @@
+services:
+  postgres-condigtal-dev:
+    image: postgres:15
+    container_name: condigtal-db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: condigtal_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  postgres-data:

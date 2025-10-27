@@ -14,6 +14,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -50,7 +51,8 @@ public class ContratoService {
         contratoRepository.deleteById(id);
     }
 
-    public List<Contrato> listarContratos(Integer condominioId, String busca, StatusContrato status, Boolean isProximoVencimento, Boolean isHistorico, LocalDate inicioApos, LocalDate fimAntes) {
+    public List<Contrato> listarContratos(Integer condominioId, String busca, StatusContrato status,
+            Boolean isProximoVencimento, Boolean isHistorico, LocalDate inicioApos, LocalDate fimAntes) {
         Specification<Contrato> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -61,8 +63,7 @@ public class ContratoService {
             if (StringUtils.hasText(busca)) {
                 predicates.add(cb.or(
                         cb.like(cb.lower(root.get("empresa")), "%" + busca.toLowerCase() + "%"),
-                        cb.like(cb.lower(root.get("servico")), "%" + busca.toLowerCase() + "%")
-                ));
+                        cb.like(cb.lower(root.get("servico")), "%" + busca.toLowerCase() + "%")));
             }
 
             if (inicioApos != null) {
@@ -79,9 +80,13 @@ public class ContratoService {
         List<Contrato> todosContratos = contratoRepository.findAll(spec);
         todosContratos.forEach(this::atualizarStatusCalculado);
 
+        todosContratos.sort(Comparator.comparing(Contrato::getDataInicio)
+                .thenComparing(Contrato::getDataFim));
+
         if (Boolean.TRUE.equals(isHistorico)) {
             return todosContratos.stream()
-                    .filter(c -> c.getStatus() == StatusContrato.FINALIZADO || c.getStatus() == StatusContrato.RESCINDIDO)
+                    .filter(c -> c.getStatus() == StatusContrato.FINALIZADO
+                            || c.getStatus() == StatusContrato.RESCINDIDO)
                     .filter(c -> status == null || c.getStatus() == status)
                     .collect(Collectors.toList());
         } else if (Boolean.TRUE.equals(isProximoVencimento)) {
@@ -111,8 +116,9 @@ public class ContratoService {
     }
 
     private void atualizarStatusCalculado(Contrato contrato) {
+
         if (contrato.getStatus() != StatusContrato.RESCINDIDO) {
-             contrato.setStatus(calcularStatus(contrato.getDataFim()));
+            contrato.setStatus(calcularStatus(contrato.getDataFim()));
         }
     }
 
@@ -128,15 +134,19 @@ public class ContratoService {
         if (dto.getStatus() == StatusContrato.RESCINDIDO) {
             contrato.setStatus(dto.getStatus());
         } else {
+
             contrato.setStatus(calcularStatus(dto.getDataFim()));
         }
     }
 
     private StatusContrato calcularStatus(LocalDate dataFim) {
         LocalDate hoje = LocalDate.now();
-        if (dataFim == null) return StatusContrato.ATIVO;
-        if (dataFim.isBefore(hoje)) return StatusContrato.FINALIZADO;
-        if (dataFim.isBefore(hoje.plusDays(30))) return StatusContrato.A_VENCER;
+        if (dataFim == null)
+            return StatusContrato.ATIVO;
+        if (dataFim.isBefore(hoje))
+            return StatusContrato.FINALIZADO;
+        if (dataFim.isBefore(hoje.plusDays(30)))
+            return StatusContrato.A_VENCER;
         return StatusContrato.ATIVO;
     }
 }

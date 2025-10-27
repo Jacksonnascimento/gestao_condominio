@@ -20,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Comparator; 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -42,6 +43,10 @@ public class OcupanteService {
     public List<OcupanteResponseDTO> consultarOcupantesPorUsuario(Pessoa usuario, Integer condominioId, String busca,
             OcupanteVinculo vinculo, Integer unidadeId) {
         List<Ocupante> ocupantes = findOcupantesByUsuario(usuario, condominioId, busca, vinculo, unidadeId);
+
+        ocupantes.sort(Comparator.comparing(o -> (o.getPessoa() != null ? o.getPessoa().getPesNome() : ""),
+                String.CASE_INSENSITIVE_ORDER));
+
         return ocupantes.stream()
                 .map(OcupanteResponseDTO::new)
                 .collect(Collectors.toList());
@@ -52,18 +57,21 @@ public class OcupanteService {
         if (usuario.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuario, UserRole.SINDICO,
                 UserRole.ADMIN, UserRole.FUNCIONARIO_ADM)) {
             Specification<Ocupante> spec = OcupanteSpecification.comFiltros(condominioId, busca, vinculo, unidadeId);
-            return ocupanteRepository.findAll(spec);
+            return ocupanteRepository.findAll(spec); 
         } else {
             List<Unidade> unidadesDoMorador = findUnidadesByMorador(usuario);
             if (!unidadesDoMorador.isEmpty()) {
                 if (unidadeId != null) {
                     boolean temAcesso = unidadesDoMorador.stream().anyMatch(u -> u.getUniCod().equals(unidadeId));
                     if (temAcesso) {
-                        Specification<Ocupante> spec = OcupanteSpecification.comFiltros(null, busca, vinculo, unidadeId);
-                        return ocupanteRepository.findAll(spec);
+                        Specification<Ocupante> spec = OcupanteSpecification.comFiltros(null, busca, vinculo,
+                                unidadeId);
+                        return ocupanteRepository.findAll(spec); 
                     }
                 } else {
-                     return ocupanteRepository.findByUnidadeIn(unidadesDoMorador);
+                    Specification<Ocupante> spec = OcupanteSpecification.comFiltros(null, busca, vinculo, null)
+                            .and((root, query, cb) -> root.get("unidade").in(unidadesDoMorador));
+                    return ocupanteRepository.findAll(spec);
                 }
             }
         }
@@ -172,7 +180,7 @@ public class OcupanteService {
 
         if (usuarioCondominioService.possuiRole(usuario, UserRole.MORADOR)) {
             boolean pertence = findUnidadesByMorador(usuario).stream()
-                .anyMatch(unidade -> unidade.equals(ocupante.getUnidade()));
+                    .anyMatch(unidade -> unidade.getUniCod().equals(ocupante.getUnidade().getUniCod())); // Comparar IDs
             if (pertence) {
                 return ocupante;
             }

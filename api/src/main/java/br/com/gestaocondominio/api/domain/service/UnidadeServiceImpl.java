@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -33,12 +34,12 @@ public class UnidadeServiceImpl implements UnidadeService {
     private final OcupanteRepository ocupanteRepository;
 
     public UnidadeServiceImpl(UnidadeRepository unidadeRepository,
-                              CondominioRepository condominioRepository,
-                              OcupanteRepository ocupanteRepository) {
+            CondominioRepository condominioRepository,
+            OcupanteRepository ocupanteRepository) {
         this.unidadeRepository = unidadeRepository;
         this.condominioRepository = condominioRepository;
         this.ocupanteRepository = ocupanteRepository;
-       
+
     }
 
     @Override
@@ -69,15 +70,18 @@ public class UnidadeServiceImpl implements UnidadeService {
 
         final Integer finalCondominioId = condominioId;
         Condominio condominio = condominioRepository.findById(finalCondominioId)
-                .orElseThrow(() -> new EntityNotFoundException("Condomínio não encontrado com o ID: " + finalCondominioId));
+                .orElseThrow(
+                        () -> new EntityNotFoundException("Condomínio não encontrado com o ID: " + finalCondominioId));
 
         if (dto.getUniNumero() == null || dto.getUniNumero().trim().isEmpty()) {
             throw new IllegalArgumentException("Número da unidade não pode ser vazio.");
         }
 
-        unidadeRepository.findByCondominioAndUniNumeroAndBlocoAndUnidadeTipo(condominio, dto.getUniNumero(), dto.getBloco(), dto.getUnidadeTipo()).ifPresent(u -> {
-            throw new IllegalArgumentException("Já existe uma unidade com este número, bloco e tipo para o condomínio informado.");
-        });
+        unidadeRepository.findByCondominioAndUniNumeroAndBlocoAndUnidadeTipo(condominio, dto.getUniNumero(),
+                dto.getBloco(), dto.getUnidadeTipo()).ifPresent(u -> {
+                    throw new IllegalArgumentException(
+                            "Já existe uma unidade com este número, bloco e tipo para o condomínio informado.");
+                });
 
         Unidade unidade = new Unidade();
         unidade.setCondominio(condominio);
@@ -88,7 +92,8 @@ public class UnidadeServiceImpl implements UnidadeService {
         unidade.setFracaoIdeal(dto.getFracaoIdeal());
         unidade.setAreaPrivada(dto.getAreaPrivada());
         unidade.setObservacao(dto.getObservacao());
-        unidade.setUniStatusOcupacao(dto.getUniStatusOcupacao() == null ? UnidadeStatusOcupacao.VAZIA : dto.getUniStatusOcupacao());
+        unidade.setUniStatusOcupacao(
+                dto.getUniStatusOcupacao() == null ? UnidadeStatusOcupacao.VAZIA : dto.getUniStatusOcupacao());
         unidade.setUniDtCadastro(LocalDateTime.now());
         unidade.setUniDtAtualizacao(LocalDateTime.now());
         unidade.setUniAtiva(dto.getUniAtiva() != null ? dto.getUniAtiva() : true);
@@ -105,23 +110,25 @@ public class UnidadeServiceImpl implements UnidadeService {
         List<Unidade> unidadesAutorizadas;
 
         if (userDetails.getPessoa().getPesIsGlobalAdmin()) {
-            unidadesAutorizadas = incluirInativas ? unidadeRepository.findAllWithCondominio() : unidadeRepository.findByUniAtivaWithCondominio(true);
+            unidadesAutorizadas = incluirInativas ? unidadeRepository.findAllWithCondominio()
+                    : unidadeRepository.findByUniAtivaWithCondominio(true);
         } else {
-            Set<Integer> condoIdsComAcessoAdmin = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_", "ROLE_FUNCIONARIO_ADM");
+            Set<Integer> condoIdsComAcessoAdmin = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_",
+                    "ROLE_FUNCIONARIO_ADM");
             if (!condoIdsComAcessoAdmin.isEmpty()) {
                 List<Condominio> condominiosGerenciados = condominioRepository.findAllById(condoIdsComAcessoAdmin);
                 unidadesAutorizadas = unidadeRepository.findByCondominioInWithCondominio(condominiosGerenciados);
             } else { // Assume MORADOR ou outro papel restrito
                 List<Ocupante> vinculosOcupante = ocupanteRepository.findByPessoa(userDetails.getPessoa());
                 unidadesAutorizadas = vinculosOcupante.stream()
-                                             .map(Ocupante::getUnidade)
-                                             .collect(Collectors.toList());
+                        .map(Ocupante::getUnidade)
+                        .collect(Collectors.toList());
             }
 
             if (!incluirInativas) {
                 unidadesAutorizadas = unidadesAutorizadas.stream()
-                                             .filter(u -> u.getUniAtiva() != null && u.getUniAtiva())
-                                             .collect(Collectors.toList());
+                        .filter(u -> u.getUniAtiva() != null && u.getUniAtiva())
+                        .collect(Collectors.toList());
             }
         }
 
@@ -134,13 +141,13 @@ public class UnidadeServiceImpl implements UnidadeService {
 
         if (busca != null && !busca.isBlank()) {
             String buscaLower = busca.toLowerCase();
-            stream = stream.filter(u ->
-                    (u.getUniNumero() != null && u.getUniNumero().toLowerCase().contains(buscaLower)) ||
-                    (u.getBloco() != null && u.getBloco().toLowerCase().contains(buscaLower))
-            );
+            stream = stream
+                    .filter(u -> (u.getUniNumero() != null && u.getUniNumero().toLowerCase().contains(buscaLower)) ||
+                            (u.getBloco() != null && u.getBloco().toLowerCase().contains(buscaLower)));
         }
 
-        return stream.collect(Collectors.toList());
+        return stream.sorted(Comparator.comparing(Unidade::getUniNumero))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -160,12 +167,13 @@ public class UnidadeServiceImpl implements UnidadeService {
         checkAdminOrSindicoPermissionForCondominio(unidadeExistente.getCondominio().getConCod());
 
         unidadeRepository.findByCondominioAndUniNumeroAndBlocoAndUnidadeTipo(
-            unidadeExistente.getCondominio(), dto.getUniNumero(), dto.getBloco(), dto.getUnidadeTipo()
-        ).ifPresent(u -> {
-            if (!u.getUniCod().equals(id)) {
-                throw new IllegalArgumentException("Já existe uma unidade com este número, bloco e tipo para o condomínio informado.");
-            }
-        });
+                unidadeExistente.getCondominio(), dto.getUniNumero(), dto.getBloco(), dto.getUnidadeTipo())
+                .ifPresent(u -> {
+                    if (!u.getUniCod().equals(id)) {
+                        throw new IllegalArgumentException(
+                                "Já existe uma unidade com este número, bloco e tipo para o condomínio informado.");
+                    }
+                });
 
         unidadeExistente.setUniNumero(dto.getUniNumero());
         unidadeExistente.setUnidadeTipo(dto.getUnidadeTipo());
@@ -193,10 +201,9 @@ public class UnidadeServiceImpl implements UnidadeService {
         checkAdminOrSindicoPermissionForCondominio(unidade.getCondominio().getConCod());
 
         if (!ocupanteRepository.findByUnidade(unidade).isEmpty()) {
-            throw new IllegalArgumentException("Não é possível inativar a unidade, pois existem ocupantes vinculados a ela.");
+            throw new IllegalArgumentException(
+                    "Não é possível inativar a unidade, pois existem ocupantes vinculados a ela.");
         }
-        
-      
 
         unidade.setUniAtiva(false);
         unidade.setUniDtAtualizacao(LocalDateTime.now());
@@ -226,7 +233,8 @@ public class UnidadeServiceImpl implements UnidadeService {
             return;
         }
 
-        boolean isMoradorDaUnidade = ocupanteRepository.findByPessoaAndUnidade(userDetails.getPessoa(), unidade).isPresent();
+        boolean isMoradorDaUnidade = ocupanteRepository.findByPessoaAndUnidade(userDetails.getPessoa(), unidade)
+                .isPresent();
         if (isMoradorDaUnidade) {
             return;
         }
@@ -242,7 +250,8 @@ public class UnidadeServiceImpl implements UnidadeService {
                 hasAuthority(authentication, "ROLE_ADMIN_" + condominioId);
 
         if (!hasPermission) {
-            throw new AccessDeniedException("Acesso negado. Você não tem permissão para gerenciar unidades neste condomínio.");
+            throw new AccessDeniedException(
+                    "Acesso negado. Você não tem permissão para gerenciar unidades neste condomínio.");
         }
     }
 
@@ -260,7 +269,8 @@ public class UnidadeServiceImpl implements UnidadeService {
 
     @Deprecated
     public void checkAdminOrSindicoPermission(Integer unidadeId) {
-        Unidade unidade = unidadeRepository.findById(unidadeId).orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada"));
+        Unidade unidade = unidadeRepository.findById(unidadeId)
+                .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada"));
         checkAdminOrSindicoPermissionForCondominio(unidade.getCondominio().getConCod());
     }
 }

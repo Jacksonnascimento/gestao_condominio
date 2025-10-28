@@ -4,7 +4,7 @@ import br.com.gestaocondominio.api.domain.entity.Comunicado;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.jpa.repository.EntityGraph;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.lang.NonNull;
@@ -15,6 +15,6 @@ public interface ComunicadoRepository extends JpaRepository<Comunicado, Integer>
 
     @Override
     @NonNull
-    @EntityGraph(attributePaths = {"condominios", "criador"})
+
     Page<Comunicado> findAll(@NonNull Specification<Comunicado> spec, @NonNull Pageable pageable);
 }

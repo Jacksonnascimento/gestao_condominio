@@ -25,7 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const showErrorFeedback = (message = 'Ocorreu um erro.') => {
-
         if (Swal.isLoading()) { Swal.close(); }
         Swal.fire({ icon: 'error', title: 'Erro!', text: message });
     };
@@ -36,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(url);
             if (!response.ok) {
-
                 let errorBody = '';
                 try { errorBody = await response.text(); } catch (e) { }
                 throw new Error(`Falha ao carregar conteúdo: ${response.statusText}. ${errorBody}`);
@@ -47,7 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Erro ao buscar/injetar conteúdo do modal:', error);
             contentElement.innerHTML = `<div class="modal-body"><p class="text-danger">Erro ao carregar o conteúdo. Tente novamente.</p></div>`;
-
             return false;
         }
     };
@@ -65,20 +62,31 @@ document.addEventListener('DOMContentLoaded', () => {
             let responseText = '';
             try {
                 responseText = await response.text();
-                responseData = JSON.parse(responseText);
+                // Tenta parsear como JSON, mas se falhar, usa o texto como mensagem
+                try {
+                    responseData = JSON.parse(responseText);
+                } catch (parseError) {
+                    responseData = { message: responseText || 'Resposta inválida do servidor.' };
+                }
             } catch (e) {
-
-                responseData = { message: responseText || 'Resposta inválida do servidor.' };
+                // Caso a leitura do texto falhe
+                responseData = { message: 'Não foi possível ler a resposta do servidor.' };
             }
 
-
             if (response.ok) {
-
                 if (Swal.isLoading()) { Swal.close(); }
                 if (successCallback) successCallback(responseData);
             } else {
-                const message = responseData.message || 'Erro ao processar a solicitação.';
-                showErrorFeedback(message);
+                const message = responseData.message || responseData.detail || 'Erro ao processar a solicitação.';
+                 // Extrai a mensagem de erro específica do backend se disponível
+                let extractedMessage = message;
+                if (typeof message === 'string') {
+                    const match = message.match(/"([^"]*)"/); // Tenta pegar a mensagem dentro de aspas
+                    if (match && match[1]) {
+                        extractedMessage = match[1];
+                    }
+                }
+                showErrorFeedback(extractedMessage);
                 if (errorCallback) errorCallback(responseData);
             }
         } catch (error) {
@@ -86,8 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
             showErrorFeedback('Erro de comunicação com o servidor.');
             if (errorCallback) errorCallback(error);
         }
-
     };
+
 
     const carregarUnidadesPorCondominio = async (condominioId, unidadeSelectElement) => {
         if (!unidadeSelectElement) return;
@@ -139,35 +147,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const handleNovaOcorrenciaSubmit = async (event) => {
         event.preventDefault();
         const form = event.target;
-
-        const formData = new FormData(form);
-        showLoadingFeedback();
-
-        try {
-            const response = await fetch(form.action, { method: 'POST', body: formData });
-
-            let responseData = {};
-            let responseText = '';
-            try {
-                responseText = await response.text();
-                responseData = JSON.parse(responseText);
-            } catch (e) {
-                responseData = { message: responseText || 'Resposta inválida do servidor.' };
-            }
-
-            if (response.ok) {
-                if (Swal.isLoading()) { Swal.close(); }
-                mainModal.hide();
-                showSuccessFeedback('Ocorrência registrada com sucesso!');
-            } else {
-                const message = responseData.message || 'Erro ao registrar ocorrência.';
-                showErrorFeedback(message);
-            }
-        } catch (error) {
-            console.error('Erro ao registrar ocorrência:', error);
-            showErrorFeedback('Erro de comunicação.');
-        }
-
+        await handleAjaxFormSubmit(form, (responseData) => {
+            mainModal.hide();
+            showSuccessFeedback('Ocorrência registrada com sucesso!');
+        });
     };
 
     const handleComentarioSubmit = async (event) => {
@@ -176,11 +159,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const input = form.querySelector('input[name="comentario"]');
         if (!input || !input.value.trim()) return;
 
-
         await handleAjaxFormSubmit(form, (responseData) => {
             input.value = '';
             addComentarioToList(responseData);
-
+            // Não fecha o modal nem recarrega a página
         });
     };
 
@@ -190,24 +172,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const fileInput = form.querySelector('input[type="file"]');
         if (!fileInput || fileInput.files.length === 0) return;
 
-
         await handleAjaxFormSubmit(form, (responseData) => {
-            fileInput.value = '';
+            fileInput.value = ''; // Limpa o input de arquivo
             addAnexoToList(responseData);
-
+             // Não fecha o modal nem recarrega a página
         });
     };
 
     const handleFinalizarSubmit = async (event) => {
         event.preventDefault();
         const form = event.target;
-
-
         await handleAjaxFormSubmit(form, (responseData) => {
             if (finalizarModalInstance) finalizarModalInstance.hide();
             mainModal.hide();
-
-            showSuccessFeedback(responseData.message || 'Ocorrência finalizada com sucesso!');
+            showSuccessFeedback(responseData.message || 'Ocorrência finalizada com sucesso!'); // Recarrega a página por padrão
         });
     };
 
@@ -239,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const newItem = document.createElement('div');
         newItem.className = 'anexo-item d-flex justify-content-between align-items-center';
-        newItem.dataset.anexoId = anexoDTO.id;
+        newItem.dataset.anexoId = anexoDTO.id; // Adiciona ID para facilitar remoção
         newItem.innerHTML = `
             <div>
                  <a href="/ocorrencias/${anexoDTO.ocorrenciaId}/anexo/${anexoDTO.id}" target="_blank" class="text-decoration-none anexo-link">${escapeHtml(anexoDTO.nomeOriginal || 'anexo')}</a>
@@ -258,8 +236,9 @@ document.addEventListener('DOMContentLoaded', () => {
                  </button>
              </div>
         `;
-        listElement.insertBefore(newItem, listElement.firstChild);
+        listElement.insertBefore(newItem, listElement.firstChild); // Insere no início
 
+        // Adiciona listener ao novo botão de excluir
         const deleteButton = newItem.querySelector('.btn-excluir-anexo');
         deleteButton?.addEventListener('click', handleExcluirAnexoClick);
     };
@@ -281,23 +260,42 @@ document.addEventListener('DOMContentLoaded', () => {
                     let responseData = {};
                     let responseText = '';
                     try {
+                        // Tenta ler como texto primeiro
                         responseText = await response.text();
-                        responseData = JSON.parse(responseText);
-                    } catch (e) {
-                        responseData = { message: responseText || 'Resposta inválida do servidor.' };
+                        // Tenta parsear como JSON
+                        try {
+                           responseData = JSON.parse(responseText);
+                        } catch (parseError) {
+                            // Se falhar o parse, usa o texto como mensagem (caso de respostas não-JSON)
+                           responseData = { message: responseText || 'Resposta inválida do servidor.' };
+                        }
+                    } catch (readError) {
+                        responseData = { message: 'Não foi possível ler a resposta do servidor.' };
                     }
+
 
                     if (response.ok) {
                         const itemToRemove = document.querySelector(`.anexo-item[data-anexo-id="${anexoId}"]`);
                         itemToRemove?.remove();
-                        if (Swal.isLoading()) { Swal.close(); } // Fecha loading antes de verificar lista
+
+                        // Verifica se a lista ficou vazia após remover
                         const listElement = document.getElementById('anexosList');
                         if (listElement && !listElement.querySelector('.anexo-item')) {
                             listElement.innerHTML = '<div class="text-muted text-center p-3">Nenhum anexo adicionado.</div>';
                         }
+                         if (Swal.isLoading()) { Swal.close(); } // Fecha o loading
+                         // Não mostra alerta de sucesso para exclusão, apenas remove o item
                     } else {
                         const message = responseData.message || 'Erro ao excluir anexo.';
-                        showErrorFeedback(message);
+                         // Extrai a mensagem de erro específica do backend se disponível
+                        let extractedMessage = message;
+                        if (typeof message === 'string') {
+                            const match = message.match(/"([^"]*)"/);
+                            if (match && match[1]) {
+                                extractedMessage = match[1];
+                            }
+                        }
+                        showErrorFeedback(extractedMessage);
                     }
                 } catch (error) {
                     console.error('Erro ao excluir anexo:', error);
@@ -311,8 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalizarModalElement = document.getElementById('finalizarOcorrenciaModal');
         if (finalizarModalElement) {
             if (!finalizarModalInstance) {
-
-                finalizarModalInstance = createStaticModal(finalizarModalElement);
+                finalizarModalInstance = createStaticModal(finalizarModalElement); // Usa a função global
                 const formFinalizar = finalizarModalElement.querySelector('#finalizarForm');
                 formFinalizar?.addEventListener('submit', handleFinalizarSubmit);
             }
@@ -320,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-
+    // --- CORREÇÃO FINAL ---
     const handleAnexoLinkClick = async (event) => {
         const link = event.target.closest('a.anexo-link');
         if (!link) return;
@@ -330,43 +327,47 @@ document.addEventListener('DOMContentLoaded', () => {
         showLoadingFeedback('Verificando arquivo...');
 
         try {
-
-            const response = await fetch(url, { method: 'GET' });
+            // Usa 'HEAD' para verificar a existência sem baixar o arquivo
+            // Se o servidor não suportar HEAD para esses links, volte para 'GET'
+            const response = await fetch(url, { method: 'HEAD' });
 
             if (response.ok) {
+                // Se HEAD funcionou e deu OK, o arquivo existe
                 if (Swal.isLoading()) { Swal.close(); }
-
                 window.open(url, '_blank');
+            } else if (response.status === 404) {
+                 // Se o status for 404, o arquivo não foi encontrado
+                 showErrorFeedback("Arquivo não encontrado. Pode ter sido excluído.");
             } else {
-
-                let errorMsg = "Arquivo não encontrado. Pode ter sido excluído.";
-                try {
-                    const errorData = await response.json();
-                    if (errorData && errorData.detail) {
-
-                        const match = errorData.detail.match(/"([^"]*)"/);
-                        if (match && match[1]) {
-                            errorMsg = match[1];
-                        } else {
-                            errorMsg = errorData.detail;
-                        }
-                    } else if (errorData && errorData.message) {
-                        errorMsg = errorData.message;
-                    }
-                } catch (e) {
-
-                    const errorText = await response.text();
-                    if (errorText) errorMsg = errorText;
-                    console.warn("Resposta de erro não era JSON:", errorText);
-                }
-                showErrorFeedback(errorMsg);
+                // Outro erro inesperado ao verificar o arquivo
+                // Tenta obter alguma informação do status/texto para o erro
+                 let errorMsg = `Erro ${response.status} ao verificar o arquivo.`;
+                 try {
+                     const errorText = await response.text();
+                     if (errorText) {
+                         // Tenta extrair mensagem mais específica se houver
+                         const jsonMatch = errorText.match(/"detail":"([^"]*)"/i) || errorText.match(/"message":"([^"]*)"/i);
+                          if (jsonMatch && jsonMatch[1]) {
+                             const detailMsgMatch = jsonMatch[1].match(/"([^"]*)"/); // Tenta pegar a msg dentro da msg
+                             errorMsg = (detailMsgMatch && detailMsgMatch[1]) ? detailMsgMatch[1] : jsonMatch[1];
+                         } else {
+                             const titleMatch = errorText.match(/<title>(.*?)<\/title>/i); // Para páginas HTML de erro
+                             errorMsg = (titleMatch && titleMatch[1]) ? titleMatch[1] : `Erro ${response.status}: ${response.statusText}`;
+                         }
+                     }
+                 } catch (e) {
+                     // Ignora erro ao ler corpo, usa mensagem baseada no status
+                     errorMsg = `Erro ${response.status}: ${response.statusText} ao verificar o arquivo.`;
+                 }
+                 showErrorFeedback(errorMsg);
             }
         } catch (error) {
-            console.error('Erro ao verificar/acessar anexo:', error);
+            // Erro de rede/conexão
+            console.error('Erro de rede ao verificar/acessar anexo:', error);
             showErrorFeedback('Erro de comunicação ao tentar acessar o anexo.');
         }
     };
-
+    // --- FIM DA CORREÇÃO FINAL ---
 
     const initializeNovaOcorrenciaListeners = () => {
         const form = mainModalContent.querySelector('#ocorrenciaForm');
@@ -375,10 +376,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const condominioSelect = mainModalContent.querySelector('#condominioId');
         const unidadeSelect = mainModalContent.querySelector('#unidadeId');
 
+        // Adiciona listener para carregar unidades quando o condomínio muda
         if (condominioSelect && unidadeSelect) {
             condominioSelect.addEventListener('change', (event) => {
                 carregarUnidadesPorCondominio(event.target.value, unidadeSelect);
             });
+            // Carrega unidades iniciais se um condomínio já estiver selecionado (ex: admin não global)
             if (condominioSelect.value) {
                 carregarUnidadesPorCondominio(condominioSelect.value, unidadeSelect);
             }
@@ -386,46 +389,50 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const initializeDetalhesModalListeners = (ocorrenciaId) => {
+        // Adiciona listeners para os formulários de comentário e anexo
         const comentarioForm = mainModalContent.querySelector('#comentarioForm');
         comentarioForm?.addEventListener('submit', handleComentarioSubmit);
 
         const anexoForm = mainModalContent.querySelector('#anexoForm');
         anexoForm?.addEventListener('submit', handleAnexoSubmit);
 
+        // (Re)Adiciona listeners aos botões de excluir anexo (importante para itens adicionados dinamicamente)
         mainModalContent.querySelectorAll('.btn-excluir-anexo').forEach(button => {
-            button.removeEventListener('click', handleExcluirAnexoClick);
+            button.removeEventListener('click', handleExcluirAnexoClick); // Remove listener antigo para evitar duplicação
             button.addEventListener('click', handleExcluirAnexoClick);
         });
 
+        // Adiciona listener ao botão de abrir modal de finalização
         const btnAbrirFinalizar = mainModalContent.querySelector('#btnAbrirModalFinalizar');
         btnAbrirFinalizar?.addEventListener('click', handleAbrirModalFinalizarClick);
 
+        // Adiciona listener à lista de anexos para tratar cliques nos links (delegação de evento)
         const anexosList = mainModalContent.querySelector('#anexosList');
         if (anexosList) {
-            anexosList.removeEventListener('click', handleAnexoLinkClick);
+            anexosList.removeEventListener('click', handleAnexoLinkClick); // Garante que não haja listeners duplicados
             anexosList.addEventListener('click', handleAnexoLinkClick);
         }
 
-
+        // Limpeza ao fechar o modal principal (evita problemas com modal aninhado)
         mainModalElement.addEventListener('hidden.bs.modal', () => {
             if (finalizarModalInstance) {
-
+                // Remove listener do formulário de finalização
                 const formFinalizar = document.getElementById('finalizarForm');
                 formFinalizar?.removeEventListener('submit', handleFinalizarSubmit);
-                finalizarModalInstance.dispose();
+                finalizarModalInstance.dispose(); // Destroi a instância do modal de finalização
                 finalizarModalInstance = null;
-
-                const backdrops = document.querySelectorAll('.modal-backdrop');
-                backdrops.forEach(bd => bd.remove());
-
+                 // Remove manualmente o backdrop se ainda existir (bug do bootstrap com modais aninhados)
+                 const backdrops = document.querySelectorAll('.modal-backdrop');
+                 backdrops.forEach(bd => bd.remove());
+                 // Garante que o body volte ao normal
+                 document.body.classList.remove('modal-open');
+                 document.body.style.overflow = '';
+                 document.body.style.paddingRight = '';
             }
-
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
-        }, { once: true });
+        }, { once: true }); // Executa o listener apenas uma vez
     };
 
+    // Função auxiliar para escapar HTML (evita XSS)
     const escapeHtml = (unsafe) => {
         if (!unsafe) return '';
         return unsafe
@@ -436,41 +443,50 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/'/g, "&#039;");
     }
 
+    // Função auxiliar para formatar data/hora
     const formatDateTime = (dateTimeString) => {
         if (!dateTimeString) return '';
         try {
             const date = new Date(dateTimeString);
-
+            // Verifica se a data é válida
             if (isNaN(date.getTime())) {
                 throw new Error("Data inválida");
             }
             return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         } catch (e) {
             console.error("Erro ao formatar data:", dateTimeString, e);
-            return dateTimeString;
+            return dateTimeString; // Retorna a string original em caso de erro
         }
     }
 
-    const formatBytes = (bytes, decimals = 1) => {
-        if (!+bytes || bytes === 0) return '0 Bytes'
+    // Função auxiliar para formatar bytes
+     const formatBytes = (bytes, decimals = 1) => {
+        if (!+bytes || bytes === 0) return '0 Bytes' // Trata 0 ou não numérico
         const k = 1024
         const dm = decimals < 0 ? 0 : decimals
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'] // Adicionado 'Bytes'
 
+        // Calcula o índice correto (logaritmo na base k)
         const i = (bytes === 0) ? 0 : Math.floor(Math.log(bytes) / Math.log(k));
 
-        if (isNaN(i) || i < 0) return '0 Bytes';
+        // Validação adicional para o índice
+        if (isNaN(i) || i < 0) return '0 Bytes'; // Retorna '0 Bytes' se o cálculo falhar
+
+        // Formata o número e adiciona a unidade
         return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
     }
 
-    document.addEventListener('modalContentLoaded', () => {
 
+    // Listener para inicializar listeners específicos quando o conteúdo do modal é carregado
+    document.addEventListener('modalContentLoaded', () => {
+        // Verifica se é o formulário de nova ocorrência
         if (mainModalContent.querySelector('#ocorrenciaForm')) {
             initializeNovaOcorrenciaListeners();
         }
-
+        // Verifica se é o modal de detalhes (pela presença de um elemento específico)
         if (mainModalContent.querySelector('.ocorrencia-detalhes-modal')) {
-
+             // O ID não é estritamente necessário aqui se os listeners internos já pegam via data-attributes
+            initializeDetalhesModalListeners(null);
         }
     });
 

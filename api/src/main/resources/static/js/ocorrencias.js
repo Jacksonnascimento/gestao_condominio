@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const showErrorFeedback = (message = 'Ocorreu um erro.') => {
+
+        if (Swal.isLoading()) { Swal.close(); }
         Swal.fire({ icon: 'error', title: 'Erro!', text: message });
     };
 
@@ -34,7 +36,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(url);
             if (!response.ok) {
-                throw new Error(`Falha ao carregar conteúdo: ${response.statusText}`);
+
+                let errorBody = '';
+                try { errorBody = await response.text(); } catch (e) { }
+                throw new Error(`Falha ao carregar conteúdo: ${response.statusText}. ${errorBody}`);
             }
             contentElement.innerHTML = await response.text();
             document.dispatchEvent(new CustomEvent('modalContentLoaded'));
@@ -42,11 +47,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Erro ao buscar/injetar conteúdo do modal:', error);
             contentElement.innerHTML = `<div class="modal-body"><p class="text-danger">Erro ao carregar o conteúdo. Tente novamente.</p></div>`;
+
             return false;
         }
     };
 
-     const handleAjaxFormSubmit = async (form, successCallback, errorCallback) => {
+    const handleAjaxFormSubmit = async (form, successCallback, errorCallback) => {
         showLoadingFeedback();
         const url = form.action;
         const method = form.method;
@@ -54,22 +60,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const response = await fetch(url, { method: method.toUpperCase(), body: formData });
-            const responseData = await response.json().catch(() => ({})); // Captura caso não seja JSON
+
+            let responseData = {};
+            let responseText = '';
+            try {
+                responseText = await response.text();
+                responseData = JSON.parse(responseText);
+            } catch (e) {
+
+                responseData = { message: responseText || 'Resposta inválida do servidor.' };
+            }
+
 
             if (response.ok) {
-                if(successCallback) successCallback(responseData);
+
+                if (Swal.isLoading()) { Swal.close(); }
+                if (successCallback) successCallback(responseData);
             } else {
-                 const message = responseData.message || await response.text() || 'Erro ao processar a solicitação.';
-                 showErrorFeedback(message);
-                 if(errorCallback) errorCallback(responseData);
+                const message = responseData.message || 'Erro ao processar a solicitação.';
+                showErrorFeedback(message);
+                if (errorCallback) errorCallback(responseData);
             }
         } catch (error) {
             console.error(`Erro no submit AJAX para ${url}:`, error);
             showErrorFeedback('Erro de comunicação com o servidor.');
-             if(errorCallback) errorCallback(error);
-        } finally {
-             if (Swal.isLoading()) { Swal.close(); }
+            if (errorCallback) errorCallback(error);
         }
+
     };
 
     const carregarUnidadesPorCondominio = async (condominioId, unidadeSelectElement) => {
@@ -79,6 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!condominioId) {
             unidadeSelectElement.innerHTML = '<option value="">Selecione um condomínio</option>';
+            unidadeSelectElement.disabled = false;
             return;
         }
 
@@ -112,75 +130,88 @@ document.addEventListener('DOMContentLoaded', () => {
             const ocorrenciaId = event.currentTarget.dataset.ocorrenciaId;
             if (!ocorrenciaId) return;
             const success = await fetchAndInjectModalContent(`/ocorrencias/detalhes/${ocorrenciaId}`, mainModal, mainModalContent);
-             if (success) {
-                  initializeDetalhesModalListeners(ocorrenciaId);
-             }
+            if (success) {
+                initializeDetalhesModalListeners(ocorrenciaId);
+            }
         });
     });
 
     const handleNovaOcorrenciaSubmit = async (event) => {
         event.preventDefault();
         const form = event.target;
-        const formData = new URLSearchParams(new FormData(form));
+
+        const formData = new FormData(form);
         showLoadingFeedback();
 
-         try {
+        try {
             const response = await fetch(form.action, { method: 'POST', body: formData });
-             const responseData = await response.json().catch(() => ({}));
+
+            let responseData = {};
+            let responseText = '';
+            try {
+                responseText = await response.text();
+                responseData = JSON.parse(responseText);
+            } catch (e) {
+                responseData = { message: responseText || 'Resposta inválida do servidor.' };
+            }
 
             if (response.ok) {
+                if (Swal.isLoading()) { Swal.close(); }
                 mainModal.hide();
                 showSuccessFeedback('Ocorrência registrada com sucesso!');
             } else {
-                const message = responseData.message || await response.text() || 'Erro ao registrar ocorrência.';
+                const message = responseData.message || 'Erro ao registrar ocorrência.';
                 showErrorFeedback(message);
             }
         } catch (error) {
-             console.error('Erro ao registrar ocorrência:', error);
-             showErrorFeedback('Erro de comunicação.');
-        } finally {
-             if (Swal.isLoading()) { Swal.close(); }
+            console.error('Erro ao registrar ocorrência:', error);
+            showErrorFeedback('Erro de comunicação.');
         }
+
     };
 
-     const handleComentarioSubmit = async (event) => {
-         event.preventDefault();
-         const form = event.target;
-         const input = form.querySelector('input[name="comentario"]');
-         if (!input || !input.value.trim()) return;
+    const handleComentarioSubmit = async (event) => {
+        event.preventDefault();
+        const form = event.target;
+        const input = form.querySelector('input[name="comentario"]');
+        if (!input || !input.value.trim()) return;
 
-         await handleAjaxFormSubmit(form, (responseData) => {
-             input.value = '';
-             addComentarioToList(responseData);
-             Swal.close();
-         });
-     };
 
-     const handleAnexoSubmit = async (event) => {
-         event.preventDefault();
-         const form = event.target;
-         const fileInput = form.querySelector('input[type="file"]');
-         if (!fileInput || fileInput.files.length === 0) return;
+        await handleAjaxFormSubmit(form, (responseData) => {
+            input.value = '';
+            addComentarioToList(responseData);
 
-         await handleAjaxFormSubmit(form, (responseData) => {
+        });
+    };
+
+    const handleAnexoSubmit = async (event) => {
+        event.preventDefault();
+        const form = event.target;
+        const fileInput = form.querySelector('input[type="file"]');
+        if (!fileInput || fileInput.files.length === 0) return;
+
+
+        await handleAjaxFormSubmit(form, (responseData) => {
             fileInput.value = '';
             addAnexoToList(responseData);
-            Swal.close();
-         });
-     };
 
-     const handleFinalizarSubmit = async (event) => {
-         event.preventDefault();
-         const form = event.target;
+        });
+    };
 
-         await handleAjaxFormSubmit(form, (responseData) => {
-             if (finalizarModalInstance) finalizarModalInstance.hide();
-             mainModal.hide();
-             showSuccessFeedback(responseData.message || 'Ocorrência finalizada com sucesso!');
-         });
-     };
+    const handleFinalizarSubmit = async (event) => {
+        event.preventDefault();
+        const form = event.target;
 
-     const addComentarioToList = (comentarioDTO) => {
+
+        await handleAjaxFormSubmit(form, (responseData) => {
+            if (finalizarModalInstance) finalizarModalInstance.hide();
+            mainModal.hide();
+
+            showSuccessFeedback(responseData.message || 'Ocorrência finalizada com sucesso!');
+        });
+    };
+
+    const addComentarioToList = (comentarioDTO) => {
         const listElement = document.getElementById('comentariosList');
         if (!listElement) return;
 
@@ -196,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 em ${formatDateTime(comentarioDTO.dataComentario)}
             </small>
         `;
-        listElement.insertBefore(newItem, listElement.firstChild);
+        listElement.insertBefore(newItem, listElement.firstChild); // Insere no início
     };
 
     const addAnexoToList = (anexoDTO) => {
@@ -211,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
         newItem.dataset.anexoId = anexoDTO.id;
         newItem.innerHTML = `
             <div>
-                 <a href="/ocorrencias/${anexoDTO.ocorrenciaId}/anexo/${anexoDTO.id}" target="_blank" class="text-decoration-none">${escapeHtml(anexoDTO.nomeOriginal || 'anexo')}</a>
+                 <a href="/ocorrencias/${anexoDTO.ocorrenciaId}/anexo/${anexoDTO.id}" target="_blank" class="text-decoration-none anexo-link">${escapeHtml(anexoDTO.nomeOriginal || 'anexo')}</a>
                  <small class="anexo-meta d-block">
                      Por <strong>${escapeHtml(anexoDTO.nomeUsuario)}</strong>
                      em ${formatDateTime(anexoDTO.dataAnexo)}
@@ -227,10 +258,10 @@ document.addEventListener('DOMContentLoaded', () => {
                  </button>
              </div>
         `;
-         listElement.insertBefore(newItem, listElement.firstChild);
+        listElement.insertBefore(newItem, listElement.firstChild);
 
-          const deleteButton = newItem.querySelector('.btn-excluir-anexo');
-          deleteButton?.addEventListener('click', handleExcluirAnexoClick);
+        const deleteButton = newItem.querySelector('.btn-excluir-anexo');
+        deleteButton?.addEventListener('click', handleExcluirAnexoClick);
     };
 
     const handleExcluirAnexoClick = (event) => {
@@ -246,111 +277,200 @@ document.addEventListener('DOMContentLoaded', () => {
                 showLoadingFeedback('Excluindo...');
                 try {
                     const response = await fetch(`/ocorrencias/${ocorrenciaId}/anexo/${anexoId}/excluir`, { method: 'POST' });
-                    const responseData = await response.json().catch(() => ({}));
+
+                    let responseData = {};
+                    let responseText = '';
+                    try {
+                        responseText = await response.text();
+                        responseData = JSON.parse(responseText);
+                    } catch (e) {
+                        responseData = { message: responseText || 'Resposta inválida do servidor.' };
+                    }
 
                     if (response.ok) {
                         const itemToRemove = document.querySelector(`.anexo-item[data-anexo-id="${anexoId}"]`);
                         itemToRemove?.remove();
-                        Swal.close();
+                        if (Swal.isLoading()) { Swal.close(); } // Fecha loading antes de verificar lista
                         const listElement = document.getElementById('anexosList');
                         if (listElement && !listElement.querySelector('.anexo-item')) {
-                             listElement.innerHTML = '<div class="text-muted text-center p-3">Nenhum anexo adicionado.</div>';
+                            listElement.innerHTML = '<div class="text-muted text-center p-3">Nenhum anexo adicionado.</div>';
                         }
                     } else {
-                        const message = responseData.message || await response.text() || 'Erro ao excluir anexo.';
+                        const message = responseData.message || 'Erro ao excluir anexo.';
                         showErrorFeedback(message);
                     }
                 } catch (error) {
-                     console.error('Erro ao excluir anexo:', error);
-                     showErrorFeedback('Erro de comunicação ao excluir anexo.');
+                    console.error('Erro ao excluir anexo:', error);
+                    showErrorFeedback('Erro de comunicação ao excluir anexo.');
                 }
             }
         });
     };
 
-     const handleAbrirModalFinalizarClick = (event) => {
+    const handleAbrirModalFinalizarClick = (event) => {
         const finalizarModalElement = document.getElementById('finalizarOcorrenciaModal');
         if (finalizarModalElement) {
             if (!finalizarModalInstance) {
-                 finalizarModalInstance = new bootstrap.Modal(finalizarModalElement);
-                 const formFinalizar = finalizarModalElement.querySelector('#finalizarForm');
-                 formFinalizar?.addEventListener('submit', handleFinalizarSubmit);
+
+                finalizarModalInstance = createStaticModal(finalizarModalElement);
+                const formFinalizar = finalizarModalElement.querySelector('#finalizarForm');
+                formFinalizar?.addEventListener('submit', handleFinalizarSubmit);
             }
             finalizarModalInstance.show();
         }
-     };
+    };
 
-     const initializeNovaOcorrenciaListeners = () => {
-         const form = mainModalContent.querySelector('#ocorrenciaForm');
-         form?.addEventListener('submit', handleNovaOcorrenciaSubmit);
 
-         const condominioSelect = mainModalContent.querySelector('#condominioId');
-         const unidadeSelect = mainModalContent.querySelector('#unidadeId');
+    const handleAnexoLinkClick = async (event) => {
+        const link = event.target.closest('a.anexo-link');
+        if (!link) return;
 
-         if (condominioSelect && unidadeSelect) {
-             condominioSelect.addEventListener('change', (event) => {
-                 carregarUnidadesPorCondominio(event.target.value, unidadeSelect);
-             });
-             // Carrega unidades se um condomínio já estiver selecionado (caso de edição futura ou pré-seleção)
-             if (condominioSelect.value) {
+        event.preventDefault();
+        const url = link.href;
+        showLoadingFeedback('Verificando arquivo...');
+
+        try {
+
+            const response = await fetch(url, { method: 'GET' });
+
+            if (response.ok) {
+                if (Swal.isLoading()) { Swal.close(); }
+
+                window.open(url, '_blank');
+            } else {
+
+                let errorMsg = "Arquivo não encontrado. Pode ter sido excluído.";
+                try {
+                    const errorData = await response.json();
+                    if (errorData && errorData.detail) {
+
+                        const match = errorData.detail.match(/"([^"]*)"/);
+                        if (match && match[1]) {
+                            errorMsg = match[1];
+                        } else {
+                            errorMsg = errorData.detail;
+                        }
+                    } else if (errorData && errorData.message) {
+                        errorMsg = errorData.message;
+                    }
+                } catch (e) {
+
+                    const errorText = await response.text();
+                    if (errorText) errorMsg = errorText;
+                    console.warn("Resposta de erro não era JSON:", errorText);
+                }
+                showErrorFeedback(errorMsg);
+            }
+        } catch (error) {
+            console.error('Erro ao verificar/acessar anexo:', error);
+            showErrorFeedback('Erro de comunicação ao tentar acessar o anexo.');
+        }
+    };
+
+
+    const initializeNovaOcorrenciaListeners = () => {
+        const form = mainModalContent.querySelector('#ocorrenciaForm');
+        form?.addEventListener('submit', handleNovaOcorrenciaSubmit);
+
+        const condominioSelect = mainModalContent.querySelector('#condominioId');
+        const unidadeSelect = mainModalContent.querySelector('#unidadeId');
+
+        if (condominioSelect && unidadeSelect) {
+            condominioSelect.addEventListener('change', (event) => {
+                carregarUnidadesPorCondominio(event.target.value, unidadeSelect);
+            });
+            if (condominioSelect.value) {
                 carregarUnidadesPorCondominio(condominioSelect.value, unidadeSelect);
-             }
-         }
-     };
+            }
+        }
+    };
 
-     const initializeDetalhesModalListeners = (ocorrenciaId) => {
-         const comentarioForm = mainModalContent.querySelector('#comentarioForm');
-         comentarioForm?.addEventListener('submit', handleComentarioSubmit);
+    const initializeDetalhesModalListeners = (ocorrenciaId) => {
+        const comentarioForm = mainModalContent.querySelector('#comentarioForm');
+        comentarioForm?.addEventListener('submit', handleComentarioSubmit);
 
-         const anexoForm = mainModalContent.querySelector('#anexoForm');
-         anexoForm?.addEventListener('submit', handleAnexoSubmit);
+        const anexoForm = mainModalContent.querySelector('#anexoForm');
+        anexoForm?.addEventListener('submit', handleAnexoSubmit);
 
-         mainModalContent.querySelectorAll('.btn-excluir-anexo').forEach(button => {
+        mainModalContent.querySelectorAll('.btn-excluir-anexo').forEach(button => {
             button.removeEventListener('click', handleExcluirAnexoClick);
             button.addEventListener('click', handleExcluirAnexoClick);
-         });
+        });
 
-         const btnAbrirFinalizar = mainModalContent.querySelector('#btnAbrirModalFinalizar');
-         btnAbrirFinalizar?.addEventListener('click', handleAbrirModalFinalizarClick);
+        const btnAbrirFinalizar = mainModalContent.querySelector('#btnAbrirModalFinalizar');
+        btnAbrirFinalizar?.addEventListener('click', handleAbrirModalFinalizarClick);
 
-         mainModalElement.addEventListener('hidden.bs.modal', () => {
-             if (finalizarModalInstance) {
-                 finalizarModalInstance.dispose();
-                 finalizarModalInstance = null;
-             }
-         }, { once: true });
-     };
+        const anexosList = mainModalContent.querySelector('#anexosList');
+        if (anexosList) {
+            anexosList.removeEventListener('click', handleAnexoLinkClick);
+            anexosList.addEventListener('click', handleAnexoLinkClick);
+        }
+
+
+        mainModalElement.addEventListener('hidden.bs.modal', () => {
+            if (finalizarModalInstance) {
+
+                const formFinalizar = document.getElementById('finalizarForm');
+                formFinalizar?.removeEventListener('submit', handleFinalizarSubmit);
+                finalizarModalInstance.dispose();
+                finalizarModalInstance = null;
+
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                backdrops.forEach(bd => bd.remove());
+
+            }
+
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }, { once: true });
+    };
 
     const escapeHtml = (unsafe) => {
         if (!unsafe) return '';
         return unsafe
-             .replace(/&/g, "&amp;")
-             .replace(/</g, "&lt;")
-             .replace(/>/g, "&gt;")
-             .replace(/"/g, "&quot;")
-             .replace(/'/g, "&#039;");
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
     const formatDateTime = (dateTimeString) => {
         if (!dateTimeString) return '';
         try {
             const date = new Date(dateTimeString);
+
+            if (isNaN(date.getTime())) {
+                throw new Error("Data inválida");
+            }
             return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        } catch (e) { return dateTimeString; }
+        } catch (e) {
+            console.error("Erro ao formatar data:", dateTimeString, e);
+            return dateTimeString;
+        }
     }
 
-     const formatBytes = (bytes, decimals = 1) => {
+    const formatBytes = (bytes, decimals = 1) => {
         if (!+bytes || bytes === 0) return '0 Bytes'
         const k = 1024
         const dm = decimals < 0 ? 0 : decimals
         const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
-        const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+        const i = (bytes === 0) ? 0 : Math.floor(Math.log(bytes) / Math.log(k));
+
+        if (isNaN(i) || i < 0) return '0 Bytes';
         return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
     }
 
     document.addEventListener('modalContentLoaded', () => {
-        if(mainModalContent.querySelector('#ocorrenciaForm')){
+
+        if (mainModalContent.querySelector('#ocorrenciaForm')) {
             initializeNovaOcorrenciaListeners();
+        }
+
+        if (mainModalContent.querySelector('.ocorrencia-detalhes-modal')) {
+
         }
     });
 

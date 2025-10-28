@@ -222,9 +222,11 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
         try {
             String simpleFilename = Paths.get(anexo.getCaminhoArquivo()).getFileName().toString();
             fileStorageService.delete(simpleFilename, OCORRENCIAS_DIR);
-            anexoRepository.delete(anexo);
+            anexoRepository.delete(anexo); // <-- CORREÇÃO: Adicionada exclusão do banco
         } catch (StorageException e) {
             throw new RuntimeException("Falha ao excluir o arquivo físico do anexo: " + e.getMessage(), e);
+        } catch (Exception e) {
+             throw new RuntimeException("Falha ao excluir o registro do anexo no banco de dados: " + e.getMessage(), e);
         }
     }
 
@@ -234,14 +236,20 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
         buscarOcorrenciaPorIdEValidarAcesso(ocorrenciaId, usuarioLogado, false);
 
         OcorrenciaAnexo anexo = anexoRepository.findByOcorrenciaOcoCodAndOcaCod(ocorrenciaId, anexoId)
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, // <-- MUDANÇA: EntityNotFound -> ResponseStatusException 404
                         "Anexo não encontrado com ID: " + anexoId + " para a ocorrência ID: " + ocorrenciaId));
 
         try {
             String simpleFilename = Paths.get(anexo.getCaminhoArquivo()).getFileName().toString();
-            return fileStorageService.loadAsResource(simpleFilename, OCORRENCIAS_DIR);
+            Resource resource = fileStorageService.loadAsResource(simpleFilename, OCORRENCIAS_DIR);
+
+            // <-- VERIFICAÇÃO ADICIONAL (Embora loadAsResource já lance exceção se não existir)
+            if (!resource.exists() || !resource.isReadable()) {
+                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Arquivo não encontrado ou inacessível no armazenamento.");
+            }
+            return resource;
         } catch (StorageException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Arquivo não encontrado ou inacessível.", e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Arquivo não encontrado ou inacessível: " + e.getMessage(), e);
         }
     }
 
@@ -251,7 +259,7 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
         buscarOcorrenciaPorIdEValidarAcesso(ocorrenciaId, usuarioLogado, false);
 
         OcorrenciaAnexo anexo = anexoRepository.findByOcorrenciaOcoCodAndOcaCod(ocorrenciaId, anexoId)
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new EntityNotFoundException( // Mantém EntityNotFound pois é só busca de nome
                         "Anexo não encontrado com ID: " + anexoId + " para a ocorrência ID: " + ocorrenciaId));
 
         return anexo.getNomeOriginal() != null ? anexo.getNomeOriginal() : "anexo_" + anexo.getOcaCod();

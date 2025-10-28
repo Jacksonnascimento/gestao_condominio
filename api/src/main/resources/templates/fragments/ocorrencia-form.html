@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<body>
+<div th:fragment="form-modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="formModalLabel">Nova Ocorrência</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <form id="ocorrenciaForm" th:action="@{/ocorrencias/novo}" th:object="${ocorrenciaRequestDTO}" method="post">
+        <div class="modal-body">
+            <div class="row g-3">
+
+                <div class="col-md-6">
+                    <label for="unidadeId" class="form-label">Unidade <span class="text-danger">*</span></label>
+                    <select id="unidadeId" class="form-select" th:field="*{unidadeId}" required>
+                        <option value="">Selecione...</option>
+                        <option th:each="unidade : ${unidadesSelecionaveis}"
+                                th:value="${unidade.uniCod}"
+                                th:text="${unidade.uniNumero} + (${unidade.bloco != null ? ' - ' + unidade.bloco : ''})">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="tipo" class="form-label">Tipo <span class="text-danger">*</span></label>
+                    <select id="tipo" class="form-select" th:field="*{tipo}" required>
+                        <option th:each="t : ${tiposOcorrencia}"
+                                th:value="${t}"
+                                th:text="${t.descricao}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label for="titulo" class="form-label">Título <span class="text-danger">*</span></label>
+                    <input type="text" id="titulo" class="form-control" th:field="*{titulo}" required maxlength="150">
+                </div>
+
+                <div class="col-12">
+                    <label for="descricao" class="form-label">Descrição <span class="text-danger">*</span></label>
+                    <textarea id="descricao" class="form-control" th:field="*{descricao}" rows="5" required></textarea>
+                </div>
+
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

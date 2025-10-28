@@ -1,57 +1,71 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+
 <body>
-<div id="sidebar" class="sidebar d-flex flex-column flex-shrink-0 p-3" th:fragment="sidebar">
-    <a th:href="@{/dashboard}" class="d-flex flex-column align-items-center mb-3 mb-md-0 text-decoration-none sidebar-logo-area">
-        <img th:src="@{/images/logo.png}" alt="CONDIGTAL Logo" class="sidebar-logo">
-        <span class="sidebar-title">CONDIGTAL</span>
-    </a>
-    <hr>
-    <ul class="nav nav-pills flex-column mb-auto">
-        <li class="nav-item">
-            <a th:href="@{/dashboard}" class="nav-link" th:classappend="${currentPage == 'dashboard' ? 'active' : ''}">
-                <i class='bx bxs-dashboard'></i> Dashboard
-            </a>
-        </li>
-        <li>
-            <a th:href="@{/unidades}" class="nav-link" th:classappend="${currentPage == 'unidades' ? 'active' : ''}">
-                <i class='bx bxs-building-house'></i> Unidades
-            </a>
-        </li>
-        <li>
-            <a th:href="@{/ocupantes}" class="nav-link" th:classappend="${currentPage == 'ocupantes' ? 'active' : ''}">
-                <i class='bx bxs-group'></i> Ocupantes
-            </a>
-        </li>
-        <li th:if="${usuarioPodeGerenciar}">
-            <a th:href="@{/contratos}" class="nav-link" th:classappend="${currentPage == 'contratos' ? 'active' : ''}">
-                <i class='bx bxs-file-doc'></i> Contratos
-            </a>
-        </li>
-        <li>
-            <a th:href="@{/comunicados}" class="nav-link" th:classappend="${currentPage == 'comunicados' ? 'active' : ''}">
-                <i class='bx bxs-message-detail'></i> Mural de Comunicados
-            </a>
-        </li>
-        
-    </ul>
-    <div class="sidebar-footer pt-3 mt-auto">
-        <div class="d-flex align-items-center justify-content-between">
-            <div class="user-info">
-                <span class="fw-bold" th:text="${nomeUsuarioLogado}">Nome do Usuário</span>
-            </div>
-            <button class="btn btn-outline-secondary" id="theme-toggler" type="button" aria-label="Toggle theme">
-                <i class='bx bxs-sun' id="theme-toggler-light"></i>
-                <i class='bx bxs-moon d-none' id="theme-toggler-dark"></i>
-            </button>
-        </div>
+    <div id="sidebar" class="sidebar d-flex flex-column flex-shrink-0 p-3" th:fragment="sidebar">
+        <a th:href="@{/dashboard}"
+            class="d-flex flex-column align-items-center mb-3 mb-md-0 text-decoration-none sidebar-logo-area">
+            <img th:src="@{/images/logo.png}" alt="CONDIGTAL Logo" class="sidebar-logo">
+            <span class="sidebar-title">CONDIGTAL</span>
+        </a>
         <hr>
-        <form th:action="@{/logout}" method="post" class="d-grid">
-            <button type="submit" class="btn btn-danger">
-                <i class='bx bx-log-out'></i> Sair
-            </button>
-        </form>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item">
+                <a th:href="@{/dashboard}" class="nav-link"
+                    th:classappend="${currentPage == 'dashboard' ? 'active' : ''}">
+                    <i class='bx bxs-dashboard'></i> Dashboard
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/unidades}" class="nav-link"
+                    th:classappend="${currentPage == 'unidades' ? 'active' : ''}">
+                    <i class='bx bxs-building-house'></i> Unidades
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/ocupantes}" class="nav-link"
+                    th:classappend="${currentPage == 'ocupantes' ? 'active' : ''}">
+                    <i class='bx bxs-group'></i> Ocupantes
+                </a>
+            </li>
+            <li th:if="${usuarioPodeGerenciar}">
+                <a th:href="@{/contratos}" class="nav-link"
+                    th:classappend="${currentPage == 'contratos' ? 'active' : ''}">
+                    <i class='bx bxs-file-doc'></i> Contratos
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/comunicados}" class="nav-link"
+                    th:classappend="${currentPage == 'comunicados' ? 'active' : ''}">
+                    <i class='bx bxs-message-detail'></i> Mural de Comunicados
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/ocorrencias}" class="nav-link"
+                    th:classappend="${currentPage == 'ocorrencias' ? 'active' : ''}">
+                    <i class='bx bxs-comment-error'></i> Ocorrências
+                </a>
+            </li>
+
+        </ul>
+        <div class="sidebar-footer pt-3 mt-auto">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="user-info">
+                    <span class="fw-bold" th:text="${nomeUsuarioLogado}">Nome do Usuário</span>
+                </div>
+                <button class="btn btn-outline-secondary" id="theme-toggler" type="button" aria-label="Toggle theme">
+                    <i class='bx bxs-sun' id="theme-toggler-light"></i>
+                    <i class='bx bxs-moon d-none' id="theme-toggler-dark"></i>
+                </button>
+            </div>
+            <hr>
+            <form th:action="@{/logout}" method="post" class="d-grid">
+                <button type="submit" class="btn btn-danger">
+                    <i class='bx bx-log-out'></i> Sair
+                </button>
+            </form>
+        </div>
     </div>
-</div>
 </body>
+
 </html>

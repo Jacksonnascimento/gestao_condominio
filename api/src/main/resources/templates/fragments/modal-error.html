@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<body>
+<div th:fragment="error-modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title text-danger" id="formModalLabel"><i class='bx bx-error-circle'></i> Erro</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <p th:text="${errorMessage} ?: 'Ocorreu um erro inesperado.'">Mensagem de erro aqui.</p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+    </div>
+</div>
+</body>
+</html>

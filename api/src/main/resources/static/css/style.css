@@ -130,3 +130,29 @@ body, html {
 .preserve-line-breaks {
     white-space: pre-wrap;
 }
+
+/* --- Novas Classes para Ocorrências --- */
+
+/* Ícones dos Cards de Resumo */
+.icon-ocorrencia-aberta { background-color: #fee2e2; color: #dc2626; } /* Vermelho */
+.icon-ocorrencia-analise { background-color: #fef9c3; color: #ca8a04; } /* Amarelo */
+.icon-ocorrencia-resolvida { background-color: #dcfce7; color: #16a34a; } /* Verde */
+.icon-ocorrencia-total { background-color: #e0e7ff; color: #4f46e5; } /* Indigo/Roxo */
+.icon-ocorrencia-mes { background-color: #e0f2fe; color: #0284c7; } /* Azul Claro */
+
+/* Badges de Status das Ocorrências */
+.status-ocorrencia-aberta { background-color: #dc2626; } /* Vermelho */
+.status-ocorrencia-em_analise { background-color: #ca8a04; color: #422006; } /* Amarelo */
+.status-ocorrencia-resolvida { background-color: #16a34a; } /* Verde */
+
+/* Ajustes específicos para o modal de detalhes (se necessário) */
+.ocorrencia-detalhes-modal .modal-dialog { max-width: 800px; } /* Modal um pouco maior */
+.ocorrencia-detalhes-modal .comentarios-list,
+.ocorrencia-detalhes-modal .anexos-list { max-height: 250px; overflow-y: auto; }
+.ocorrencia-detalhes-modal .comentario-item,
+.ocorrencia-detalhes-modal .anexo-item { padding: 0.75rem; border-bottom: 1px solid var(--border-color); }
+.ocorrencia-detalhes-modal .comentario-item:last-child,
+.ocorrencia-detalhes-modal .anexo-item:last-child { border-bottom: none; }
+.ocorrencia-detalhes-modal .comentario-meta,
+.ocorrencia-detalhes-modal .anexo-meta { font-size: 0.8rem; color: var(--text-light-color); }
+.ocorrencia-detalhes-modal .anexo-actions .btn { margin-left: 0.5rem; }

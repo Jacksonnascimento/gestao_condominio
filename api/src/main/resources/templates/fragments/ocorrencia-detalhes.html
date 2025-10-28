@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<body>
+<div th:fragment="detalhes-modal-content" class="ocorrencia-detalhes-modal">
+    <div class="modal-header">
+        <h5 class="modal-title" id="formModalLabel" th:text="'Detalhes da Ocorrência #' + ${ocorrencia.id}"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+
+        <div class="details-section mb-4">
+            <h6 class="section-title"><i class='bx bx-info-circle'></i> Informações Gerais</h6>
+            <div class="row g-2 mb-3">
+                 <div class="col-md-8"><strong class="me-1">Título:</strong> <span th:text="${ocorrencia.titulo}"></span></div>
+                 <div class="col-md-4 text-md-end"><strong class="me-1">Status:</strong>
+                    <span class="status-badge"
+                          th:text="${ocorrencia.status.descricao}"
+                          th:classappend="'status-ocorrencia-' + ${#strings.toLowerCase(ocorrencia.status.name())}">
+                    </span>
+                 </div>
+                 <div class="col-md-4"><strong class="me-1">Unidade:</strong> <span th:text="${ocorrencia.unidadeNumero} + (${ocorrencia.unidadeBloco != null ? ' - ' + ocorrencia.unidadeBloco : ''})"></span></div>
+                 <div class="col-md-4"><strong class="me-1">Tipo:</strong> <span th:text="${ocorrencia.tipo.descricao}"></span></div>
+                 <div class="col-md-4 text-md-end"><strong class="me-1">Abertura:</strong> <span th:text="${#temporals.format(ocorrencia.dataRegistro, 'dd/MM/yyyy HH:mm')}"></span></div>
+                 <div class="col-12"><strong class="me-1">Registrado por:</strong> <span th:text="${ocorrencia.nomePessoaRegistro}"></span></div>
+            </div>
+            <p><strong>Descrição Completa:</strong></p>
+            <p class="preserve-line-breaks" th:text="${ocorrencia.descricaoCompleta}"></p>
+        </div>
+
+         <div th:if="${ocorrencia.status == T(br.com.gestaocondominio.api.domain.enums.OcorrenciaStatus).RESOLVIDA}" class="details-section mb-4">
+            <h6 class="section-title text-success"><i class='bx bx-check-double'></i> Parecer Final</h6>
+            <p class="preserve-line-breaks" th:text="${ocorrencia.parecerFinal}"></p>
+            <small class="text-muted d-block" th:if="${ocorrencia.nomePessoaFinalizou}">
+                Finalizado por <strong th:text="${ocorrencia.nomePessoaFinalizou}"></strong>
+                em <span th:text="${#temporals.format(ocorrencia.dataFinalizacao, 'dd/MM/yyyy HH:mm')}"></span>
+            </small>
+        </div>
+
+
+        <div class="row gx-4">
+             <div class="col-lg-6 mb-4 mb-lg-0">
+                <div class="details-section">
+                    <h6 class="section-title"><i class='bx bx-comment-dots'></i> Comentários</h6>
+                    <div id="comentariosList" class="comentarios-list mb-3">
+                        <div th:if="${#lists.isEmpty(ocorrencia.comentarios)}" class="text-muted text-center p-3">Nenhum comentário ainda.</div>
+                        <div th:each="comentario : ${ocorrencia.comentarios}" class="comentario-item">
+                            <p class="mb-1 preserve-line-breaks" th:text="${comentario.comentario}"></p>
+                            <small class="comentario-meta">
+                                Por <strong th:text="${comentario.nomeUsuario}"></strong>
+                                em <span th:text="${#temporals.format(comentario.dataComentario, 'dd/MM/yyyy HH:mm')}"></span>
+                            </small>
+                        </div>
+                    </div>
+                    <form id="comentarioForm" th:if="${ocorrencia.status != T(br.com.gestaocondominio.api.domain.enums.OcorrenciaStatus).RESOLVIDA}" th:action="@{'/ocorrencias/' + ${ocorrencia.id} + '/comentar'}" method="post" th:object="${comentarioRequestDTO}">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Adicionar um novo comentário..." th:field="*{comentario}" required>
+                            <button class="btn btn-outline-primary" type="submit">Enviar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="details-section">
+                     <h6 class="section-title"><i class='bx bx-paperclip'></i> Anexos</h6>
+                    <div id="anexosList" class="anexos-list mb-3">
+                         <div th:if="${#lists.isEmpty(ocorrencia.anexos)}" class="text-muted text-center p-3">Nenhum anexo adicionado.</div>
+                         <div th:each="anexo : ${ocorrencia.anexos}" class="anexo-item d-flex justify-content-between align-items-center">
+                             <div>
+                                 <a th:href="@{'/ocorrencias/' + ${ocorrencia.id} + '/anexo/' + ${anexo.id}}" target="_blank" class="text-decoration-none" th:text="${anexo.nomeOriginal} ?: 'anexo'">Nome do Arquivo</a>
+                                 <small class="anexo-meta d-block">
+                                     Por <strong th:text="${anexo.nomeUsuario}"></strong>
+                                     em <span th:text="${#temporals.format(anexo.dataAnexo, 'dd/MM/yyyy HH:mm')}"></span>
+                                      (<span th:text="${#numbers.formatDecimal(anexo.tamanhoArquivo / 1024.0, 1, 1)} + ' KB'"></span>)
+                                 </small>
+                             </div>
+                             <div class="anexo-actions" th:if="${ocorrencia.status != T(br.com.gestaocondominio.api.domain.enums.OcorrenciaStatus).RESOLVIDA}">
+                                 <button class="btn btn-sm btn-outline-danger btn-excluir-anexo"
+                                         th:data-ocorrencia-id="${ocorrencia.id}"
+                                         th:data-anexo-id="${anexo.id}"
+                                         type="button">
+                                     <i class='bx bxs-trash'></i>
+                                 </button>
+                             </div>
+                         </div>
+                    </div>
+                     <form id="anexoForm" th:if="${ocorrencia.status != T(br.com.gestaocondominio.api.domain.enums.OcorrenciaStatus).RESOLVIDA}" th:action="@{'/ocorrencias/' + ${ocorrencia.id} + '/anexar'}" method="post" enctype="multipart/form-data">
+                         <div class="input-group">
+                             <input type="file" class="form-control" name="anexoFile" required>
+                             <button class="btn btn-outline-primary" type="submit">Anexar</button>
+                         </div>
+                     </form>
+                 </div>
+             </div>
+        </div>
+    </div>
+    <div class="modal-footer justify-content-between">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+         <button th:if="${ocorrencia.status != T(br.com.gestaocondominio.api.domain.enums.OcorrenciaStatus).RESOLVIDA and isGerencial}"
+                 type="button" class="btn btn-success" id="btnAbrirModalFinalizar"
+                 th:data-ocorrencia-id="${ocorrencia.id}">
+             <i class='bx bx-check-double'></i> Finalizar Ocorrência
+         </button>
+    </div>
+
+    <div class="modal fade" id="finalizarOcorrenciaModal" tabindex="-1" aria-labelledby="finalizarOcorrenciaModalLabel" aria-hidden="true">
+         <div class="modal-dialog">
+             <div class="modal-content">
+                 <div class="modal-header">
+                     <h5 class="modal-title" id="finalizarOcorrenciaModalLabel">Finalizar Ocorrência</h5>
+                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                 </div>
+                 <form id="finalizarForm" th:action="@{'/ocorrencias/' + ${ocorrencia.id} + '/finalizar'}" method="post" th:object="${finalizarRequestDTO}">
+                     <div class="modal-body">
+                         <div class="mb-3">
+                             <label for="parecerFinal" class="form-label">Parecer Final <span class="text-danger">*</span></label>
+                             <textarea id="parecerFinal" class="form-control" rows="4" th:field="*{parecerFinal}" required></textarea>
+                         </div>
+                     </div>
+                     <div class="modal-footer">
+                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                         <button type="submit" class="btn btn-success">Finalizar</button>
+                     </div>
+                 </form>
+             </div>
+         </div>
+     </div>
+
+</div>
+</body>
+</html>

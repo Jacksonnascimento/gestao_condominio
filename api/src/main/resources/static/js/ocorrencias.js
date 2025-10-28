@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+
     const carregarUnidadesPorCondominio = async (condominioId, unidadeSelectElement) => {
         if (!unidadeSelectElement) return;
         unidadeSelectElement.innerHTML = '<option value="">Carregando...</option>';
@@ -303,28 +304,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- CORREÇÃO APLICADA AQUI ---
     const handleAnexoLinkClick = async (event) => {
         const link = event.target.closest('a.anexo-link');
         if (!link) return;
 
-        event.preventDefault(); // Impede a navegação padrão
+        event.preventDefault();
         const url = link.href;
         showLoadingFeedback('Verificando arquivo...');
 
         try {
-            // Tenta verificar a existência do arquivo usando o método HEAD
+            // Usa HEAD para verificar a existência sem baixar o arquivo
             const response = await fetch(url, { method: 'HEAD' });
 
             if (response.ok) {
-                // Se o status for OK (2xx), o arquivo existe
                 if (Swal.isLoading()) { Swal.close(); }
-                window.open(url, '_blank'); // Abre o link em nova aba
+                window.open(url, '_blank');
             } else if (response.status === 404) {
-                // Se for 404, o arquivo não foi encontrado
+                 // Trata o 404 com a mensagem amigável
                  showErrorFeedback("Arquivo não encontrado. Pode ter sido excluído.");
             } else {
-                 // Outro erro inesperado (ex: 500, 403)
+                 // Trata outros erros (500, 403, etc.)
                  let errorMsg = `Erro ${response.status} ao verificar o arquivo.`;
                  try {
                      const errorText = await response.text();
@@ -344,12 +343,10 @@ document.addEventListener('DOMContentLoaded', () => {
                  showErrorFeedback(errorMsg);
             }
         } catch (error) {
-            // Erro de rede/conexão
             console.error('Erro de rede ao verificar/acessar anexo:', error);
             showErrorFeedback('Erro de comunicação ao tentar acessar o anexo.');
         }
     };
-    // --- FIM DA CORREÇÃO ---
 
     const initializeNovaOcorrenciaListeners = () => {
         const form = mainModalContent.querySelector('#ocorrenciaForm');
@@ -383,13 +380,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnAbrirFinalizar = mainModalContent.querySelector('#btnAbrirModalFinalizar');
         btnAbrirFinalizar?.addEventListener('click', handleAbrirModalFinalizarClick);
 
-        // *** Adiciona o listener para os links de anexo ***
         const anexosList = mainModalContent.querySelector('#anexosList');
         if (anexosList) {
-            anexosList.removeEventListener('click', handleAnexoLinkClick); // Garante que não haja listeners duplicados
-            anexosList.addEventListener('click', handleAnexoLinkClick); // Usa delegação de evento
+            anexosList.removeEventListener('click', handleAnexoLinkClick);
+            anexosList.addEventListener('click', handleAnexoLinkClick);
         }
-        // ***********************************************
 
         mainModalElement.addEventListener('hidden.bs.modal', () => {
             if (finalizarModalInstance) {

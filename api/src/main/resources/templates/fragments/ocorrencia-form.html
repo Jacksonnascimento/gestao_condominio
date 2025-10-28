@@ -10,14 +10,27 @@
         <div class="modal-body">
             <div class="row g-3">
 
-                <div class="col-md-6">
+                <div class="col-md-6" th:if="${isGlobalAdmin and #lists.size(condominiosSelecionaveis) > 1}">
+                    <label for="condominioId" class="form-label">Condomínio <span class="text-danger">*</span></label>
+                    <select id="condominioId" class="form-select" th:field="*{condominioId}" required>
+                        <option value="">Selecione o Condomínio...</option>
+                        <option th:each="condo : ${condominiosSelecionaveis}"
+                                th:value="${condo.conCod}"
+                                th:text="${condo.conNome}">
+                        </option>
+                    </select>
+                </div>
+                <input type="hidden" th:if="${isGlobalAdmin and #lists.size(condominiosSelecionaveis) <= 1}" th:field="*{condominioId}" th:value="${not #lists.isEmpty(condominiosSelecionaveis)} ? ${condominiosSelecionaveis[0].conCod} : ''" />
+
+                <div th:classappend="${isGlobalAdmin and #lists.size(condominiosSelecionaveis) > 1} ? 'col-md-6' : 'col-12'">
                     <label for="unidadeId" class="form-label">Unidade <span class="text-danger">*</span></label>
-                    <select id="unidadeId" class="form-select" th:field="*{unidadeId}" required>
+                    <select id="unidadeId" class="form-select" th:field="*{unidadeId}" required th:disabled="${isGlobalAdmin and ocorrenciaRequestDTO.condominioId == null}">
                         <option value="">Selecione...</option>
-                        <option th:each="unidade : ${unidadesSelecionaveis}"
+                        <option th:if="${not isGlobalAdmin}" th:each="unidade : ${unidadesSelecionaveis}"
                                 th:value="${unidade.uniCod}"
                                 th:text="${unidade.uniNumero} + (${unidade.bloco != null ? ' - ' + unidade.bloco : ''})">
                         </option>
+                        <option th:if="${isGlobalAdmin and ocorrenciaRequestDTO.condominioId == null}" value="" disabled>Selecione um condomínio primeiro</option>
                     </select>
                 </div>
 

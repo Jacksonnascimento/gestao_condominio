@@ -8,9 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainModalContent = document.getElementById('modalContent');
     const mainModal = createStaticModal(mainModalElement);
 
-    let finalizarModalInstance = null; // Para guardar a instância do sub-modal
-
-    // --- Funções Auxiliares ---
+    let finalizarModalInstance = null;
 
     const showLoadingFeedback = (title = 'Processando...') => {
         Swal.fire({
@@ -39,12 +37,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(`Falha ao carregar conteúdo: ${response.statusText}`);
             }
             contentElement.innerHTML = await response.text();
-            return true; // Sucesso
+            document.dispatchEvent(new CustomEvent('modalContentLoaded'));
+            return true;
         } catch (error) {
             console.error('Erro ao buscar/injetar conteúdo do modal:', error);
             contentElement.innerHTML = `<div class="modal-body"><p class="text-danger">Erro ao carregar o conteúdo. Tente novamente.</p></div>`;
-            // Não fecha o modal automaticamente para o usuário ver o erro
-            return false; // Falha
+            return false;
         }
     };
 
@@ -56,12 +54,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const response = await fetch(url, { method: method.toUpperCase(), body: formData });
-            const responseData = await response.json();
+            const responseData = await response.json().catch(() => ({})); // Captura caso não seja JSON
 
             if (response.ok) {
                 if(successCallback) successCallback(responseData);
             } else {
-                 showErrorFeedback(responseData.message || 'Erro ao processar a solicitação.');
+                 const message = responseData.message || await response.text() || 'Erro ao processar a solicitação.';
+                 showErrorFeedback(message);
                  if(errorCallback) errorCallback(responseData);
             }
         } catch (error) {
@@ -69,18 +68,42 @@ document.addEventListener('DOMContentLoaded', () => {
             showErrorFeedback('Erro de comunicação com o servidor.');
              if(errorCallback) errorCallback(error);
         } finally {
-             // Garante que o Swal de loading feche se não houver outro feedback
              if (Swal.isLoading()) { Swal.close(); }
         }
     };
 
-    // --- Abertura de Modais ---
+    const carregarUnidadesPorCondominio = async (condominioId, unidadeSelectElement) => {
+        if (!unidadeSelectElement) return;
+        unidadeSelectElement.innerHTML = '<option value="">Carregando...</option>';
+        unidadeSelectElement.disabled = true;
+
+        if (!condominioId) {
+            unidadeSelectElement.innerHTML = '<option value="">Selecione um condomínio</option>';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/unidades/por-condominio/${condominioId}`);
+            if (!response.ok) throw new Error('Falha ao buscar unidades.');
+            const unidades = await response.json();
+
+            unidadeSelectElement.innerHTML = '<option value="">Selecione...</option>';
+            unidades.forEach(unidade => {
+                const optionText = `${unidade.uniNumero}${unidade.bloco ? ' - ' + unidade.bloco : ''}`;
+                unidadeSelectElement.innerHTML += `<option value="${unidade.uniCod}">${optionText}</option>`;
+            });
+            unidadeSelectElement.disabled = false;
+        } catch (error) {
+            console.error('Erro ao carregar unidades:', error);
+            unidadeSelectElement.innerHTML = '<option value="">Erro ao carregar</option>';
+            unidadeSelectElement.disabled = true;
+        }
+    };
 
     document.getElementById('btnNovaOcorrencia')?.addEventListener('click', async () => {
         const success = await fetchAndInjectModalContent('/ocorrencias/novo', mainModal, mainModalContent);
         if (success) {
-            const form = mainModalContent.querySelector('#ocorrenciaForm');
-            form?.addEventListener('submit', handleNovaOcorrenciaSubmit);
+            initializeNovaOcorrenciaListeners();
         }
     });
 
@@ -95,23 +118,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- Submissão de Formulários ---
-
     const handleNovaOcorrenciaSubmit = async (event) => {
         event.preventDefault();
         const form = event.target;
-        // Usa URLSearchParams para forms simples sem anexo
         const formData = new URLSearchParams(new FormData(form));
         showLoadingFeedback();
 
          try {
             const response = await fetch(form.action, { method: 'POST', body: formData });
+             const responseData = await response.json().catch(() => ({}));
+
             if (response.ok) {
                 mainModal.hide();
                 showSuccessFeedback('Ocorrência registrada com sucesso!');
             } else {
-                const errorData = await response.json();
-                showErrorFeedback(errorData.message || 'Erro ao registrar ocorrência.');
+                const message = responseData.message || await response.text() || 'Erro ao registrar ocorrência.';
+                showErrorFeedback(message);
             }
         } catch (error) {
              console.error('Erro ao registrar ocorrência:', error);
@@ -125,13 +147,12 @@ document.addEventListener('DOMContentLoaded', () => {
          event.preventDefault();
          const form = event.target;
          const input = form.querySelector('input[name="comentario"]');
-         if (!input || !input.value.trim()) return; // Não envia vazio
+         if (!input || !input.value.trim()) return;
 
          await handleAjaxFormSubmit(form, (responseData) => {
-             // Limpa o campo e atualiza a lista dinamicamente
              input.value = '';
              addComentarioToList(responseData);
-             Swal.close(); // Fecha o loading, sem mensagem de sucesso explícita
+             Swal.close();
          });
      };
 
@@ -142,9 +163,9 @@ document.addEventListener('DOMContentLoaded', () => {
          if (!fileInput || fileInput.files.length === 0) return;
 
          await handleAjaxFormSubmit(form, (responseData) => {
-            fileInput.value = ''; // Limpa o input
+            fileInput.value = '';
             addAnexoToList(responseData);
-            Swal.close(); // Fecha o loading
+            Swal.close();
          });
      };
 
@@ -156,19 +177,13 @@ document.addEventListener('DOMContentLoaded', () => {
              if (finalizarModalInstance) finalizarModalInstance.hide();
              mainModal.hide();
              showSuccessFeedback(responseData.message || 'Ocorrência finalizada com sucesso!');
-         }, () => {
-             // Em caso de erro ao finalizar, apenas fecha o Swal de erro, mantém sub-modal aberto
-             // showErrorFeedback já foi chamado
          });
      };
-
-    // --- Funções de Atualização Dinâmica da UI (Modal Detalhes) ---
 
      const addComentarioToList = (comentarioDTO) => {
         const listElement = document.getElementById('comentariosList');
         if (!listElement) return;
 
-        // Remove mensagem de "Nenhum comentário" se existir
         const emptyMsg = listElement.querySelector('.text-muted');
         if (emptyMsg) emptyMsg.remove();
 
@@ -181,7 +196,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 em ${formatDateTime(comentarioDTO.dataComentario)}
             </small>
         `;
-        // Adiciona no início da lista (mais recente primeiro)
         listElement.insertBefore(newItem, listElement.firstChild);
     };
 
@@ -194,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const newItem = document.createElement('div');
         newItem.className = 'anexo-item d-flex justify-content-between align-items-center';
-        newItem.dataset.anexoId = anexoDTO.id; // Para facilitar a remoção
+        newItem.dataset.anexoId = anexoDTO.id;
         newItem.innerHTML = `
             <div>
                  <a href="/ocorrencias/${anexoDTO.ocorrenciaId}/anexo/${anexoDTO.id}" target="_blank" class="text-decoration-none">${escapeHtml(anexoDTO.nomeOriginal || 'anexo')}</a>
@@ -215,12 +229,9 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
          listElement.insertBefore(newItem, listElement.firstChild);
 
-         // Adiciona listener ao novo botão de excluir
           const deleteButton = newItem.querySelector('.btn-excluir-anexo');
           deleteButton?.addEventListener('click', handleExcluirAnexoClick);
     };
-
-    // --- Handlers de Eventos (Modal Detalhes) ---
 
     const handleExcluirAnexoClick = (event) => {
         const button = event.currentTarget;
@@ -235,19 +246,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 showLoadingFeedback('Excluindo...');
                 try {
                     const response = await fetch(`/ocorrencias/${ocorrenciaId}/anexo/${anexoId}/excluir`, { method: 'POST' });
-                    const responseData = await response.json();
+                    const responseData = await response.json().catch(() => ({}));
+
                     if (response.ok) {
-                        // Remove o item da lista visualmente
                         const itemToRemove = document.querySelector(`.anexo-item[data-anexo-id="${anexoId}"]`);
                         itemToRemove?.remove();
-                        Swal.close(); // Fecha loading
-                        // Adiciona mensagem se a lista ficar vazia
+                        Swal.close();
                         const listElement = document.getElementById('anexosList');
                         if (listElement && !listElement.querySelector('.anexo-item')) {
                              listElement.innerHTML = '<div class="text-muted text-center p-3">Nenhum anexo adicionado.</div>';
                         }
                     } else {
-                        showErrorFeedback(responseData.message || 'Erro ao excluir anexo.');
+                        const message = responseData.message || await response.text() || 'Erro ao excluir anexo.';
+                        showErrorFeedback(message);
                     }
                 } catch (error) {
                      console.error('Erro ao excluir anexo:', error);
@@ -260,7 +271,6 @@ document.addEventListener('DOMContentLoaded', () => {
      const handleAbrirModalFinalizarClick = (event) => {
         const finalizarModalElement = document.getElementById('finalizarOcorrenciaModal');
         if (finalizarModalElement) {
-            // Cria a instância do sub-modal se ainda não existir
             if (!finalizarModalInstance) {
                  finalizarModalInstance = new bootstrap.Modal(finalizarModalElement);
                  const formFinalizar = finalizarModalElement.querySelector('#finalizarForm');
@@ -270,7 +280,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
      };
 
-     // --- Inicialização de Listeners (Modal Detalhes) ---
+     const initializeNovaOcorrenciaListeners = () => {
+         const form = mainModalContent.querySelector('#ocorrenciaForm');
+         form?.addEventListener('submit', handleNovaOcorrenciaSubmit);
+
+         const condominioSelect = mainModalContent.querySelector('#condominioId');
+         const unidadeSelect = mainModalContent.querySelector('#unidadeId');
+
+         if (condominioSelect && unidadeSelect) {
+             condominioSelect.addEventListener('change', (event) => {
+                 carregarUnidadesPorCondominio(event.target.value, unidadeSelect);
+             });
+             // Carrega unidades se um condomínio já estiver selecionado (caso de edição futura ou pré-seleção)
+             if (condominioSelect.value) {
+                carregarUnidadesPorCondominio(condominioSelect.value, unidadeSelect);
+             }
+         }
+     };
+
      const initializeDetalhesModalListeners = (ocorrenciaId) => {
          const comentarioForm = mainModalContent.querySelector('#comentarioForm');
          comentarioForm?.addEventListener('submit', handleComentarioSubmit);
@@ -279,24 +306,21 @@ document.addEventListener('DOMContentLoaded', () => {
          anexoForm?.addEventListener('submit', handleAnexoSubmit);
 
          mainModalContent.querySelectorAll('.btn-excluir-anexo').forEach(button => {
-            button.removeEventListener('click', handleExcluirAnexoClick); // Evita duplicidade
+            button.removeEventListener('click', handleExcluirAnexoClick);
             button.addEventListener('click', handleExcluirAnexoClick);
          });
 
          const btnAbrirFinalizar = mainModalContent.querySelector('#btnAbrirModalFinalizar');
          btnAbrirFinalizar?.addEventListener('click', handleAbrirModalFinalizarClick);
 
-         // Limpa a instância do sub-modal quando o modal principal é fechado
          mainModalElement.addEventListener('hidden.bs.modal', () => {
              if (finalizarModalInstance) {
                  finalizarModalInstance.dispose();
                  finalizarModalInstance = null;
              }
-         }, { once: true }); // Executa apenas uma vez para evitar leaks
+         }, { once: true });
      };
 
-
-    // --- Funções Utilitárias ---
     const escapeHtml = (unsafe) => {
         if (!unsafe) return '';
         return unsafe
@@ -316,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
      const formatBytes = (bytes, decimals = 1) => {
-        if (!+bytes) return '0 Bytes'
+        if (!+bytes || bytes === 0) return '0 Bytes'
         const k = 1024
         const dm = decimals < 0 ? 0 : decimals
         const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
@@ -324,4 +348,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
     }
 
-}); 
+    document.addEventListener('modalContentLoaded', () => {
+        if(mainModalContent.querySelector('#ocorrenciaForm')){
+            initializeNovaOcorrenciaListeners();
+        }
+    });
+
+});

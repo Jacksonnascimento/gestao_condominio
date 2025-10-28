@@ -25,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional; // Import needed
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -62,10 +63,11 @@ public class OcorrenciaController {
 
         List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
         model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
-        model.addAttribute("showCondominioInfo", condominiosDisponiveis.size() > 1);
+        model.addAttribute("showCondominioInfo", usuarioLogado.getPesIsGlobalAdmin() && condominiosDisponiveis.size() > 1);
     }
 
     @GetMapping
+    @Transactional(readOnly = true) // Annotation added here
     public String listarOcorrencias(
             @RequestParam(required = false) Integer condominioId,
             @RequestParam(required = false) String buscaUnidade,
@@ -106,15 +108,25 @@ public class OcorrenciaController {
     }
 
     @GetMapping("/novo")
+    @Transactional(readOnly = true) // Also added here for consistency
     public String getFormNovaOcorrencia(Model model) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         carregarDadosPadrao(model, usuarioLogado);
 
         OcorrenciaRequestDTO dto = new OcorrenciaRequestDTO();
-        List<Unidade> unidadesSelecionaveis = obterUnidadesParaCadastro(usuarioLogado);
+        List<Unidade> unidadesSelecionaveis;
+        List<Condominio> condominiosSelecionaveis = Collections.emptyList();
+
+        if (usuarioLogado.getPesIsGlobalAdmin()) {
+            condominiosSelecionaveis = condominioService.listarTodosCondominios(false);
+            unidadesSelecionaveis = Collections.emptyList();
+        } else {
+            unidadesSelecionaveis = obterUnidadesParaCadastro(usuarioLogado);
+        }
 
         model.addAttribute("ocorrenciaRequestDTO", dto);
         model.addAttribute("unidadesSelecionaveis", unidadesSelecionaveis);
+        model.addAttribute("condominiosSelecionaveis", condominiosSelecionaveis);
         model.addAttribute("isCadastro", true);
 
         return "fragments/ocorrencia-form :: form-modal-content";
@@ -133,7 +145,7 @@ public class OcorrenciaController {
             Pessoa usuarioLogado = pessoaService.getLoggedInUser();
             Ocorrencia novaOcorrencia = ocorrenciaService.criarOcorrencia(dto, usuarioLogado);
             return ResponseEntity.status(HttpStatus.CREATED).body(new OcorrenciaResumoDTO(novaOcorrencia));
-        } catch (EntityNotFoundException | ResponseStatusException e) {
+        } catch (EntityNotFoundException | ResponseStatusException | IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erro interno ao criar ocorrência."));
@@ -141,6 +153,7 @@ public class OcorrenciaController {
     }
 
     @GetMapping("/detalhes/{id}")
+    @Transactional(readOnly = true) // Also added here for consistency
     public String getDetalhesOcorrencia(@PathVariable Integer id, Model model) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         carregarDadosPadrao(model, usuarioLogado);
@@ -211,6 +224,7 @@ public class OcorrenciaController {
 
      @GetMapping("/{ocorrenciaId}/anexo/{anexoId}")
      @ResponseBody
+     @Transactional(readOnly = true) // Also added here for consistency
      public ResponseEntity<Resource> baixarAnexo(@PathVariable Integer ocorrenciaId, @PathVariable Integer anexoId, HttpServletRequest request) {
          try {
              Pessoa usuarioLogado = pessoaService.getLoggedInUser();
@@ -281,7 +295,7 @@ public class OcorrenciaController {
 
      private List<Unidade> obterUnidadesParaCadastro(Pessoa usuarioLogado) {
           if (usuarioLogado.getPesIsGlobalAdmin()) {
-               return unidadeService.listarTodasUnidades(false, null, null);
+               return Collections.emptyList();
           } else if (usuarioCondominioService.possuiRole(usuarioLogado, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM)) {
               Integer userCondoId = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
                if (userCondoId != null) {

@@ -39,7 +39,9 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
     @Autowired
     private UnidadeRepository unidadeRepository;
     @Autowired
-    private OcupanteRepository ocupanteRepository; // Injeção adicionada
+    private CondominioRepository condominioRepository;
+    @Autowired
+    private OcupanteRepository ocupanteRepository;
     @Autowired
     private UsuarioCondominioService usuarioCondominioService;
     @Autowired
@@ -110,10 +112,25 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
         Unidade unidade = unidadeRepository.findById(dto.getUnidadeId())
                 .orElseThrow(() -> new EntityNotFoundException("Unidade não encontrada com ID: " + dto.getUnidadeId()));
 
+        Condominio condominio;
+        if (Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin())) {
+            if (dto.getCondominioId() == null) {
+                throw new IllegalArgumentException("Condomínio deve ser selecionado para Administrador Global.");
+            }
+            condominio = condominioRepository.findById(dto.getCondominioId())
+                    .orElseThrow(() -> new EntityNotFoundException("Condomínio não encontrado com ID: " + dto.getCondominioId()));
+
+            if (!unidade.getCondominio().getConCod().equals(condominio.getConCod())) {
+                 throw new IllegalArgumentException("A unidade selecionada não pertence ao condomínio selecionado.");
+            }
+        } else {
+             condominio = unidade.getCondominio();
+        }
+
         validarAcessoUnidade(unidade, usuarioLogado, true);
 
         Ocorrencia ocorrencia = Ocorrencia.builder()
-                .condominio(unidade.getCondominio())
+                .condominio(condominio)
                 .unidade(unidade)
                 .pessoaRegistro(usuarioLogado)
                 .titulo(dto.getTitulo())

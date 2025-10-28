@@ -37,7 +37,7 @@ public class OcorrenciaSpecification {
             if (!otimizarParaContagem && (Long.class != query.getResultType() && long.class != query.getResultType())) {
                 root.fetch("unidade", JoinType.INNER).fetch("condominio", JoinType.INNER);
                 root.fetch("pessoaRegistro", JoinType.LEFT);
-                 query.distinct(true);
+                 // query.distinct(true); // LINHA REMOVIDA
             }
 
             List<Predicate> predicates = new ArrayList<>();
@@ -115,7 +115,7 @@ public class OcorrenciaSpecification {
                  Order orderData = cb.desc(root.get("dataRegistro"));
 
                  if (status == null) {
-                      Expression<Integer> statusOrderExpression = cb.<Integer>selectCase() // Especifica o tipo aqui
+                      Expression<Integer> statusOrderExpression = cb.<Integer>selectCase()
                                       .when(cb.equal(root.get("status"), OcorrenciaStatus.ABERTA), 0)
                                       .when(cb.equal(root.get("status"), OcorrenciaStatus.EM_ANALISE), 1)
                                       .when(cb.equal(root.get("status"), OcorrenciaStatus.RESOLVIDA), 2)

@@ -62,14 +62,12 @@ document.addEventListener('DOMContentLoaded', () => {
             let responseText = '';
             try {
                 responseText = await response.text();
-                // Tenta parsear como JSON, mas se falhar, usa o texto como mensagem
                 try {
                     responseData = JSON.parse(responseText);
                 } catch (parseError) {
                     responseData = { message: responseText || 'Resposta inválida do servidor.' };
                 }
             } catch (e) {
-                // Caso a leitura do texto falhe
                 responseData = { message: 'Não foi possível ler a resposta do servidor.' };
             }
 
@@ -78,10 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (successCallback) successCallback(responseData);
             } else {
                 const message = responseData.message || responseData.detail || 'Erro ao processar a solicitação.';
-                 // Extrai a mensagem de erro específica do backend se disponível
                 let extractedMessage = message;
                 if (typeof message === 'string') {
-                    const match = message.match(/"([^"]*)"/); // Tenta pegar a mensagem dentro de aspas
+                    const match = message.match(/"([^"]*)"/);
                     if (match && match[1]) {
                         extractedMessage = match[1];
                     }
@@ -95,7 +92,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (errorCallback) errorCallback(error);
         }
     };
-
 
     const carregarUnidadesPorCondominio = async (condominioId, unidadeSelectElement) => {
         if (!unidadeSelectElement) return;
@@ -162,7 +158,6 @@ document.addEventListener('DOMContentLoaded', () => {
         await handleAjaxFormSubmit(form, (responseData) => {
             input.value = '';
             addComentarioToList(responseData);
-            // Não fecha o modal nem recarrega a página
         });
     };
 
@@ -173,9 +168,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!fileInput || fileInput.files.length === 0) return;
 
         await handleAjaxFormSubmit(form, (responseData) => {
-            fileInput.value = ''; // Limpa o input de arquivo
+            fileInput.value = '';
             addAnexoToList(responseData);
-             // Não fecha o modal nem recarrega a página
         });
     };
 
@@ -185,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await handleAjaxFormSubmit(form, (responseData) => {
             if (finalizarModalInstance) finalizarModalInstance.hide();
             mainModal.hide();
-            showSuccessFeedback(responseData.message || 'Ocorrência finalizada com sucesso!'); // Recarrega a página por padrão
+            showSuccessFeedback(responseData.message || 'Ocorrência finalizada com sucesso!');
         });
     };
 
@@ -205,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 em ${formatDateTime(comentarioDTO.dataComentario)}
             </small>
         `;
-        listElement.insertBefore(newItem, listElement.firstChild); // Insere no início
+        listElement.insertBefore(newItem, listElement.firstChild);
     };
 
     const addAnexoToList = (anexoDTO) => {
@@ -217,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const newItem = document.createElement('div');
         newItem.className = 'anexo-item d-flex justify-content-between align-items-center';
-        newItem.dataset.anexoId = anexoDTO.id; // Adiciona ID para facilitar remoção
+        newItem.dataset.anexoId = anexoDTO.id;
         newItem.innerHTML = `
             <div>
                  <a href="/ocorrencias/${anexoDTO.ocorrenciaId}/anexo/${anexoDTO.id}" target="_blank" class="text-decoration-none anexo-link">${escapeHtml(anexoDTO.nomeOriginal || 'anexo')}</a>
@@ -236,9 +230,8 @@ document.addEventListener('DOMContentLoaded', () => {
                  </button>
              </div>
         `;
-        listElement.insertBefore(newItem, listElement.firstChild); // Insere no início
+        listElement.insertBefore(newItem, listElement.firstChild);
 
-        // Adiciona listener ao novo botão de excluir
         const deleteButton = newItem.querySelector('.btn-excluir-anexo');
         deleteButton?.addEventListener('click', handleExcluirAnexoClick);
     };
@@ -260,34 +253,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     let responseData = {};
                     let responseText = '';
                     try {
-                        // Tenta ler como texto primeiro
                         responseText = await response.text();
-                        // Tenta parsear como JSON
                         try {
                            responseData = JSON.parse(responseText);
                         } catch (parseError) {
-                            // Se falhar o parse, usa o texto como mensagem (caso de respostas não-JSON)
                            responseData = { message: responseText || 'Resposta inválida do servidor.' };
                         }
                     } catch (readError) {
                         responseData = { message: 'Não foi possível ler a resposta do servidor.' };
                     }
 
-
                     if (response.ok) {
                         const itemToRemove = document.querySelector(`.anexo-item[data-anexo-id="${anexoId}"]`);
                         itemToRemove?.remove();
 
-                        // Verifica se a lista ficou vazia após remover
                         const listElement = document.getElementById('anexosList');
                         if (listElement && !listElement.querySelector('.anexo-item')) {
                             listElement.innerHTML = '<div class="text-muted text-center p-3">Nenhum anexo adicionado.</div>';
                         }
-                         if (Swal.isLoading()) { Swal.close(); } // Fecha o loading
-                         // Não mostra alerta de sucesso para exclusão, apenas remove o item
+                         if (Swal.isLoading()) { Swal.close(); }
                     } else {
                         const message = responseData.message || 'Erro ao excluir anexo.';
-                         // Extrai a mensagem de erro específica do backend se disponível
                         let extractedMessage = message;
                         if (typeof message === 'string') {
                             const match = message.match(/"([^"]*)"/);
@@ -309,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalizarModalElement = document.getElementById('finalizarOcorrenciaModal');
         if (finalizarModalElement) {
             if (!finalizarModalInstance) {
-                finalizarModalInstance = createStaticModal(finalizarModalElement); // Usa a função global
+                finalizarModalInstance = createStaticModal(finalizarModalElement);
                 const formFinalizar = finalizarModalElement.querySelector('#finalizarForm');
                 formFinalizar?.addEventListener('submit', handleFinalizarSubmit);
             }
@@ -317,46 +303,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- CORREÇÃO FINAL ---
+    // --- CORREÇÃO APLICADA AQUI ---
     const handleAnexoLinkClick = async (event) => {
         const link = event.target.closest('a.anexo-link');
         if (!link) return;
 
-        event.preventDefault();
+        event.preventDefault(); // Impede a navegação padrão
         const url = link.href;
         showLoadingFeedback('Verificando arquivo...');
 
         try {
-            // Usa 'HEAD' para verificar a existência sem baixar o arquivo
-            // Se o servidor não suportar HEAD para esses links, volte para 'GET'
+            // Tenta verificar a existência do arquivo usando o método HEAD
             const response = await fetch(url, { method: 'HEAD' });
 
             if (response.ok) {
-                // Se HEAD funcionou e deu OK, o arquivo existe
+                // Se o status for OK (2xx), o arquivo existe
                 if (Swal.isLoading()) { Swal.close(); }
-                window.open(url, '_blank');
+                window.open(url, '_blank'); // Abre o link em nova aba
             } else if (response.status === 404) {
-                 // Se o status for 404, o arquivo não foi encontrado
+                // Se for 404, o arquivo não foi encontrado
                  showErrorFeedback("Arquivo não encontrado. Pode ter sido excluído.");
             } else {
-                // Outro erro inesperado ao verificar o arquivo
-                // Tenta obter alguma informação do status/texto para o erro
+                 // Outro erro inesperado (ex: 500, 403)
                  let errorMsg = `Erro ${response.status} ao verificar o arquivo.`;
                  try {
                      const errorText = await response.text();
                      if (errorText) {
-                         // Tenta extrair mensagem mais específica se houver
                          const jsonMatch = errorText.match(/"detail":"([^"]*)"/i) || errorText.match(/"message":"([^"]*)"/i);
-                          if (jsonMatch && jsonMatch[1]) {
-                             const detailMsgMatch = jsonMatch[1].match(/"([^"]*)"/); // Tenta pegar a msg dentro da msg
+                         if (jsonMatch && jsonMatch[1]) {
+                             const detailMsgMatch = jsonMatch[1].match(/"([^"]*)"/);
                              errorMsg = (detailMsgMatch && detailMsgMatch[1]) ? detailMsgMatch[1] : jsonMatch[1];
                          } else {
-                             const titleMatch = errorText.match(/<title>(.*?)<\/title>/i); // Para páginas HTML de erro
+                             const titleMatch = errorText.match(/<title>(.*?)<\/title>/i);
                              errorMsg = (titleMatch && titleMatch[1]) ? titleMatch[1] : `Erro ${response.status}: ${response.statusText}`;
                          }
                      }
                  } catch (e) {
-                     // Ignora erro ao ler corpo, usa mensagem baseada no status
                      errorMsg = `Erro ${response.status}: ${response.statusText} ao verificar o arquivo.`;
                  }
                  showErrorFeedback(errorMsg);
@@ -367,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showErrorFeedback('Erro de comunicação ao tentar acessar o anexo.');
         }
     };
-    // --- FIM DA CORREÇÃO FINAL ---
+    // --- FIM DA CORREÇÃO ---
 
     const initializeNovaOcorrenciaListeners = () => {
         const form = mainModalContent.querySelector('#ocorrenciaForm');
@@ -376,12 +358,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const condominioSelect = mainModalContent.querySelector('#condominioId');
         const unidadeSelect = mainModalContent.querySelector('#unidadeId');
 
-        // Adiciona listener para carregar unidades quando o condomínio muda
         if (condominioSelect && unidadeSelect) {
             condominioSelect.addEventListener('change', (event) => {
                 carregarUnidadesPorCondominio(event.target.value, unidadeSelect);
             });
-            // Carrega unidades iniciais se um condomínio já estiver selecionado (ex: admin não global)
             if (condominioSelect.value) {
                 carregarUnidadesPorCondominio(condominioSelect.value, unidadeSelect);
             }
@@ -389,50 +369,43 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const initializeDetalhesModalListeners = (ocorrenciaId) => {
-        // Adiciona listeners para os formulários de comentário e anexo
         const comentarioForm = mainModalContent.querySelector('#comentarioForm');
         comentarioForm?.addEventListener('submit', handleComentarioSubmit);
 
         const anexoForm = mainModalContent.querySelector('#anexoForm');
         anexoForm?.addEventListener('submit', handleAnexoSubmit);
 
-        // (Re)Adiciona listeners aos botões de excluir anexo (importante para itens adicionados dinamicamente)
         mainModalContent.querySelectorAll('.btn-excluir-anexo').forEach(button => {
-            button.removeEventListener('click', handleExcluirAnexoClick); // Remove listener antigo para evitar duplicação
+            button.removeEventListener('click', handleExcluirAnexoClick);
             button.addEventListener('click', handleExcluirAnexoClick);
         });
 
-        // Adiciona listener ao botão de abrir modal de finalização
         const btnAbrirFinalizar = mainModalContent.querySelector('#btnAbrirModalFinalizar');
         btnAbrirFinalizar?.addEventListener('click', handleAbrirModalFinalizarClick);
 
-        // Adiciona listener à lista de anexos para tratar cliques nos links (delegação de evento)
+        // *** Adiciona o listener para os links de anexo ***
         const anexosList = mainModalContent.querySelector('#anexosList');
         if (anexosList) {
             anexosList.removeEventListener('click', handleAnexoLinkClick); // Garante que não haja listeners duplicados
-            anexosList.addEventListener('click', handleAnexoLinkClick);
+            anexosList.addEventListener('click', handleAnexoLinkClick); // Usa delegação de evento
         }
+        // ***********************************************
 
-        // Limpeza ao fechar o modal principal (evita problemas com modal aninhado)
         mainModalElement.addEventListener('hidden.bs.modal', () => {
             if (finalizarModalInstance) {
-                // Remove listener do formulário de finalização
                 const formFinalizar = document.getElementById('finalizarForm');
                 formFinalizar?.removeEventListener('submit', handleFinalizarSubmit);
-                finalizarModalInstance.dispose(); // Destroi a instância do modal de finalização
+                finalizarModalInstance.dispose();
                 finalizarModalInstance = null;
-                 // Remove manualmente o backdrop se ainda existir (bug do bootstrap com modais aninhados)
                  const backdrops = document.querySelectorAll('.modal-backdrop');
                  backdrops.forEach(bd => bd.remove());
-                 // Garante que o body volte ao normal
                  document.body.classList.remove('modal-open');
                  document.body.style.overflow = '';
                  document.body.style.paddingRight = '';
             }
-        }, { once: true }); // Executa o listener apenas uma vez
+        }, { once: true });
     };
 
-    // Função auxiliar para escapar HTML (evita XSS)
     const escapeHtml = (unsafe) => {
         if (!unsafe) return '';
         return unsafe
@@ -443,49 +416,38 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/'/g, "&#039;");
     }
 
-    // Função auxiliar para formatar data/hora
     const formatDateTime = (dateTimeString) => {
         if (!dateTimeString) return '';
         try {
             const date = new Date(dateTimeString);
-            // Verifica se a data é válida
             if (isNaN(date.getTime())) {
                 throw new Error("Data inválida");
             }
             return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         } catch (e) {
             console.error("Erro ao formatar data:", dateTimeString, e);
-            return dateTimeString; // Retorna a string original em caso de erro
+            return dateTimeString;
         }
     }
 
-    // Função auxiliar para formatar bytes
      const formatBytes = (bytes, decimals = 1) => {
-        if (!+bytes || bytes === 0) return '0 Bytes' // Trata 0 ou não numérico
+        if (!+bytes || bytes === 0) return '0 Bytes'
         const k = 1024
         const dm = decimals < 0 ? 0 : decimals
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'] // Adicionado 'Bytes'
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
 
-        // Calcula o índice correto (logaritmo na base k)
         const i = (bytes === 0) ? 0 : Math.floor(Math.log(bytes) / Math.log(k));
 
-        // Validação adicional para o índice
-        if (isNaN(i) || i < 0) return '0 Bytes'; // Retorna '0 Bytes' se o cálculo falhar
+        if (isNaN(i) || i < 0) return '0 Bytes';
 
-        // Formata o número e adiciona a unidade
         return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
     }
 
-
-    // Listener para inicializar listeners específicos quando o conteúdo do modal é carregado
     document.addEventListener('modalContentLoaded', () => {
-        // Verifica se é o formulário de nova ocorrência
         if (mainModalContent.querySelector('#ocorrenciaForm')) {
             initializeNovaOcorrenciaListeners();
         }
-        // Verifica se é o modal de detalhes (pela presença de um elemento específico)
         if (mainModalContent.querySelector('.ocorrencia-detalhes-modal')) {
-             // O ID não é estritamente necessário aqui se os listeners internos já pegam via data-attributes
             initializeDetalhesModalListeners(null);
         }
     });

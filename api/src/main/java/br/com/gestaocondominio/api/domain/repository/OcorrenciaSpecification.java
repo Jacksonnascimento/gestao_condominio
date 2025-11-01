@@ -37,7 +37,7 @@ public class OcorrenciaSpecification {
             if (!otimizarParaContagem && (Long.class != query.getResultType() && long.class != query.getResultType())) {
                 root.fetch("unidade", JoinType.INNER).fetch("condominio", JoinType.INNER);
                 root.fetch("pessoaRegistro", JoinType.LEFT);
-                 // query.distinct(true); // LINHA REMOVIDA
+                 
             }
 
             List<Predicate> predicates = new ArrayList<>();
@@ -70,7 +70,10 @@ public class OcorrenciaSpecification {
                      subqueryUnidadesMorador.select(ocupanteRoot.get("unidade").get("uniCod"))
                              .where(cb.equal(ocupanteRoot.get("pessoa").get("pesCod"), usuarioLogado.getPesCod()));
 
-                     predicates.add(root.get("unidade").get("uniCod").in(subqueryUnidadesMorador));
+                     
+                     Predicate predicateUnidadesMorador = root.get("unidade").get("uniCod").in(subqueryUnidadesMorador);
+                     Predicate predicateAutorOcorrencia = cb.equal(root.get("pessoaRegistro").get("pesCod"), usuarioLogado.getPesCod());
+                     predicates.add(cb.or(predicateUnidadesMorador, predicateAutorOcorrencia));
 
                      if (condominioIdParaFiltrar != null) {
                           Integer conCodUsuario = associacoes.stream().findFirst().map(UsuarioCondominio::getConCod).orElse(null);

@@ -25,7 +25,15 @@ public record OcorrenciaDetalhesDTO(
         List<OcorrenciaComentarioDTO> comentarios,
         List<OcorrenciaAnexoDTO> anexos
 ) {
-    public static OcorrenciaDetalhesDTO fromEntity(Ocorrencia ocorrencia) {
+    public static OcorrenciaDetalhesDTO fromEntity(Ocorrencia ocorrencia, boolean podeVerAutor) {
+        
+        String nomeAutor;
+        if (podeVerAutor) {
+            nomeAutor = ocorrencia.getPessoaRegistro() != null ? ocorrencia.getPessoaRegistro().getPesNome() : "Desconhecido";
+        } else {
+            nomeAutor = "Morador"; 
+        }
+
         return new OcorrenciaDetalhesDTO(
                 ocorrencia.getOcoCod(),
                 ocorrencia.getTitulo(),
@@ -36,7 +44,7 @@ public record OcorrenciaDetalhesDTO(
                 ocorrencia.getUnidade() != null ? ocorrencia.getUnidade().getBloco() : null,
                 ocorrencia.getCondominio() != null ? ocorrencia.getCondominio().getConNome() : null,
                 ocorrencia.getDataRegistro(),
-                ocorrencia.getPessoaRegistro() != null ? ocorrencia.getPessoaRegistro().getPesNome() : "Desconhecido",
+                nomeAutor,
                 ocorrencia.getParecerFinal(),
                 ocorrencia.getPessoaFinalizou() != null ? ocorrencia.getPessoaFinalizou().getPesNome() : null,
                 ocorrencia.getDataFinalizacao(),

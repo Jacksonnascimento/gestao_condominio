@@ -14,4 +14,5 @@ public interface UnidadeService {
     Unidade ativarUnidade(Integer id);
     void checkAdminOrSindicoPermission(Integer unidadeId);
     List<Unidade> findByCondominioId(Integer condominioId);
+    List<Unidade> findAtivasByCondominioId(Integer condominioId);
 }

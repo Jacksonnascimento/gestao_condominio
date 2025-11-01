@@ -103,7 +103,28 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
     @Transactional(readOnly = true)
     public OcorrenciaDetalhesDTO buscarPorIdDetalhes(Integer id, Pessoa usuarioLogado) {
         Ocorrencia ocorrencia = buscarOcorrenciaPorIdEValidarAcesso(id, usuarioLogado, false);
-        return OcorrenciaDetalhesDTO.fromEntity(ocorrencia);
+        Integer conCodOcorrencia = ocorrencia.getCondominio().getConCod();
+
+        boolean isVisualizadorGerencial = usuarioLogado.getPesIsGlobalAdmin() ||
+                usuarioCondominioService.findByPessoa(usuarioLogado).stream()
+                        .anyMatch(uc -> uc.getConCod().equals(conCodOcorrencia) &&
+                                (uc.getUscPapel() == UserRole.SINDICO ||
+                                 uc.getUscPapel() == UserRole.ADMIN ||
+                                 uc.getUscPapel() == UserRole.FUNCIONARIO_ADM));
+
+        boolean isVisualizadorAutor = ocorrencia.getPessoaRegistro().getPesCod().equals(usuarioLogado.getPesCod());
+
+        Pessoa autorOcorrencia = ocorrencia.getPessoaRegistro();
+        boolean isAutorGerencial = autorOcorrencia.getPesIsGlobalAdmin() ||
+                usuarioCondominioService.findByPessoa(autorOcorrencia).stream()
+                        .anyMatch(uc -> uc.getConCod().equals(conCodOcorrencia) &&
+                                (uc.getUscPapel() == UserRole.SINDICO ||
+                                 uc.getUscPapel() == UserRole.ADMIN ||
+                                 uc.getUscPapel() == UserRole.FUNCIONARIO_ADM));
+
+        boolean podeVerAutor = isVisualizadorGerencial || isVisualizadorAutor || isAutorGerencial;
+
+        return OcorrenciaDetalhesDTO.fromEntity(ocorrencia, podeVerAutor);
     }
 
     @Override
@@ -127,7 +148,7 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
              condominio = unidade.getCondominio();
         }
 
-        validarAcessoUnidade(unidade, usuarioLogado, true);
+        validarAcessoCriacao(unidade, usuarioLogado);
 
         Ocorrencia ocorrencia = Ocorrencia.builder()
                 .condominio(condominio)
@@ -222,7 +243,7 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
         try {
             String simpleFilename = Paths.get(anexo.getCaminhoArquivo()).getFileName().toString();
             fileStorageService.delete(simpleFilename, OCORRENCIAS_DIR);
-            anexoRepository.delete(anexo); // <-- CORREÇÃO: Adicionada exclusão do banco
+            anexoRepository.delete(anexo); 
         } catch (StorageException e) {
             throw new RuntimeException("Falha ao excluir o arquivo físico do anexo: " + e.getMessage(), e);
         } catch (Exception e) {
@@ -236,14 +257,13 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
         buscarOcorrenciaPorIdEValidarAcesso(ocorrenciaId, usuarioLogado, false);
 
         OcorrenciaAnexo anexo = anexoRepository.findByOcorrenciaOcoCodAndOcaCod(ocorrenciaId, anexoId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, // <-- MUDANÇA: EntityNotFound -> ResponseStatusException 404
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, 
                         "Anexo não encontrado com ID: " + anexoId + " para a ocorrência ID: " + ocorrenciaId));
 
         try {
             String simpleFilename = Paths.get(anexo.getCaminhoArquivo()).getFileName().toString();
             Resource resource = fileStorageService.loadAsResource(simpleFilename, OCORRENCIAS_DIR);
 
-            // <-- VERIFICAÇÃO ADICIONAL (Embora loadAsResource já lance exceção se não existir)
             if (!resource.exists() || !resource.isReadable()) {
                  throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Arquivo não encontrado ou inacessível no armazenamento.");
             }
@@ -259,7 +279,7 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
         buscarOcorrenciaPorIdEValidarAcesso(ocorrenciaId, usuarioLogado, false);
 
         OcorrenciaAnexo anexo = anexoRepository.findByOcorrenciaOcoCodAndOcaCod(ocorrenciaId, anexoId)
-                .orElseThrow(() -> new EntityNotFoundException( // Mantém EntityNotFound pois é só busca de nome
+                .orElseThrow(() -> new EntityNotFoundException( 
                         "Anexo não encontrado com ID: " + anexoId + " para a ocorrência ID: " + ocorrenciaId));
 
         return anexo.getNomeOriginal() != null ? anexo.getNomeOriginal() : "anexo_" + anexo.getOcaCod();
@@ -307,45 +327,61 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
         Ocorrencia ocorrencia = ocorrenciaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Ocorrência não encontrada com ID: " + id));
 
-        validarAcessoUnidade(ocorrencia.getUnidade(), usuarioLogado, edicao);
-        return ocorrencia;
-    }
-
-    private void validarAcessoUnidade(Unidade unidade, Pessoa usuarioLogado, boolean edicao) {
-        if (usuarioLogado == null || unidade == null) {
+        if (usuarioLogado == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso Negado.");
         }
 
-        Integer conCodUnidade = unidade.getCondominio() != null ? unidade.getCondominio().getConCod() : null;
-        if (conCodUnidade == null) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unidade sem condomínio associado.");
+        if (Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin())) {
+            return ocorrencia;
         }
 
-        if (Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin())) {
-            return;
-        }
+        Integer conCodOcorrencia = ocorrencia.getCondominio().getConCod();
 
         boolean isGerencialNoCondominio = usuarioCondominioService.findByPessoa(usuarioLogado).stream()
-                .anyMatch(uc -> uc.getConCod().equals(conCodUnidade) &&
+                .anyMatch(uc -> uc.getConCod().equals(conCodOcorrencia) &&
                         (uc.getUscPapel() == UserRole.SINDICO || uc.getUscPapel() == UserRole.ADMIN
                                 || uc.getUscPapel() == UserRole.FUNCIONARIO_ADM));
 
         if (isGerencialNoCondominio) {
-            return;
+            return ocorrencia;
         }
 
-        boolean isOcupanteDaUnidade = unidadeRepository.findByIdWithCondominio(unidade.getUniCod())
-                .map(u -> u.getCondominio().getConCod().equals(conCodUnidade))
-                .orElse(false) &&
-                ocupanteRepository.findByPessoa(usuarioLogado).stream()
-                        .anyMatch(oc -> oc.getUnidade() != null
-                                && oc.getUnidade().getUniCod().equals(unidade.getUniCod()));
+        boolean isAutor = ocorrencia.getPessoaRegistro().getPesCod().equals(usuarioLogado.getPesCod());
 
-        if (isOcupanteDaUnidade) {
-            return;
+        boolean isOcupanteDaUnidadeAlvo = ocupanteRepository.findByPessoa(usuarioLogado).stream()
+                .anyMatch(oc -> oc.getUnidade() != null
+                        && oc.getUnidade().getUniCod().equals(ocorrencia.getUnidade().getUniCod()));
+
+        if (isAutor || isOcupanteDaUnidadeAlvo) {
+            return ocorrencia;
         }
 
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso Negado. Você não tem permissão para "
-                + (edicao ? "modificar" : "visualizar") + " ocorrências desta unidade.");
+                + (edicao ? "modificar" : "visualizar") + " esta ocorrência.");
+    }
+
+    private void validarAcessoCriacao(Unidade unidade, Pessoa usuarioLogado) {
+        if (usuarioLogado == null || unidade == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso Negado.");
+        }
+    
+        Integer conCodUnidade = unidade.getCondominio() != null ? unidade.getCondominio().getConCod() : null;
+        if (conCodUnidade == null) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unidade sem condomínio associado.");
+        }
+    
+        if (Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin())) {
+            return;
+        }
+    
+        boolean pertenceAoCondominio = usuarioCondominioService.findByPessoa(usuarioLogado).stream()
+                .anyMatch(uc -> uc.getConCod().equals(conCodUnidade));
+    
+        if (pertenceAoCondominio) {
+            return;
+        }
+    
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso Negado. Você não tem permissão para "
+                + "criar ocorrências para unidades deste condomínio.");
     }
 }

@@ -273,4 +273,10 @@ public class UnidadeServiceImpl implements UnidadeService {
                 .orElseThrow(() -> new IllegalArgumentException("Unidade não encontrada"));
         checkAdminOrSindicoPermissionForCondominio(unidade.getCondominio().getConCod());
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Unidade> findAtivasByCondominioId(Integer condominioId) {
+        return unidadeRepository.findAtivasByCondominioConCodWithCondominio(condominioId);
+    }
 }

@@ -296,18 +296,13 @@ public class OcorrenciaController {
      private List<Unidade> obterUnidadesParaCadastro(Pessoa usuarioLogado) {
           if (usuarioLogado.getPesIsGlobalAdmin()) {
                return Collections.emptyList();
-          } else if (usuarioCondominioService.possuiRole(usuarioLogado, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM)) {
-              Integer userCondoId = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
-               if (userCondoId != null) {
-                   return unidadeService.findByCondominioId(userCondoId);
-               }
-          } else {
-               return ocupanteRepository.findByPessoa(usuarioLogado).stream()
-                       .map(Ocupante::getUnidade)
-                       .filter(Objects::nonNull)
-                       .distinct()
-                       .collect(Collectors.toList());
           }
+          
+          Integer userCondoId = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
+          if (userCondoId != null) {
+              return unidadeService.findAtivasByCondominioId(userCondoId);
+          }
+          
           return Collections.emptyList();
      }
 }

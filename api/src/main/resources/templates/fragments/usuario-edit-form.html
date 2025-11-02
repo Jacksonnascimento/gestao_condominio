@@ -3,7 +3,7 @@
 <body>
 <div th:fragment="form-modal-content">
     <div class="modal-header">
-        <h5 class="modal-title">Editar Papel do Usuário</h5>
+        <h5 class="modal-title">Editar Usuário</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
     <form id="usuarioEditForm" th:object="${usuarioDTO}" th:action="@{/usuarios/editar}" method="post">
@@ -21,6 +21,10 @@
                  <div class="col-12">
                     <label class="form-label">Usuário</label>
                     <input type="text" class="form-control" th:value="*{pessoaNome}" readonly disabled>
+                </div>
+                <div class="col-12">
+                    <label for="email" class="form-label">Email (Login) *</label>
+                    <input type="email" class="form-control" id="email" name="email" th:value="*{pessoaEmail}" required>
                 </div>
                 <div class="col-12">
                     <label for="newPapel" class="form-label">Papel (Role) *</label>

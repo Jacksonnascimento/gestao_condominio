@@ -1,6 +1,7 @@
 package br.com.gestaocondominio.api.controller;
 
 import br.com.gestaocondominio.api.controller.dto.OcupanteResponseDTO;
+import br.com.gestaocondominio.api.controller.dto.PessoaUpdateRequest;
 import br.com.gestaocondominio.api.controller.dto.UsuarioCondominioDTO;
 import br.com.gestaocondominio.api.controller.dto.UsuarioCondominioRequestDTO;
 import br.com.gestaocondominio.api.domain.entity.Condominio;
@@ -17,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.util.StringUtils;
 
 
 import java.util.Collections;
@@ -170,10 +172,34 @@ public class UsuarioAdminController {
     public ResponseEntity<?> atualizarUsuario(@RequestParam Integer pessoaId,
                                               @RequestParam Integer condominioId,
                                               @RequestParam UserRole oldPapel,
-                                              @RequestParam UserRole newPapel) {
+                                              @RequestParam UserRole newPapel,
+                                              @RequestParam String email) {
         try {
-            usuarioCondominioService.atualizarPapelUsuario(pessoaId, condominioId, oldPapel, newPapel);
-            return ResponseEntity.ok(Map.of("message", "Papel do usuário atualizado com sucesso."));
+            boolean emailAlterado = false;
+            boolean papelAlterado = false;
+
+            if (StringUtils.hasText(email)) {
+                Pessoa pessoa = pessoaService.buscarPessoaPorId(pessoaId)
+                        .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada."));
+                
+                if (!email.equals(pessoa.getPesEmail())) {
+                    PessoaUpdateRequest updateRequest = new PessoaUpdateRequest(null, null, null, email, null, null, null, null);
+                    pessoaService.atualizarPessoa(pessoaId, updateRequest);
+                    emailAlterado = true;
+                }
+            }
+
+            if (oldPapel != newPapel) {
+                usuarioCondominioService.atualizarPapelUsuario(pessoaId, condominioId, oldPapel, newPapel);
+                papelAlterado = true;
+            }
+
+            if (!emailAlterado && !papelAlterado) {
+                 return ResponseEntity.ok(Map.of("message", "Nenhuma alteração detectada."));
+            }
+
+            return ResponseEntity.ok(Map.of("message", "Usuário atualizado com sucesso."));
+
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {

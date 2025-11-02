@@ -115,6 +115,10 @@ body, html {
     #sidebar-toggle-btn { font-size: 1.5rem; color: var(--text-color); }
     .mobile-header-title { font-weight: 600; font-size: 1.2rem; color: var(--text-color); margin-left: 1rem; }
 
+    .responsive-table-container .table-responsive {
+        overflow-x: hidden;
+    }
+
     .responsive-table-container table thead { display: none; }
     .responsive-table-container table tr { display: block; margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     .responsive-table-container table td { display: flex; justify-content: space-between; align-items: center; text-align: right; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
@@ -156,3 +160,17 @@ body, html {
 .ocorrencia-detalhes-modal .comentario-meta,
 .ocorrencia-detalhes-modal .anexo-meta { font-size: 0.8rem; color: var(--text-light-color); }
 .ocorrencia-detalhes-modal .anexo-actions .btn { margin-left: 0.5rem; }
+
+/* --- NOVAS REGRAS PARA O RODAPÉ DA SIDEBAR --- */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* Espaço entre o ícone e o nome */
+    max-width: 100%; /* Garante que o container não estoure */
+}
+
+.user-info .username {
+    word-break: break-word; /* Quebra a palavra se for muito longa */
+    white-space: normal; /* Permite a quebra de linha */
+    line-height: 1.2; /* Ajusta a altura da linha */
+}

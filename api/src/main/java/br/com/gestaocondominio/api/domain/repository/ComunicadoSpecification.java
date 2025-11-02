@@ -3,7 +3,7 @@ package br.com.gestaocondominio.api.domain.repository;
 import br.com.gestaocondominio.api.domain.entity.Comunicado;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.enums.PublicoDestino;
-import jakarta.persistence.criteria.JoinType; // Adicionado
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -32,11 +32,16 @@ public class ComunicadoSpecification {
             if (Long.class != query.getResultType() && long.class != query.getResultType()) {
                  root.fetch("criador", JoinType.LEFT);
                  
+                 if (Boolean.TRUE.equals(pessoa.getPesIsGlobalAdmin())) {
+                    root.fetch("condominios", JoinType.LEFT);
+                    query.distinct(true);
+                 }
             }
 
            
             if (Boolean.FALSE.equals(pessoa.getPesIsGlobalAdmin())) {
                 if (conCodAtivo != null) {
+                    
                     predicates.add(cb.equal(root.join("condominios").get("conCod"), conCodAtivo));
                 } else {
                     return cb.disjunction();
@@ -76,6 +81,10 @@ public class ComunicadoSpecification {
             
              if (Long.class != query.getResultType() && long.class != query.getResultType()) {
                 query.orderBy(cb.desc(root.get("dataCadastro")));
+                 
+                if (Boolean.TRUE.equals(pessoa.getPesIsGlobalAdmin())) {
+                    query.distinct(true);
+                }
              }
 
             return cb.and(predicates.toArray(new Predicate[0]));

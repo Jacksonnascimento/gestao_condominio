@@ -6,6 +6,7 @@ import br.com.gestaocondominio.api.domain.entity.Unidade;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -25,4 +26,12 @@ public interface OcupanteRepository extends JpaRepository<Ocupante, Integer>, Jp
 
     List<Ocupante> findByUnidadeIn(List<Unidade> unidades);
 
+    @Query("SELECT o FROM Ocupante o JOIN o.pessoa p JOIN o.unidade u " +
+           "WHERE u.condominio.conCod = :condominioId " +
+           "AND p.pesEmail IS NOT NULL " +
+           "AND NOT EXISTS (SELECT uc FROM UsuarioCondominio uc " +
+           "                WHERE uc.pesCod = p.pesCod " +
+           "                AND uc.conCod = :condominioId " +
+           "                AND uc.uscPapel = 'MORADOR')")
+    List<Ocupante> findOcupantesSemLoginMoradorByCondominio(@Param("condominioId") Integer condominioId);
 }

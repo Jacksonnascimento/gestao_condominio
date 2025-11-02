@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="form-modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title">Novo Usuário</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <form id="usuarioForm" th:object="${usuarioRequestDTO}" th:action="@{/usuarios/salvar}" method="post">
+        <div class="modal-body">
+            
+            <input type="hidden" id="condominioId" th:field="*{condominioId}" />
+            <input type="hidden" id="pessoaId" th:field="*{pessoaId}" />
+
+            <div class="row g-3">
+                <div class="col-12">
+                    <label for="papel" class="form-label">Papel (Role) *</label>
+                    <select id="papel" class="form-select" th:field="*{papel}" required>
+                        <option value="">Selecione...</option>
+                        <option th:each="r : ${rolesDisponiveis}" th:value="${r.name()}" th:text="${r.name()}"></option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="blocoMorador" class="row g-3 mt-2" style="display: none;">
+                <div class="col-12">
+                    <label for="selectOcupante" class="form-label">Vincular Ocupante (Morador) *</label>
+                    <select id="selectOcupante" class="form-select">
+                        <option value="">Selecione um ocupante...</option>
+                        <option th:each="o : ${ocupantesSemLogin}" th:value="${o.id}" th:text="${o.nomeCompleto} + ' (Unid: ' + ${o.unidadeNumero} + ')'"></option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="blocoNovoUsuario" class="row g-3 mt-2" style="display: none;">
+                <hr class="my-3">
+                <h6 class="section-title">Dados Pessoais</h6>
+                <div class="col-md-6">
+                    <label for="pesCpfCnpj" class="form-label">CPF *</label>
+                    <input type="text" class="form-control" id="pesCpfCnpj" th:field="*{pesCpfCnpj}">
+                </div>
+                 <div class="col-md-6">
+                    <label for="pesNome" class="form-label">Nome Completo *</label>
+                    <input type="text" class="form-control" id="pesNome" th:field="*{pesNome}">
+                </div>
+                <div class="col-md-6">
+                    <label for="pesEmail" class="form-label">Email *</label>
+                    <input type="email" class="form-control" id="pesEmail" th:field="*{pesEmail}">
+                </div>
+                <div class="col-md-6">
+                    <label for="pesTelefone" class="form-label">Telefone</label>
+                    <input type="text" class="form-control" id="pesTelefone" th:field="*{pesTelefone}">
+                </div>
+
+                <hr class="my-3">
+                 <h6 class="section-title">Definição de Senha</h6>
+                <div class="col-12">
+                     <select id="acaoSenha" class="form-select" th:field="*{acaoSenha}">
+                        <option value="ENVIAR_LINK">Enviar link de definição por e-mail (Expira em 24h)</option>
+                        <option value="CRIAR_SENHA">Definir senha manualmente</option>
+                    </select>
+                </div>
+                <div id="blocoSenhaManual" class="col-md-6" style="display: none;">
+                    <label for="pesSenhaLogin" class="form-label">Senha *</label>
+                    <input type="password" class="form-control" id="pesSenhaLogin" th:field="*{pesSenhaLogin}">
+                </div>
+            </div>
+
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Salvar Usuário</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

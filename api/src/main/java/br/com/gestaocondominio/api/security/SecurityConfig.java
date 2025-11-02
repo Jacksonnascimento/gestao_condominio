@@ -42,7 +42,8 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/login", "/css/**", "/js/**", "/images/**", "/webjars/**",
                     "/api/auth/**",
-                    "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
+                    "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
+                    "/esqueci-senha", "/definir-senha" // <-- ROTAS ADICIONADAS
                 ).permitAll()
                 // Apenas requer autenticação para o resto das requisições, incluindo /unidades, /ocupantes, /contratos, /dashboard e /api/**.
                 .anyRequest().authenticated()

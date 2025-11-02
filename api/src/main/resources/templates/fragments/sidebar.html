@@ -46,24 +46,39 @@
                     <i class='bx bxs-comment-error'></i> Ocorrências
                 </a>
             </li>
+            
 
         </ul>
         <div class="sidebar-footer pt-3 mt-auto">
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="user-info">
-                    <span class="fw-bold" th:text="${nomeUsuarioLogado}">Nome do Usuário</span>
-                </div>
-                <button class="btn btn-outline-secondary" id="theme-toggler" type="button" aria-label="Toggle theme">
+            
+            <div class="dropdown">
+                <a href="#" class="d-flex align-items-center justify-content-between text-decoration-none dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="user-info">
+                        <i class='bx bxs-user-circle fs-5 align-middle me-1'></i>
+                        <span class="fw-bold" th:text="${nomeUsuarioLogado}">Nome do Usuário</span>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="userDropdown">
+                    <li><a class="dropdown-item" href="#" id="btnMeuPerfil"><i class='bx bxs-cog me-2'></i> Meu Perfil</a></li>
+                    <li th:if="${isUsuarioAdmin}"><a class="dropdown-item" th:href="@{/usuarios}"><i class='bx bxs-user-cog me-2'></i> Admin. Usuários</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form th:action="@{/logout}" method="post" class="d-inline">
+                            <button type="submit" class="dropdown-item text-danger">
+                                <i class='bx bx-log-out me-2'></i> Sair
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="d-flex justify-content-end mt-3">
+                 <button class="btn btn-outline-secondary" id="theme-toggler" type="button" aria-label="Toggle theme">
                     <i class='bx bxs-sun' id="theme-toggler-light"></i>
                     <i class='bx bxs-moon d-none' id="theme-toggler-dark"></i>
                 </button>
             </div>
-            <hr>
-            <form th:action="@{/logout}" method="post" class="d-grid">
-                <button type="submit" class="btn btn-danger">
-                    <i class='bx bx-log-out'></i> Sair
-                </button>
-            </form>
+            
         </div>
     </div>
 </body>

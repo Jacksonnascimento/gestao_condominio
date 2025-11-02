@@ -40,8 +40,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         List<UsuarioCondominio> rolesCondominio = usuarioCondominioRepository.findByPessoa(pessoa);
         for (UsuarioCondominio uc : rolesCondominio) {
             if (uc.getUscAtivoAssociacao()) {
-                String authorityString = "ROLE_" + uc.getUscPapel().name() + "_" + uc.getConCod();
-                authorities.add(new SimpleGrantedAuthority(authorityString));
+                
+                String authorityStringEspecifica = "ROLE_" + uc.getUscPapel().name() + "_" + uc.getConCod();
+                authorities.add(new SimpleGrantedAuthority(authorityStringEspecifica));
+
+                
+                String authorityStringGenerica = "ROLE_" + uc.getUscPapel().name();
+                if (authorities.stream().noneMatch(a -> a.getAuthority().equals(authorityStringGenerica))) {
+                     authorities.add(new SimpleGrantedAuthority(authorityStringGenerica));
+                }
             }
         }
 

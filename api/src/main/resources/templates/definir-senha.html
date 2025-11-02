@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONDIGTAL - Definir Nova Senha</title>
+    <link rel="icon" type="image/png" th:href="@{/images/logo.png}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/css/login-style.css}">
+</head>
+<body>
+<div class="container-fluid h-100">
+    <div class="row h-100">
+        <div class="col-lg-5 d-flex align-items-center justify-content-center">
+            <div class="form-container">
+                <h1 class="text-center fw-bold">Definir Nova Senha</h1>
+                <p class="text-center text-muted mb-4">Insira sua nova senha abaixo.</p>
+
+                <div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}"></div>
+
+                <form th:action="@{/definir-senha}" method="post">
+                    <input type="hidden" name="token" th:value="${token}" />
+                    <div class="mb-3">
+                        <label for="senha" class="form-label">Nova Senha</label>
+                        <input type="password" class="form-control" id="senha" name="senha" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmarSenha" class="form-label">Confirmar Nova Senha</label>
+                        <input type="password" class="form-control" id="confirmarSenha" name="confirmarSenha" required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">Salvar Nova Senha</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="col-lg-7 d-none d-lg-block p-0">
+            <div class="image-section h-100"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

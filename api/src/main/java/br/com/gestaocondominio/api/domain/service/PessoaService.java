@@ -4,6 +4,7 @@ import br.com.gestaocondominio.api.controller.dto.PessoaUpdateRequest;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
 import br.com.gestaocondominio.api.util.ValidadorDocumento;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -142,6 +143,24 @@ public class PessoaService {
 
         pessoaNoBanco.setPesDtAtualizacao(LocalDateTime.now());
         return pessoaRepository.save(pessoaNoBanco);
+    }
+
+    @Transactional
+    public void atualizarSenha(Integer id, String senhaAtual, String novaSenha) {
+        Pessoa pessoaNoBanco = pessoaRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + id));
+
+        if (!passwordEncoder.matches(senhaAtual, pessoaNoBanco.getPesSenhaLogin())) {
+            throw new BadCredentialsException("A senha atual informada está incorreta.");
+        }
+
+        if (!StringUtils.hasText(novaSenha)) {
+            throw new IllegalArgumentException("A nova senha não pode estar em branco.");
+        }
+
+        pessoaNoBanco.setPesSenhaLogin(passwordEncoder.encode(novaSenha));
+        pessoaNoBanco.setPesDtAtualizacao(LocalDateTime.now());
+        pessoaRepository.save(pessoaNoBanco);
     }
 
     public Pessoa inativarPessoa(Integer id) {

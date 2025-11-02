@@ -20,7 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.Comparator; 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -196,5 +196,10 @@ public class OcupanteService {
                 .map(Ocupante::getUnidade)
                 .distinct()
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<Ocupante> findOcupantesSemLoginMoradorByCondominio(Integer condominioId) {
+        return ocupanteRepository.findOcupantesSemLoginMoradorByCondominio(condominioId);
     }
 }

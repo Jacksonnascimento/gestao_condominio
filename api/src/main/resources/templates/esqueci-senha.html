@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONDIGTAL - Recuperar Senha</title>
+    <link rel="icon" type="image/png" th:href="@{/images/logo.png}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/css/login-style.css}">
+</head>
+<body>
+<div class="container-fluid h-100">
+    <div class="row h-100">
+        <div class="col-lg-5 d-flex align-items-center justify-content-center">
+            <div class="form-container">
+                <h1 class="text-center fw-bold">Recuperar Senha</h1>
+                <p class="text-center text-muted mb-4">Insira seu e-mail para enviarmos um link de redefinição.</p>
+
+                <div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}"></div>
+                <div th:if="${successMessage}" class="alert alert-success" role="alert" th:text="${successMessage}"></div>
+
+                <form th:action="@{/esqueci-senha}" method="post">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="seuemail@exemplo.com" required autofocus>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">Enviar Link</button>
+                        <a th:href="@{/login}" class="btn btn-outline-secondary">Voltar para Login</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="col-lg-7 d-none d-lg-block p-0">
+            <div class="image-section h-100"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

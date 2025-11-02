@@ -33,24 +33,35 @@ public class GlobalControllerAdvice {
             try {
                 Pessoa usuarioLogado = pessoaService.getLoggedInUser();
                 model.addAttribute("nomeUsuarioLogado", usuarioLogado.getPesNome());
+                model.addAttribute("pessoaIdLogado", usuarioLogado.getPesCod()); // <-- ADICIONADO
 
                 boolean usuarioPodeGerenciar = false;
+                boolean isUsuarioAdmin = false; // <-- ADICIONADO
+
                 if (usuarioLogado.getPesIsGlobalAdmin()) {
                     usuarioPodeGerenciar = true;
+                    isUsuarioAdmin = true; // <-- ADICIONADO
                 } else {
                     Set<UserRole> roles = usuarioCondominioService.findByPessoa(usuarioLogado)
                             .stream()
                             .map(UsuarioCondominio::getUscPapel)
                             .collect(Collectors.toSet());
+                    
                     if (!Collections.disjoint(roles, Set.of(UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM))) {
                         usuarioPodeGerenciar = true;
                     }
+                    if (!Collections.disjoint(roles, Set.of(UserRole.SINDICO, UserRole.ADMIN))) { // <-- ADICIONADO (Sem FUNCIONARIO_ADM)
+                        isUsuarioAdmin = true;
+                    }
                 }
                 model.addAttribute("usuarioPodeGerenciar", usuarioPodeGerenciar);
+                model.addAttribute("isUsuarioAdmin", isUsuarioAdmin); // <-- ADICIONADO
 
             } catch (Exception e) {
                 model.addAttribute("nomeUsuarioLogado", "Usuário");
                 model.addAttribute("usuarioPodeGerenciar", false);
+                model.addAttribute("isUsuarioAdmin", false); // <-- ADICIONADO
+                model.addAttribute("pessoaIdLogado", null); // <-- ADICIONADO
             }
         }
     }

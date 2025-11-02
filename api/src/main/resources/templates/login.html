@@ -23,6 +23,15 @@
                 <div th:if="${param.error}" class="alert alert-danger" role="alert">
                     Email ou senha inválidos.
                 </div>
+                <div th:if="${param.logout}" class="alert alert-success" role="alert">
+                    Você foi desconectado com sucesso.
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}">
+                    Mensagem de Erro.
+                </div>
+                <div th:if="${successMessage}" class="alert alert-success" role="alert" th:text="${successMessage}">
+                    Mensagem de Sucesso.
+                </div>
 
                 <form th:action="@{/login}" method="post">
                     <div class="mb-3">
@@ -40,7 +49,7 @@
                                 Lembrar-me
                             </label>
                         </div>
-                        <a href="#" class="small">Esqueci minha senha</a>
+                        <a th:href="@{/esqueci-senha}" class="small">Esqueci minha senha</a>
                     </div>
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary btn-lg">LOGIN</button>

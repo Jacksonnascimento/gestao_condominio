@@ -107,6 +107,20 @@ public class UsuarioCondominioService {
         
         return cadastrarUsuarioCondominio(novoVinculo);
     }
+    
+    @Transactional
+    public UsuarioCondominio atualizarUsuarioCondominio(UsuarioCondominioId id, UsuarioCondominio usuarioCondominioAtualizado) {
+        UsuarioCondominio usuarioCondominioExistente = usuarioCondominioRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Associação de usuário a condomínio não encontrada com o ID: " + id));
+
+        if (usuarioCondominioAtualizado.getUscAtivoAssociacao() != null) {
+            usuarioCondominioExistente.setUscAtivoAssociacao(usuarioCondominioAtualizado.getUscAtivoAssociacao());
+        }
+
+        usuarioCondominioExistente.setUscDtAtualizacao(LocalDateTime.now());
+        return usuarioCondominioRepository.save(usuarioCondominioExistente);
+    }
 
     public UsuarioCondominio inativarUsuarioCondominio(UsuarioCondominioId id) {
         UsuarioCondominio usuarioCondominio = usuarioCondominioRepository.findById(id)

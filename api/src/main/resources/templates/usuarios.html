@@ -70,25 +70,27 @@
                                     <span class="badge bg-primary" th:text="${usuario.papelDescricao}"></span>
                                 </td>
                                 <td data-label="Ações" class="text-end">
-                                    <button class="btn btn-sm btn-outline-primary btn-edit-vinculo"
-                                            th:data-pessoa-id="${usuario.pessoaId}"
-                                            th:data-condominio-id="${usuario.condominioId}"
-                                            th:data-papel="${usuario.papel}"
-                                            title="Editar Papel">
-                                        <i class='bx bxs-edit'></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-secondary btn-enviar-link" 
-                                            th:data-pessoa-id="${usuario.pessoaId}" 
-                                            title="Enviar link de reset de senha">
-                                        <i class='bx bx-key'></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger btn-excluir-vinculo"
-                                            th:data-pessoa-id="${usuario.pessoaId}"
-                                            th:data-condominio-id="${usuario.condominioId}"
-                                            th:data-papel="${usuario.papel}"
-                                            title="Remover Acesso">
-                                        <i class='bx bxs-trash'></i>
-                                    </button>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-primary btn-edit-vinculo m-1"
+                                                th:data-pessoa-id="${usuario.pessoaId}"
+                                                th:data-condominio-id="${usuario.condominioId}"
+                                                th:data-papel="${usuario.papel}"
+                                                title="Editar Papel">
+                                            <i class='bx bxs-edit'></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary btn-enviar-link m-1" 
+                                                th:data-pessoa-id="${usuario.pessoaId}" 
+                                                title="Enviar link de reset de senha">
+                                            <i class='bx bx-key'></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger btn-excluir-vinculo m-1"
+                                                th:data-pessoa-id="${usuario.pessoaId}"
+                                                th:data-condominio-id="${usuario.condominioId}"
+                                                th:data-papel="${usuario.papel}"
+                                                title="Remover Acesso">
+                                            <i class='bx bxs-trash'></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>

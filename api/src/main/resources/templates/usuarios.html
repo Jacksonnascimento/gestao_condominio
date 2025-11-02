@@ -70,6 +70,13 @@
                                     <span class="badge bg-primary" th:text="${usuario.papelDescricao}"></span>
                                 </td>
                                 <td data-label="Ações" class="text-end">
+                                    <button class="btn btn-sm btn-outline-primary btn-edit-vinculo"
+                                            th:data-pessoa-id="${usuario.pessoaId}"
+                                            th:data-condominio-id="${usuario.condominioId}"
+                                            th:data-papel="${usuario.papel}"
+                                            title="Editar Papel">
+                                        <i class='bx bxs-edit'></i>
+                                    </button>
                                     <button class="btn btn-sm btn-outline-secondary btn-enviar-link" 
                                             th:data-pessoa-id="${usuario.pessoaId}" 
                                             title="Enviar link de reset de senha">

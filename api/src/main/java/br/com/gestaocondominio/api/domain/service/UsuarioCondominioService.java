@@ -9,6 +9,7 @@ import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
 import br.com.gestaocondominio.api.domain.repository.UsuarioCondominioRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,6 +30,7 @@ public class UsuarioCondominioService {
         this.condominioRepository = condominioRepository;
     }
 
+    @Transactional
     public UsuarioCondominio cadastrarUsuarioCondominio(UsuarioCondominio usuarioCondominio) {
 
         if (usuarioCondominio.getPessoa() == null || usuarioCondominio.getPessoa().getPesCod() == null) {
@@ -82,18 +84,28 @@ public class UsuarioCondominioService {
         return usuarioCondominioRepository.findAll();
     }
 
-    public UsuarioCondominio atualizarUsuarioCondominio(UsuarioCondominioId id,
-            UsuarioCondominio usuarioCondominioAtualizado) {
-        UsuarioCondominio usuarioCondominioExistente = usuarioCondominioRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Associação de usuário a condomínio não encontrada com o ID: " + id));
-
-        if (usuarioCondominioAtualizado.getUscAtivoAssociacao() != null) {
-            usuarioCondominioExistente.setUscAtivoAssociacao(usuarioCondominioAtualizado.getUscAtivoAssociacao());
+    @Transactional
+    public UsuarioCondominio atualizarPapelUsuario(Integer pessoaId, Integer condominioId, UserRole oldPapel, UserRole newPapel) {
+        if (oldPapel == newPapel) {
+             throw new IllegalArgumentException("O novo papel deve ser diferente do papel atual.");
         }
 
-        usuarioCondominioExistente.setUscDtAtualizacao(LocalDateTime.now());
-        return usuarioCondominioRepository.save(usuarioCondominioExistente);
+        UsuarioCondominioId oldId = new UsuarioCondominioId(pessoaId, condominioId, oldPapel);
+        UsuarioCondominio oldVinculo = usuarioCondominioRepository.findById(oldId)
+             .orElseThrow(() -> new IllegalArgumentException("Vínculo de usuário original não encontrado."));
+
+        Pessoa pessoa = oldVinculo.getPessoa();
+        Condominio condominio = oldVinculo.getCondominio();
+
+        UsuarioCondominio novoVinculo = new UsuarioCondominio();
+        novoVinculo.setPessoa(pessoa);
+        novoVinculo.setCondominio(condominio);
+        novoVinculo.setUscPapel(newPapel);
+        novoVinculo.setUscAtivoAssociacao(true);
+
+        usuarioCondominioRepository.delete(oldVinculo);
+        
+        return cadastrarUsuarioCondominio(novoVinculo);
     }
 
     public UsuarioCondominio inativarUsuarioCondominio(UsuarioCondominioId id) {
@@ -115,6 +127,7 @@ public class UsuarioCondominioService {
         return usuarioCondominioRepository.save(usuarioCondominio);
     }
 
+    @Transactional
     public void deletarUsuarioCondominio(UsuarioCondominioId id) {
         usuarioCondominioRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException(

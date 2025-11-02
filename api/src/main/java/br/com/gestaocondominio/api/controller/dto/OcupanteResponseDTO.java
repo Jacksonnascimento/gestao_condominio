@@ -8,6 +8,7 @@ import java.time.LocalDate;
 
 public record OcupanteResponseDTO(
     Integer id,
+    Integer pessoaId,
     String nomeCompleto,
     String email,
     String telefone,
@@ -23,13 +24,14 @@ public record OcupanteResponseDTO(
     public OcupanteResponseDTO(Ocupante ocupante) {
         this(
             ocupante.getOcuCod(),
+            ocupante.getPessoa().getPesCod(),
             ocupante.getPessoa().getPesNome(),
             ocupante.getPessoa().getPesEmail(),
             ocupante.getPessoa().getPesTelefone(),
             ocupante.getOcuVinculo(),
             ocupante.getUnidade().getUniNumero(),
             ocupante.getUnidade().getBloco(),
-            ocupante.getUnidade().getCondominio().getConNome(), // Mapeamento adicionado
+            ocupante.getUnidade().getCondominio().getConNome(),
             ocupante.getOcuDtInicioOcupacao(),
             ocupante.getOcuDtFimOcupacao(),
             ocupante.getOcuPeriodoUso(),

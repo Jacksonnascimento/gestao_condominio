@@ -7,6 +7,7 @@ import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.entity.Ocupante;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.entity.UsuarioCondominio;
+import br.com.gestaocondominio.api.domain.entity.UsuarioCondominioId;
 import br.com.gestaocondominio.api.domain.enums.UserRole;
 import br.com.gestaocondominio.api.domain.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,8 +93,8 @@ public class UsuarioAdminController {
 
         if(idCondominioParaFiltrar != null) {
             dto.setCondominioId(idCondominioParaFiltrar);
-            List<Ocupante> ocupantes = ocupanteService.findOcupantesSemLoginMoradorByCondominio(idCondominioParaFiltrar);
-            model.addAttribute("ocupantesSemLogin", ocupantes.stream().map(OcupanteResponseDTO::new).collect(Collectors.toList()));
+            List<OcupanteResponseDTO> ocupantesDTO = ocupanteService.findOcupantesDtoSemLoginMoradorByCondominio(idCondominioParaFiltrar);
+            model.addAttribute("ocupantesSemLogin", ocupantesDTO);
         } else {
              model.addAttribute("ocupantesSemLogin", Collections.emptyList());
         }
@@ -140,7 +141,39 @@ public class UsuarioAdminController {
                 passwordResetService.createPasswordResetToken(pessoaParaVincular.getPesEmail(), 24); // 24 Horas
             }
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(new UsuarioCondominioDTO(salvo));
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Usuário salvo com sucesso."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erro interno: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/editar")
+    public String getFormEditarUsuario(Model model,
+                                        @RequestParam Integer pessoaId,
+                                        @RequestParam Integer condominioId,
+                                        @RequestParam UserRole papel) {
+        Pessoa usuarioLogado = pessoaService.getLoggedInUser();
+        carregarDadosPadrao(model, usuarioLogado);
+
+        UsuarioCondominioId id = new UsuarioCondominioId(pessoaId, condominioId, papel);
+        UsuarioCondominio vinculo = usuarioCondominioService.buscarUsuarioCondominioPorId(id)
+                .orElseThrow(() -> new IllegalArgumentException("Vínculo de usuário não encontrado."));
+
+        model.addAttribute("usuarioDTO", new UsuarioCondominioDTO(vinculo));
+        return "fragments/usuario-edit-form :: form-modal-content";
+    }
+
+    @PostMapping("/editar")
+    @ResponseBody
+    public ResponseEntity<?> atualizarUsuario(@RequestParam Integer pessoaId,
+                                              @RequestParam Integer condominioId,
+                                              @RequestParam UserRole oldPapel,
+                                              @RequestParam UserRole newPapel) {
+        try {
+            usuarioCondominioService.atualizarPapelUsuario(pessoaId, condominioId, oldPapel, newPapel);
+            return ResponseEntity.ok(Map.of("message", "Papel do usuário atualizado com sucesso."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {

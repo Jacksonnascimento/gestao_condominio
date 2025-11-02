@@ -17,7 +17,7 @@
                     <label for="papel" class="form-label">Papel (Role) *</label>
                     <select id="papel" class="form-select" th:field="*{papel}" required>
                         <option value="">Selecione...</option>
-                        <option th:each="r : ${rolesDisponiveis}" th:value="${r.name()}" th:text="${r.name()}"></option>
+                        <option th:each="r : ${rolesDisponiveis}" th:value="${r.name()}" th:text="${r.getDescricao()}"></option>
                     </select>
                 </div>
             </div>
@@ -27,7 +27,7 @@
                     <label for="selectOcupante" class="form-label">Vincular Ocupante (Morador) *</label>
                     <select id="selectOcupante" class="form-select">
                         <option value="">Selecione um ocupante...</option>
-                        <option th:each="o : ${ocupantesSemLogin}" th:value="${o.id}" th:text="${o.nomeCompleto} + ' (Unid: ' + ${o.unidadeNumero} + ')'"></option>
+                        <option th:each="o : ${ocupantesSemLogin}" th:value="${o.pessoaId}" th:text="${o.nomeCompleto} + ' (Unid: ' + ${o.unidadeNumero} + ')'"></option>
                     </select>
                 </div>
             </div>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="form-modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title">Editar Papel do Usuário</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <form id="usuarioEditForm" th:object="${usuarioDTO}" th:action="@{/usuarios/editar}" method="post">
+        <div class="modal-body">
+            
+            <input type="hidden" id="pessoaId" name="pessoaId" th:value="*{pessoaId}" />
+            <input type="hidden" id="condominioId" name="condominioId" th:value="*{condominioId}" />
+            <input type="hidden" id="oldPapel" name="oldPapel" th:value="*{papel}" />
+
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label">Condomínio</label>
+                    <input type="text" class="form-control" th:value="*{condominioNome}" readonly disabled>
+                </div>
+                 <div class="col-12">
+                    <label class="form-label">Usuário</label>
+                    <input type="text" class="form-control" th:value="*{pessoaNome}" readonly disabled>
+                </div>
+                <div class="col-12">
+                    <label for="newPapel" class="form-label">Papel (Role) *</label>
+                    <select id="newPapel" name="newPapel" class="form-select" required>
+                        <option value="">Selecione...</option>
+                        <option th:each="r : ${rolesDisponiveis}" 
+                                th:value="${r.name()}" 
+                                th:text="${r.getDescricao()}"
+                                th:selected="${r == usuarioDTO.papel}">
+                        </option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

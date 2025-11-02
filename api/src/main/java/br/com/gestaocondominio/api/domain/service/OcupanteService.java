@@ -202,4 +202,12 @@ public class OcupanteService {
     public List<Ocupante> findOcupantesSemLoginMoradorByCondominio(Integer condominioId) {
         return ocupanteRepository.findOcupantesSemLoginMoradorByCondominio(condominioId);
     }
+
+    @Transactional(readOnly = true)
+    public List<OcupanteResponseDTO> findOcupantesDtoSemLoginMoradorByCondominio(Integer condominioId) {
+        List<Ocupante> ocupantes = ocupanteRepository.findOcupantesSemLoginMoradorByCondominio(condominioId);
+        return ocupantes.stream()
+                .map(OcupanteResponseDTO::new)
+                .collect(Collectors.toList());
+    }
 }

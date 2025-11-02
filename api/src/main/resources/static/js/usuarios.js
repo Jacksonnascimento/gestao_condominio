@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const responseData = await response.json();
             if (response.ok) {
                 formModal.hide();
-                showSuccess('Usuário salvo com sucesso.');
+                showSuccess(responseData.message || 'Operação realizada com sucesso.');
             } else {
                 showError(responseData.message || 'Ocorreu um erro.');
             }
@@ -69,6 +69,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const toggleFormFields = () => {
         const papelSelect = document.getElementById('papel');
+        if (!papelSelect) return; 
+
         const blocoMorador = document.getElementById('blocoMorador');
         const blocoNovoUsuario = document.getElementById('blocoNovoUsuario');
         const acaoSenhaSelect = document.getElementById('acaoSenha');
@@ -80,14 +82,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const nomeInput = document.getElementById('pesNome');
         const emailInput = document.getElementById('pesEmail');
         
-        if (!papelSelect || !blocoMorador || !blocoNovoUsuario || !acaoSenhaSelect || !blocoSenhaManual || !selectOcupante) return;
+        if (!blocoMorador || !blocoNovoUsuario || !acaoSenhaSelect || !blocoSenhaManual || !selectOcupante) return;
 
         const papel = papelSelect.value;
 
         if (papel === 'MORADOR') {
             blocoMorador.style.display = 'block';
             blocoNovoUsuario.style.display = 'none';
-            // Limpa e desabilita campos de novo usuário
             [cpfInput, nomeInput, emailInput].forEach(input => {
                 input.value = '';
                 input.required = false;
@@ -95,11 +96,9 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (papel) {
             blocoMorador.style.display = 'none';
             blocoNovoUsuario.style.display = 'block';
-            // Habilita campos de novo usuário
             [cpfInput, nomeInput, emailInput].forEach(input => {
                 input.required = true;
             });
-            // Limpa seleção de ocupante
             selectOcupante.value = '';
             pessoaIdInput.value = '';
         } else {
@@ -107,7 +106,6 @@ document.addEventListener('DOMContentLoaded', function () {
             blocoNovoUsuario.style.display = 'none';
         }
 
-        // Toggle do campo de senha manual
         if (acaoSenhaSelect.value === 'CRIAR_SENHA' && papel !== 'MORADOR') {
             blocoSenhaManual.style.display = 'block';
             document.getElementById('pesSenhaLogin').required = true;
@@ -125,7 +123,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (select.value) {
             pessoaIdInput.value = select.value;
-            // Força o envio de link para morador
             acaoSenhaSelect.value = 'ENVIAR_LINK';
             acaoSenhaSelect.disabled = true;
             document.getElementById('blocoSenhaManual').style.display = 'none';
@@ -163,7 +160,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    // Listeners da página principal (delegação de eventos)
     document.addEventListener('click', async (event) => {
         const btnExcluir = event.target.closest('.btn-excluir-vinculo');
         if (btnExcluir) {
@@ -206,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const response = await fetch('/usuarios/enviar-link-reset', { method: 'POST', body: formData });
                 const responseData = await response.json();
                 if(response.ok) {
-                    showSuccess(responseData.message, false); // Não recarrega
+                    showSuccess(responseData.message, false);
                 } else {
                     showError(responseData.message || 'Erro ao enviar.');
                 }
@@ -214,11 +210,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 showError('Erro de comunicação.');
             }
         }
+
+        const btnEditar = event.target.closest('.btn-edit-vinculo');
+        if (btnEditar) {
+            const { pessoaId, condominioId, papel } = btnEditar.dataset;
+            const url = `/usuarios/editar?pessoaId=${pessoaId}&condominioId=${condominioId}&papel=${papel}`;
+            openFormModal(url);
+        }
     });
 
-    // Listeners do Modal
     modalContent.addEventListener('submit', (event) => {
-        if (event.target.matches('#usuarioForm')) {
+        if (event.target.matches('#usuarioForm') || event.target.matches('#usuarioEditForm')) {
             handleFormSubmit(event);
         }
     });
@@ -235,5 +237,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }, true);
 
-    document.addEventListener('modalContentLoaded', toggleFormFields);
+    document.addEventListener('modalContentLoaded', () => {
+        if (document.getElementById('papel')) {
+            toggleFormFields();
+        }
+    });
 });

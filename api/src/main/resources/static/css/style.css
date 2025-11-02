@@ -84,7 +84,7 @@ body, html {
 
 .unit-card .card-header { background-color: rgba(128, 128, 128, 0.05); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: flex-start; }
 .unit-card .card-title { font-weight: 600; }
-.unit-card .card-body .info-item { display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem; color: var(--text-light-color); font-size: 0.9rem; }
+.unit-card .card-body .info-item { display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem; color: var(--text-light-color); font-size: 0.9rem; word-break: break-all; overflow-wrap: break-word; }
 .unit-card .card-body .info-item i { font-size: 1.1rem; }
 .unit-card .card-body .info-item strong { color: var(--text-color); }
 .unit-card .card-footer { background-color: rgba(128, 128, 128, 0.05); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 8px; }

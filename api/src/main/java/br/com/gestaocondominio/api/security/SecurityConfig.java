@@ -43,9 +43,8 @@ public class SecurityConfig {
                     "/login", "/css/**", "/js/**", "/images/**", "/webjars/**",
                     "/api/auth/**",
                     "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
-                    "/esqueci-senha", "/definir-senha" // <-- ROTAS ADICIONADAS
+                    "/esqueci-senha", "/definir-senha" 
                 ).permitAll()
-                // Apenas requer autenticação para o resto das requisições, incluindo /unidades, /ocupantes, /contratos, /dashboard e /api/**.
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
@@ -61,6 +60,11 @@ public class SecurityConfig {
             .logout(logout -> logout
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/login?logout=true")
+            )
+            .rememberMe(rememberMe -> rememberMe
+                .userDetailsService(userDetailsService)
+                .key("CONDIGTAL_REMEMBER_ME_KEY_SECRET") 
+                .tokenValiditySeconds(604800) // 7 dias
             );
 
         return http.build();

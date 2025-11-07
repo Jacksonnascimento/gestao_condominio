@@ -8,6 +8,24 @@ document.addEventListener('DOMContentLoaded', function () {
     const handleFormSubmit = async (event) => {
         event.preventDefault();
         const form = event.target;
+
+        const inicioOcupacaoInput = form.querySelector('#inicioOcupacao');
+        const fimOcupacaoInput = form.querySelector('#fimOcupacao');
+
+        if (inicioOcupacaoInput && fimOcupacaoInput) {
+            const inicioVal = inicioOcupacaoInput.value;
+            const fimVal = fimOcupacaoInput.value;
+
+            if (inicioVal && fimVal && inicioVal > fimVal) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Datas Inválidas!',
+                    text: 'A data de início da ocupação não pode ser posterior à data de fim.'
+                });
+                return; 
+            }
+        }
+
         try {
             const response = await fetch(form.action, {
                 method: 'POST',
@@ -34,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!response.ok) throw new Error('Falha ao carregar o formulário.');
             modalContent.innerHTML = await response.text();
             formModal.show();
-            // Dispara um evento para notificar que o conteúdo do modal foi carregado
+            
             document.dispatchEvent(new CustomEvent('modalContentLoaded'));
         } catch (error) {
             console.error('Erro ao abrir o modal:', error);
@@ -45,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('btnNovoOcupante')?.addEventListener('click', () => openFormModal('/ocupantes/novo'));
     document.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', () => openFormModal(btn.dataset.url)));
 
-    // --- Lógica específica do formulário de ocupantes ---
+    
 
     const carregarUnidadesPorCondominio = async (condominioId) => {
         const unidadeSelect = document.getElementById('unidadeId');
@@ -106,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    // Usa delegação de eventos no modal para os listeners
+    
     modalContent.addEventListener('submit', (event) => {
         if (event.target.matches('#ocupanteForm')) {
             handleFormSubmit(event);
@@ -124,6 +142,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }, true);
 
-    // Garante que a lógica de multipropriedade rode quando o modal abrir
+    
     document.addEventListener('modalContentLoaded', toggleMultipropriedadeFields);
 });

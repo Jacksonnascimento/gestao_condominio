@@ -8,6 +8,24 @@ document.addEventListener('DOMContentLoaded', function () {
     const handleFormSubmit = async (event) => {
         event.preventDefault();
         const form = event.target;
+
+        const dataInicioInput = form.querySelector('#dataInicio');
+        const dataFimInput = form.querySelector('#dataFim');
+
+        if (dataInicioInput && dataFimInput) {
+            const inicioVal = dataInicioInput.value;
+            const fimVal = dataFimInput.value;
+
+            if (inicioVal && fimVal && inicioVal > fimVal) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Datas Inválidas!',
+                    text: 'A data de início do contrato não pode ser posterior à data de fim.'
+                });
+                return; 
+            }
+        }
+
         try {
             const response = await fetch(form.action, {
                 method: 'POST',

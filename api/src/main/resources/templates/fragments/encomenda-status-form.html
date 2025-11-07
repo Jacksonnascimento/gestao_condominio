@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<body>
+<div th:fragment="form-modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="formModalLabel">Atualizar Status da Encomenda</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <form id="encomendaStatusForm" th:action="@{/encomendas/{id}/atualizar-status(id=${encomenda.id})}" th:object="${statusRequestDTO}" method="post">
+        <div class="modal-body">
+            <div class="alert alert-warning" role="alert">
+                Atenção: Use esta tela apenas para casos de devolução ou extravio. Para retiradas normais, use o botão "Registrar Retirada".
+            </div>
+
+            <div class="row g-3">
+                <div class="col-12">
+                    <label for="novoStatus" class="form-label">Novo Status <span class="text-danger">*</span></label>
+                    <select id="novoStatus" class="form-select" th:field="*{novoStatus}" required>
+                        <option value="">Selecione...</option>
+                        <option th:each="s : ${statusUpdateDisponiveis}" th:value="${s.name()}" th:text="${s.descricao}"></option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label for="observacoes" class="form-label">Observações (Obrigatório para devolução/extravio)</label>
+                    <textarea id="observacoes" class="form-control" th:field="*{observacoes}" rows="3"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Atualizar Status</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

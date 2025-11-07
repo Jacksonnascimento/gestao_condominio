@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<body>
+<div th:fragment="form-modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="formModalLabel">Registrar Retirada</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <form id="encomendaRetiradaForm" th:action="@{/encomendas/{id}/retirar(id=${encomenda.id})}" th:object="${retiradaRequestDTO}" method="post">
+        <div class="modal-body">
+            <div class="alert alert-info" role="alert">
+                <i class='bx bx-info-circle'></i>
+                Registrando retirada para <strong th:text="${encomenda.destinatario}"></strong> (Unid: <span th:text="${encomenda.unidadeNumero} + (${encomenda.unidadeBloco != null ? ' / ' + encomenda.unidadeBloco : ''})"></span>)
+            </div>
+            
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="dataRetirada" class="form-label">Data Retirada <span class="text-danger">*</span></label>
+                    <input type="date" id="dataRetirada" class="form-control" th:field="*{dataRetirada}" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="horaRetirada" class="form-label">Hora Retirada <span class="text-danger">*</span></label>
+                    <input type="time" id="horaRetirada" class="form-control" th:field="*{horaRetirada}" required>
+                </div>
+                <div class="col-12">
+                    <label for="nomeRetirada" class="form-label">Retirado por <span class="text-danger">*</span></label>
+                    <input type="text" id="nomeRetirada" class="form-control" th:field="*{nomeRetirada}" required placeholder="Nome completo de quem retirou">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success"><i class='bx bx-check'></i> Registrar Retirada</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

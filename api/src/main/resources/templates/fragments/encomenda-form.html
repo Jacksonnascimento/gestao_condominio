@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<body>
+<div th:fragment="form-modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="formModalLabel">Nova Encomenda</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <form id="encomendaForm" th:action="@{/encomendas/salvar}" th:object="${encomendaRequestDTO}" method="post">
+        <div class="modal-body">
+            <div class="row g-3">
+
+                <div class="col-md-6" th:if="${isGlobalAdmin and #lists.size(condominiosDisponiveis) > 1}">
+                    <label for="condominioId" class="form-label">Condomínio <span class="text-danger">*</span></label>
+                    <select id="condominioId" class="form-select" th:field="*{condominioId}" required>
+                        <option value="">Selecione...</option>
+                        <option th:each="condo : ${condominiosDisponiveis}" th:value="${condo.conCod}" th:text="${condo.conNome}"></option>
+                    </select>
+                </div>
+                <input type="hidden" th:if="${!isGlobalAdmin or #lists.size(condominiosDisponiveis) <= 1}" th:field="*{condominioId}" />
+
+                <div th:classappend="${isGlobalAdmin and #lists.size(condominiosDisponiveis) > 1} ? 'col-md-6' : 'col-12'">
+                    <label for="unidadeId" class="form-label">Unidade <span class="text-danger">*</span></label>
+                    <select id="unidadeId" class="form-select" th:field="*{unidadeId}" required th:disabled="${#lists.isEmpty(unidadesSelecionaveis) and isGlobalAdmin}">
+                        <option value="">Selecione...</option>
+                        <option th:each="u : ${unidadesSelecionaveis}" th:value="${u.uniCod}" th:text="${u.uniNumero} + (${u.bloco != null ? ' - ' + u.bloco : ''})"></option>
+                        <option th:if="${#lists.isEmpty(unidadesSelecionaveis) and isGlobalAdmin}" value="" disabled>Selecione um condomínio</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="destinatario" class="form-label">Destinatário <span class="text-danger">*</span></label>
+                    <input type="text" id="destinatario" class="form-control" th:field="*{destinatario}" required>
+                </div>
+                
+                <div class="col-md-6">
+                    <label for="tipo" class="form-label">Tipo <span class="text-danger">*</span></label>
+                    <select id="tipo" class="form-select" th:field="*{tipo}" required>
+                        <option th:each="t : ${tiposEncomenda}" th:value="${t.name()}" th:text="${t.descricao}"></option>
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label for="descricao" class="form-label">Descrição</label>
+                    <input type="text" id="descricao" class="form-control" th:field="*{descricao}" placeholder="Ex: Pacote da Shopee, Caixa Média">
+                </div>
+
+                <div class="col-md-6">
+                    <label for="dataRecebimento" class="form-label">Data Recebimento <span class="text-danger">*</span></label>
+                    <input type="date" id="dataRecebimento" class="form-control" th:field="*{dataRecebimento}" required>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="horaRecebimento" class="form-label">Hora Recebimento <span class="text-danger">*</span></label>
+                    <input type="time" id="horaRecebimento" class="form-control" th:field="*{horaRecebimento}" required>
+                </div>
+
+                <div class="col-12">
+                    <label for="nomeRecebidoPor" class="form-label">Recebido por <span class="text-danger">*</span></label>
+                    <input type="text" id="nomeRecebidoPor" class="form-control" th:field="*{nomeRecebidoPor}" required>
+                </div>
+                
+                <div class="col-12">
+                    <label for="observacoes" class="form-label">Observações</label>
+                    <textarea id="observacoes" class="form-control" th:field="*{observacoes}" rows="2" placeholder="Ex: Pacote amassado, frágil, etc."></textarea>
+                </div>
+
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Salvar Encomenda</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

@@ -45,6 +45,12 @@
                     <i class='bx bxs-comment-error'></i> Ocorrências
                 </a>
             </li>
+            <li>
+                <a th:href="@{/encomendas}" class="nav-link"
+                   th:classappend="${currentPage == 'encomendas' ? 'active' : ''}">
+                    <i class='bx bxs-package'></i> Encomendas
+                </a>
+            </li>
         </ul>
         <div class="sidebar-footer pt-3 mt-auto">
             

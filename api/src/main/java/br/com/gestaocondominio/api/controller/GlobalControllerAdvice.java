@@ -33,14 +33,16 @@ public class GlobalControllerAdvice {
             try {
                 Pessoa usuarioLogado = pessoaService.getLoggedInUser();
                 model.addAttribute("nomeUsuarioLogado", usuarioLogado.getPesNome());
-                model.addAttribute("pessoaIdLogado", usuarioLogado.getPesCod()); // <-- ADICIONADO
+                model.addAttribute("pessoaIdLogado", usuarioLogado.getPesCod()); 
 
                 boolean usuarioPodeGerenciar = false;
-                boolean isUsuarioAdmin = false; // <-- ADICIONADO
+                boolean isUsuarioAdmin = false; 
+                boolean usuarioPodeGerenciarEncomendas = false; // <-- ADICIONADO
 
-                if (usuarioLogado.getPesIsGlobalAdmin()) {
+                if (Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin())) {
                     usuarioPodeGerenciar = true;
-                    isUsuarioAdmin = true; // <-- ADICIONADO
+                    isUsuarioAdmin = true; 
+                    usuarioPodeGerenciarEncomendas = true; // <-- ADICIONADO
                 } else {
                     Set<UserRole> roles = usuarioCondominioService.findByPessoa(usuarioLogado)
                             .stream()
@@ -50,18 +52,24 @@ public class GlobalControllerAdvice {
                     if (!Collections.disjoint(roles, Set.of(UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM))) {
                         usuarioPodeGerenciar = true;
                     }
-                    if (!Collections.disjoint(roles, Set.of(UserRole.SINDICO, UserRole.ADMIN))) { // <-- ADICIONADO (Sem FUNCIONARIO_ADM)
+                    if (!Collections.disjoint(roles, Set.of(UserRole.SINDICO, UserRole.ADMIN))) { 
                         isUsuarioAdmin = true;
+                    }
+                    // Adiciona a permissão específica para encomendas (Incluindo Porteiro)
+                    if (!Collections.disjoint(roles, Set.of(UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM, UserRole.PORTEIRO))) {
+                        usuarioPodeGerenciarEncomendas = true; // <-- ADICIONADO
                     }
                 }
                 model.addAttribute("usuarioPodeGerenciar", usuarioPodeGerenciar);
-                model.addAttribute("isUsuarioAdmin", isUsuarioAdmin); // <-- ADICIONADO
+                model.addAttribute("isUsuarioAdmin", isUsuarioAdmin); 
+                model.addAttribute("usuarioPodeGerenciarEncomendas", usuarioPodeGerenciarEncomendas); // <-- ADICIONADO
 
             } catch (Exception e) {
                 model.addAttribute("nomeUsuarioLogado", "Usuário");
                 model.addAttribute("usuarioPodeGerenciar", false);
-                model.addAttribute("isUsuarioAdmin", false); // <-- ADICIONADO
-                model.addAttribute("pessoaIdLogado", null); // <-- ADICIONADO
+                model.addAttribute("isUsuarioAdmin", false); 
+                model.addAttribute("pessoaIdLogado", null); 
+                model.addAttribute("usuarioPodeGerenciarEncomendas", false); // <-- ADICIONADO
             }
         }
     }

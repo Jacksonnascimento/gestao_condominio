@@ -174,3 +174,15 @@ body, html {
     white-space: normal; /* Permite a quebra de linha */
     line-height: 1.2; /* Ajusta a altura da linha */
 }
+
+/* --- Novas Classes para Encomendas --- */
+.icon-encomenda-total { background-color: #e0e7ff; color: #4338ca; }
+.icon-encomenda-pendente { background-color: #fef9c3; color: #854d0e; }
+.icon-encomenda-retirada { background-color: #dcfce7; color: #166534; }
+.icon-encomenda-devolvida { background-color: #e5e7eb; color: #64748b; }
+.icon-encomenda-extraviada { background-color: #fee2e2; color: #b91c1c; }
+
+.status-encomenda-pendente { background-color: #ca8a04; color: #422006; }
+.status-encomenda-retirada { background-color: #16a34a; }
+.status-encomenda-devolvida { background-color: #64748b; }
+.status-encomenda-extraviada { background-color: #dc2626; }

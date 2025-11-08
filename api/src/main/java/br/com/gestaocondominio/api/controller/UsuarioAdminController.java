@@ -173,19 +173,26 @@ public class UsuarioAdminController {
                                               @RequestParam Integer condominioId,
                                               @RequestParam UserRole oldPapel,
                                               @RequestParam UserRole newPapel,
+                                              @RequestParam String pessoaNome,
                                               @RequestParam String email) {
         try {
-            boolean emailAlterado = false;
+            boolean dadosAlterados = false;
             boolean papelAlterado = false;
 
-            if (StringUtils.hasText(email)) {
+            if (StringUtils.hasText(email) || StringUtils.hasText(pessoaNome)) {
                 Pessoa pessoa = pessoaService.buscarPessoaPorId(pessoaId)
                         .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada."));
                 
-                if (!email.equals(pessoa.getPesEmail())) {
-                    PessoaUpdateRequest updateRequest = new PessoaUpdateRequest(null, null, null, email, null, null, null, null);
+                boolean emailMudou = StringUtils.hasText(email) && !email.equals(pessoa.getPesEmail());
+                boolean nomeMudou = StringUtils.hasText(pessoaNome) && !pessoaNome.equals(pessoa.getPesNome());
+
+                if (emailMudou || nomeMudou) {
+                    String novoNome = nomeMudou ? pessoaNome : pessoa.getPesNome();
+                    String novoEmail = emailMudou ? email : pessoa.getPesEmail();
+                    
+                    PessoaUpdateRequest updateRequest = new PessoaUpdateRequest(novoNome, null, null, novoEmail, null, null, null, null);
                     pessoaService.atualizarPessoa(pessoaId, updateRequest);
-                    emailAlterado = true;
+                    dadosAlterados = true;
                 }
             }
 
@@ -194,7 +201,7 @@ public class UsuarioAdminController {
                 papelAlterado = true;
             }
 
-            if (!emailAlterado && !papelAlterado) {
+            if (!dadosAlterados && !papelAlterado) {
                  return ResponseEntity.ok(Map.of("message", "Nenhuma alteração detectada."));
             }
 

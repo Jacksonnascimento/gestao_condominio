@@ -1,5 +1,6 @@
 package br.com.gestaocondominio.api.controller;
 
+import br.com.gestaocondominio.api.controller.dto.PessoaUpdateRequest;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.service.PessoaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,23 @@ public class PerfilController {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         model.addAttribute("usuario", usuarioLogado);
         return "fragments/perfil-modal :: form-modal-content";
+    }
+
+    @PostMapping("/salvar-dados")
+    @ResponseBody
+    public ResponseEntity<?> salvarDadosPessoais(@RequestParam String pesNome) {
+        try {
+            Pessoa usuarioLogado = pessoaService.getLoggedInUser();
+            
+            PessoaUpdateRequest updateRequest = new PessoaUpdateRequest(pesNome, null, null, null, null, null, null, null);
+            pessoaService.atualizarPessoa(usuarioLogado.getPesCod(), updateRequest);
+
+            return ResponseEntity.ok(Map.of("message", "Nome alterado com sucesso!"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erro: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/salvar-senha")

@@ -1,5 +1,5 @@
-// Handler para o submit do form de perfil
-const handlePerfilSubmit = async (event) => {
+// Handler unificado para os formulários do modal de perfil
+const handlePerfilFormSubmit = async (event) => {
     event.preventDefault();
     const form = event.target;
     const formModal = bootstrap.Modal.getInstance(document.getElementById('formModal'));
@@ -19,11 +19,19 @@ const handlePerfilSubmit = async (event) => {
         const responseData = await response.json();
 
         if (response.ok) {
-            formModal.hide();
+            
             await Swal.fire({
-                icon: 'success', title: 'Sucesso!', text: responseData.message || 'Senha alterada com sucesso.',
+                icon: 'success', title: 'Sucesso!', text: responseData.message || 'Operação realizada com sucesso.',
                 timer: 2000, showConfirmButton: false
             });
+            
+            // Se foi o form de dados, atualiza o nome na sidebar em tempo real
+            if (form.id === 'perfilDadosForm') {
+                document.querySelector('.username').textContent = form.querySelector('#pesNome').value;
+            } else {
+                // Se foi o form de senha, fecha o modal
+                formModal.hide();
+            }
         } else {
             Swal.fire({
                 icon: 'error', title: 'Erro!', text: responseData.message || 'Ocorreu um erro.'
@@ -83,10 +91,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 modalContent.innerHTML = await response.text();
                 formModal.show();
                 
-                // Adiciona o listener de submit ao formulário do modal
-                const perfilForm = modalContent.querySelector('#perfilForm');
-                if (perfilForm) {
-                    perfilForm.addEventListener('submit', handlePerfilSubmit);
+                // Adiciona os listeners de submit aos formulários corretos
+                const perfilDadosForm = modalContent.querySelector('#perfilDadosForm');
+                if (perfilDadosForm) {
+                    perfilDadosForm.addEventListener('submit', handlePerfilFormSubmit);
+                }
+                
+                const perfilSenhaForm = modalContent.querySelector('#perfilSenhaForm');
+                if (perfilSenhaForm) {
+                    perfilSenhaForm.addEventListener('submit', handlePerfilFormSubmit);
                 }
                 
             } catch (error) {

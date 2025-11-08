@@ -6,13 +6,14 @@
         <h5 class="modal-title" id="formModalLabel">Meu Perfil</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
-    <form id="perfilForm" th:action="@{/perfil/salvar-senha}" method="post">
-        <div class="modal-body">
+    
+    <div class="modal-body">
+        <form id="perfilDadosForm" th:action="@{/perfil/salvar-dados}" method="post">
             <h6 class="section-title">Informações Pessoais</h6>
             <div class="row g-3 mb-3">
                 <div class="col-12">
-                    <label class="form-label">Nome</label>
-                    <input type="text" class="form-control" th:value="${usuario.pesNome}" readonly disabled>
+                    <label for="pesNome" class="form-label">Nome *</label>
+                    <input type="text" class="form-control" id="pesNome" name="pesNome" th:value="${usuario.pesNome}" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Email</label>
@@ -23,9 +24,14 @@
                     <input type="text" class="form-control" th:value="${usuario.pesCpfCnpj}" readonly disabled>
                 </div>
             </div>
-            
-            <hr class="my-4">
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">Salvar Dados</button>
+            </div>
+        </form>
+        
+        <hr class="my-4">
 
+        <form id="perfilSenhaForm" th:action="@{/perfil/salvar-senha}" method="post">
             <h6 class="section-title">Alterar Senha</h6>
              <div class="row g-3">
                  <div class="col-12">
@@ -41,13 +47,15 @@
                     <input type="password" class="form-control" id="confirmarNovaSenha" name="confirmarNovaSenha" required>
                  </div>
              </div>
+             <div class="d-flex justify-content-end mt-3">
+                <button type="submit" class="btn btn-primary">Salvar Nova Senha</button>
+            </div>
+        </form>
+    </div>
 
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-        </div>
-    </form>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+    </div>
 </div>
 </body>
 </html>

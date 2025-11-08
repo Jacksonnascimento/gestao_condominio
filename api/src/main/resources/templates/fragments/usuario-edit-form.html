@@ -19,8 +19,8 @@
                     <input type="text" class="form-control" th:value="*{condominioNome}" readonly disabled>
                 </div>
                  <div class="col-12">
-                    <label class="form-label">Usuário</label>
-                    <input type="text" class="form-control" th:value="*{pessoaNome}" readonly disabled>
+                    <label for="pessoaNome" class="form-label">Usuário (Nome) *</label>
+                    <input type="text" class="form-control" id="pessoaNome" name="pessoaNome" th:value="*{pessoaNome}" required>
                 </div>
                 <div class="col-12">
                     <label for="email" class="form-label">Email (Login) *</label>

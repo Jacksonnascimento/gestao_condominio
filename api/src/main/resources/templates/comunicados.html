@@ -40,8 +40,9 @@
                     <form th:action="@{/comunicados}" method="GET" class="row g-2 align-items-end">
                         <div class="col-12 col-lg"><label class="form-label">Título</label><input type="text" class="form-control" name="titulo" th:value="${filtroTitulo}" placeholder="Buscar por Título"></div>
                         <div class="col-12 col-lg"><label class="form-label">Mensagem</label><input type="text" class="form-control" name="mensagem" th:value="${filtroMensagem}" placeholder="Buscar na Mensagem"></div>
-                        <div class="col-12 col-lg-auto"><label class="form-label">Público</label>
+                        <div class="col-12 col-lg-auto" th:if="${usuarioPodeGerenciar}"><label class="form-label">Público</label>
                             <select class="form-select" name="publicoDestino">
+                                <option value="">Todos</option>
                                 <option th:each="p : ${T(br.com.gestaocondominio.api.domain.enums.PublicoDestino).values()}"
                                         th:value="${p.name()}" th:text="${p.getDescricao()}"
                                         th:selected="${p.name() == filtroPublico}">

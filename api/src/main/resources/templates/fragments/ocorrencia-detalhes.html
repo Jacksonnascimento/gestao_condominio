@@ -38,7 +38,7 @@
 
 
         <div class="row gx-4">
-             <div class="col-lg-6 mb-4 mb-lg-0">
+             <div class="col-lg-6 mb-4 mb-lg-0" th:if="${isGerencial}">
                 <div class="details-section">
                     <h6 class="section-title"><i class='bx bx-comment-dots'></i> Comentários</h6>
                     <div id="comentariosList" class="comentarios-list mb-3">
@@ -60,14 +60,14 @@
                 </div>
             </div>
 
-            <div class="col-lg-6">
+            <div class="col-lg-6" th:if="${isGerencial}">
                 <div class="details-section">
                      <h6 class="section-title"><i class='bx bx-paperclip'></i> Anexos</h6>
                     <div id="anexosList" class="anexos-list mb-3">
                          <div th:if="${#lists.isEmpty(ocorrencia.anexos)}" class="text-muted text-center p-3">Nenhum anexo adicionado.</div>
-                         <div th:each="anexo : ${ocorrencia.anexos}" class="anexo-item d-flex justify-content-between align-items-center">
+                         <div th:each="anexo : ${ocorrencia.anexos}" class="anexo-item d-flex justify-content-between align-items-center" th:data-anexo-id="${anexo.id}">
                              <div>
-                                 <a th:href="@{'/ocorrencias/' + ${ocorrencia.id} + '/anexo/' + ${anexo.id}}" target="_blank" class="text-decoration-none" th:text="${anexo.nomeOriginal} ?: 'anexo'">Nome do Arquivo</a>
+                                 <a th:href="@{'/ocorrencias/' + ${ocorrencia.id} + '/anexo/' + ${anexo.id}}" target="_blank" class="text-decoration-none anexo-link" th:text="${anexo.nomeOriginal} ?: 'anexo'">Nome do Arquivo</a>
                                  <small class="anexo-meta d-block">
                                      Por <strong th:text="${anexo.nomeUsuario}"></strong>
                                      em <span th:text="${#temporals.format(anexo.dataAnexo, 'dd/MM/yyyy HH:mm')}"></span>
@@ -103,7 +103,7 @@
          </button>
     </div>
 
-    <div class="modal fade" id="finalizarOcorrenciaModal" tabindex="-1" aria-labelledby="finalizarOcorrenciaModalLabel" aria-hidden="true">
+    <div class="modal fade" id="finalizarOcorrenciaModal" tabindex="-1" aria-labelledby="finalizarOcorrenciaModalLabel" aria-hidden="true" th:if="${isGerencial}">
          <div class="modal-dialog">
              <div class="modal-content">
                  <div class="modal-header">

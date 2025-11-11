@@ -4,10 +4,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const formModal = createStaticModal(formModalElement);
     const modalContent = document.getElementById('modalContent');
+    const listaOcupantes = document.getElementById('lista-ocupantes');
 
     const handleFormSubmit = async (event) => {
         event.preventDefault();
         const form = event.target;
+        const url = form.action;
 
         const inicioOcupacaoInput = form.querySelector('#inicioOcupacao');
         const fimOcupacaoInput = form.querySelector('#fimOcupacao');
@@ -33,12 +35,54 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             if (response.ok) {
-                formModal.hide();
-                await Swal.fire({ icon: 'success', title: 'Sucesso!', text: 'Ocupante salvo com sucesso.', timer: 2000, showConfirmButton: false });
-                window.location.reload();
+                const responseHtml = await response.text();
+                
+                try {
+                    // Tenta parsear como JSON. Se falhar, é porque veio HTML (sucesso)
+                    const errorData = JSON.parse(responseHtml);
+                    Swal.fire({ icon: 'error', title: 'Erro!', text: errorData.message || 'Ocorreu um erro ao salvar.' });
+                
+                } catch (e) {
+                    // SUCESSO! Veio HTML.
+                    formModal.hide();
+                    await Swal.fire({ icon: 'success', title: 'Sucesso!', text: 'Ocupante salvo com sucesso.', timer: 2000, showConfirmButton: false });
+
+                    const placeholder = document.getElementById('empty-placeholder');
+                    if (placeholder) {
+                        placeholder.remove();
+                    }
+
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = responseHtml;
+                    const newCardElement = tempDiv.firstElementChild;
+
+                    if (!newCardElement || !newCardElement.dataset.ocupanteId) {
+                         console.error("Fragmento de HTML inválido recebido:", responseHtml);
+                         window.location.reload(); // Fallback
+                         return;
+                    }
+
+                    let isEdit = url.includes("/editar/");
+                    const ocupanteId = newCardElement.dataset.ocupanteId;
+                    
+                    if (isEdit) {
+                        const existingCard = listaOcupantes?.querySelector(`.col[data-ocupante-id="${ocupanteId}"]`);
+                        if (existingCard) {
+                            existingCard.replaceWith(newCardElement);
+                        } else if (listaOcupantes) {
+                            listaOcupantes.prepend(newCardElement);
+                        }
+                    } else if (listaOcupantes) {
+                        listaOcupantes.prepend(newCardElement);
+                    }
+                    
+                    if (newCardElement) {
+                        addCardListeners(newCardElement);
+                    }
+                }
             } else {
-                const errorData = await response.json();
-                Swal.fire({ icon: 'error', title: 'Erro!', text: errorData.message || 'Ocorreu um erro.' });
+                 const errorData = await response.json();
+                 Swal.fire({ icon: 'error', title: 'Erro!', text: errorData.message || 'Ocorreu um erro.' });
             }
         } catch (error) {
             console.error('Erro no submit do formulário:', error);
@@ -60,10 +104,24 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
     
-    document.getElementById('btnNovoOcupante')?.addEventListener('click', () => openFormModal('/ocupantes/novo'));
-    document.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', () => openFormModal(btn.dataset.url)));
-
+    // Função helper para adicionar listener ao botão 'Editar' de um card
+    function addCardListeners(cardElement) {
+        cardElement.querySelector('.btn-edit')?.addEventListener('click', (e) => {
+            const url = e.currentTarget.dataset.url;
+            openFormModal(url);
+        });
+    }
     
+    document.getElementById('btnNovoOcupante')?.addEventListener('click', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const condominioId = urlParams.get('condominioId') || '';
+        openFormModal(`/ocupantes/novo?condominioId=${condominioId}`);
+    });
+    
+    // Adiciona listeners para os cards que carregam com a página
+    document.querySelectorAll('#lista-ocupantes .col').forEach(card => {
+        addCardListeners(card);
+    });
 
     const carregarUnidadesPorCondominio = async (condominioId) => {
         const unidadeSelect = document.getElementById('unidadeId');

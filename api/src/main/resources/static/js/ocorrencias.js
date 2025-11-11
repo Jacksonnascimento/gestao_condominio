@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const mainModalContent = document.getElementById('modalContent');
     const mainModal = createStaticModal(mainModalElement);
+    
+    // Adicionado para o novo card
+    const listaOcorrencias = document.getElementById('lista-ocorrencias');
 
     let finalizarModalInstance = null;
 
@@ -18,7 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const showSuccessFeedback = (message = 'Operação realizada com sucesso.', reload = true) => {
+    // MUDANÇA: reload = false por padrão
+    const showSuccessFeedback = (message = 'Operação realizada com sucesso.', reload = false) => {
         Swal.fire({
             icon: 'success', title: 'Sucesso!', text: message, timer: 2000, showConfirmButton: false
         }).then(() => { if (reload) window.location.reload(); });
@@ -49,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Esta função genérica continua sendo usada pelos formulários de *detalhes*
     const handleAjaxFormSubmit = async (form, successCallback, errorCallback) => {
         showLoadingFeedback();
         const url = form.action;
@@ -123,6 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Listener para o botão 'Nova Ocorrência'
     document.getElementById('btnNovaOcorrencia')?.addEventListener('click', async () => {
         const success = await fetchAndInjectModalContent('/ocorrencias/novo', mainModal, mainModalContent);
         if (success) {
@@ -130,8 +136,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.querySelectorAll('.btn-ver-detalhes').forEach(button => {
-        button.addEventListener('click', async (event) => {
+    // Função helper para adicionar listener ao novo card
+    const addCardListeners = (cardElement) => {
+         cardElement.querySelector('.btn-ver-detalhes')?.addEventListener('click', async (event) => {
             const ocorrenciaId = event.currentTarget.dataset.ocorrenciaId;
             if (!ocorrenciaId) return;
             const success = await fetchAndInjectModalContent(`/ocorrencias/detalhes/${ocorrenciaId}`, mainModal, mainModalContent);
@@ -139,15 +146,73 @@ document.addEventListener('DOMContentLoaded', () => {
                 initializeDetalhesModalListeners(ocorrenciaId);
             }
         });
+    }
+
+    // Adiciona listeners aos cards já existentes na página
+    document.querySelectorAll('.btn-ver-detalhes').forEach(button => {
+        addCardListeners(button.closest('.col'));
     });
 
+    // MUDANÇA: Este submit agora é customizado para receber HTML
     const handleNovaOcorrenciaSubmit = async (event) => {
         event.preventDefault();
         const form = event.target;
-        await handleAjaxFormSubmit(form, (responseData) => {
-            mainModal.hide();
-            showSuccessFeedback('Ocorrência registrada com sucesso!');
-        });
+        showLoadingFeedback();
+        
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new URLSearchParams(new FormData(form))
+            });
+
+            const responseHtml = await response.text();
+            
+            if (response.ok) {
+                try {
+                    // Tenta parsear como JSON. Se falhar, é porque veio HTML (sucesso)
+                    JSON.parse(responseHtml);
+                    // Se chegou aqui, é um JSON de erro que o controller mandou com status 200 (improvável, mas seguro)
+                    showErrorFeedback(responseHtml.message || 'Erro ao processar.');
+                } catch (e) {
+                    // SUCESSO! Veio HTML.
+                    mainModal.hide();
+                    showSuccessFeedback('Ocorrência registrada com sucesso!', false); // false = não recarregar
+
+                    const placeholder = document.getElementById('empty-placeholder');
+                    if (placeholder) {
+                        placeholder.remove();
+                    }
+                    
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = responseHtml;
+                    const newCardElement = tempDiv.firstElementChild;
+
+                    if (!newCardElement || !newCardElement.dataset.ocorrenciaId) {
+                         console.error("Fragmento de HTML inválido recebido.");
+                         window.location.reload(); // Fallback
+                         return;
+                    }
+                    
+                    if(listaOcorrencias) {
+                        listaOcorrencias.prepend(newCardElement);
+                        addCardListeners(newCardElement); // Adiciona listener ao novo card
+                    } else {
+                        window.location.reload(); // Fallback se a lista não for encontrada
+                    }
+                }
+            } else {
+                 // Erros 400, 500, etc.
+                try {
+                    const errorJson = JSON.parse(responseHtml);
+                    showErrorFeedback(errorJson.message || 'Erro ao salvar.');
+                } catch {
+                     showErrorFeedback(responseHtml || 'Erro ao salvar.');
+                }
+            }
+        } catch (error) {
+             console.error(`Erro no submit AJAX para ${form.action}:`, error);
+             showErrorFeedback('Erro de comunicação com o servidor.');
+        }
     };
 
     const handleComentarioSubmit = async (event) => {
@@ -180,7 +245,8 @@ document.addEventListener('DOMContentLoaded', () => {
         await handleAjaxFormSubmit(form, (responseData) => {
             if (finalizarModalInstance) finalizarModalInstance.hide();
             mainModal.hide();
-            showSuccessFeedback(responseData.message || 'Ocorrência finalizada com sucesso!');
+            // MUDANÇA: Força o reload aqui
+            showSuccessFeedback(responseData.message || 'Ocorrência finalizada com sucesso!', true);
         });
     };
 
@@ -217,19 +283,19 @@ document.addEventListener('DOMContentLoaded', () => {
             <div>
                  <a href="/ocorrencias/${anexoDTO.ocorrenciaId}/anexo/${anexoDTO.id}" target="_blank" class="text-decoration-none anexo-link">${escapeHtml(anexoDTO.nomeOriginal || 'anexo')}</a>
                  <small class="anexo-meta d-block">
-                     Por <strong>${escapeHtml(anexoDTO.nomeUsuario)}</strong>
-                     em ${formatDateTime(anexoDTO.dataAnexo)}
-                     (${formatBytes(anexoDTO.tamanhoArquivo)})
+                    Por <strong>${escapeHtml(anexoDTO.nomeUsuario)}</strong>
+                    em ${formatDateTime(anexoDTO.dataAnexo)}
+                    (${formatBytes(anexoDTO.tamanhoArquivo)})
                  </small>
-             </div>
-             <div class="anexo-actions">
-                 <button class="btn btn-sm btn-outline-danger btn-excluir-anexo"
-                         data-ocorrencia-id="${anexoDTO.ocorrenciaId}"
-                         data-anexo-id="${anexoDTO.id}"
-                         type="button">
-                     <i class='bx bxs-trash'></i>
-                 </button>
-             </div>
+           </div>
+           <div class="anexo-actions">
+                <button class="btn btn-sm btn-outline-danger btn-excluir-anexo"
+                        data-ocorrencia-id="${anexoDTO.ocorrenciaId}"
+                        data-anexo-id="${anexoDTO.id}"
+                        type="button">
+                    <i class='bx bxs-trash'></i>
+                </button>
+           </div>
         `;
         listElement.insertBefore(newItem, listElement.firstChild);
 
@@ -256,9 +322,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     try {
                         responseText = await response.text();
                         try {
-                           responseData = JSON.parse(responseText);
+                            responseData = JSON.parse(responseText);
                         } catch (parseError) {
-                           responseData = { message: responseText || 'Resposta inválida do servidor.' };
+                            responseData = { message: responseText || 'Resposta inválida do servidor.' };
                         }
                     } catch (readError) {
                         responseData = { message: 'Não foi possível ler a resposta do servidor.' };
@@ -326,17 +392,17 @@ document.addEventListener('DOMContentLoaded', () => {
                  // Trata outros erros (500, 403, etc.)
                  let errorMsg = `Erro ${response.status} ao verificar o arquivo.`;
                  try {
-                     const errorText = await response.text();
-                     if (errorText) {
-                         const jsonMatch = errorText.match(/"detail":"([^"]*)"/i) || errorText.match(/"message":"([^"]*)"/i);
-                         if (jsonMatch && jsonMatch[1]) {
-                             const detailMsgMatch = jsonMatch[1].match(/"([^"]*)"/);
-                             errorMsg = (detailMsgMatch && detailMsgMatch[1]) ? detailMsgMatch[1] : jsonMatch[1];
-                         } else {
-                             const titleMatch = errorText.match(/<title>(.*?)<\/title>/i);
-                             errorMsg = (titleMatch && titleMatch[1]) ? titleMatch[1] : `Erro ${response.status}: ${response.statusText}`;
-                         }
-                     }
+                    const errorText = await response.text();
+                    if (errorText) {
+                        const jsonMatch = errorText.match(/"detail":"([^"]*)"/i) || errorText.match(/"message":"([^"]*)"/i);
+                        if (jsonMatch && jsonMatch[1]) {
+                            const detailMsgMatch = jsonMatch[1].match(/"([^"]*)"/);
+                            errorMsg = (detailMsgMatch && detailMsgMatch[1]) ? detailMsgMatch[1] : jsonMatch[1];
+                        } else {
+                            const titleMatch = errorText.match(/<title>(.*?)<\/title>/i);
+                            errorMsg = (titleMatch && titleMatch[1]) ? titleMatch[1] : `Erro ${response.status}: ${response.statusText}`;
+                        }
+                    }
                  } catch (e) {
                      errorMsg = `Erro ${response.status}: ${response.statusText} ao verificar o arquivo.`;
                  }
@@ -350,7 +416,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const initializeNovaOcorrenciaListeners = () => {
         const form = mainModalContent.querySelector('#ocorrenciaForm');
-        form?.addEventListener('submit', handleNovaOcorrenciaSubmit);
+        // MUDANÇA: Aponta para a nova função de submit
+        form?.addEventListener('submit', handleNovaOcorrenciaSubmit); 
 
         const condominioSelect = mainModalContent.querySelector('#condominioId');
         const unidadeSelect = mainModalContent.querySelector('#unidadeId');
@@ -404,11 +471,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const escapeHtml = (unsafe) => {
         if (!unsafe) return '';
         return unsafe
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
     }
 
     const formatDateTime = (dateTimeString) => {
@@ -426,17 +493,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
      const formatBytes = (bytes, decimals = 1) => {
-        if (!+bytes || bytes === 0) return '0 Bytes'
-        const k = 1024
-        const dm = decimals < 0 ? 0 : decimals
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+         if (!+bytes || bytes === 0) return '0 Bytes'
+         const k = 1024
+         const dm = decimals < 0 ? 0 : decimals
+         const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
 
-        const i = (bytes === 0) ? 0 : Math.floor(Math.log(bytes) / Math.log(k));
+         const i = (bytes === 0) ? 0 : Math.floor(Math.log(bytes) / Math.log(k));
 
-        if (isNaN(i) || i < 0) return '0 Bytes';
+         if (isNaN(i) || i < 0) return '0 Bytes';
 
-        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
-    }
+         return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+     }
 
     document.addEventListener('modalContentLoaded', () => {
         if (mainModalContent.querySelector('#ocorrenciaForm')) {

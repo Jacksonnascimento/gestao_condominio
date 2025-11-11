@@ -42,6 +42,18 @@ public class EncomendaController {
     @Autowired private UsuarioCondominioService usuarioCondominioService;
     @Autowired private CondominioService condominioService;
     @Autowired private UnidadeService unidadeService;
+    
+    // Helper para popular o Model para o fragmento
+    private void popularModelParaFragmento(Model model, EncomendaDTO encomendaDTO, Pessoa usuarioLogado) {
+        List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
+        boolean showCondominioInfo = usuarioLogado.getPesIsGlobalAdmin() && condominiosDisponiveis.size() > 1;
+        boolean isGerencial = usuarioLogado.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuarioLogado,
+            UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM, UserRole.PORTEIRO);
+            
+        model.addAttribute("enc", encomendaDTO);
+        model.addAttribute("showCondominioInfo", showCondominioInfo);
+        model.addAttribute("usuarioPodeGerenciarEncomendas", isGerencial);
+    }
 
     private void carregarDadosPadrao(Model model, Pessoa usuarioLogado) {
         model.addAttribute("currentPage", "encomendas");
@@ -75,7 +87,6 @@ public class EncomendaController {
 
         List<Unidade> unidadesDisponiveis = Collections.emptyList();
         
-        // CORREÇÃO (Linha 75): Checagem segura de boolean (Null-safe)
         if (Boolean.TRUE.equals(model.getAttribute("usuarioPodeGerenciarEncomendas"))) {
             Integer idCondoParaFiltro = condominioId;
             if (idCondoParaFiltro == null && !usuarioLogado.getPesIsGlobalAdmin()) {
@@ -96,7 +107,7 @@ public class EncomendaController {
     }
 
     @GetMapping("/novo")
-    @Transactional(readOnly = true) // CORREÇÃO: Adicionado para evitar LazyInit no findAtivasByCondominioId
+    @Transactional(readOnly = true)
     public String getFormNovaEncomenda(Model model, @RequestParam(required = false) Integer condominioId) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         carregarDadosPadrao(model, usuarioLogado);
@@ -131,23 +142,28 @@ public class EncomendaController {
     }
 
     @PostMapping("/salvar")
-    @ResponseBody
-    public ResponseEntity<?> salvarEncomenda(@Valid @ModelAttribute EncomendaRequestDTO dto, BindingResult bindingResult) {
+    public Object salvarEncomenda(@Valid @ModelAttribute EncomendaRequestDTO dto, BindingResult bindingResult, Model model) {
         if (bindingResult.hasErrors()) {
             String errors = bindingResult.getAllErrors().stream().map(e -> e.getDefaultMessage()).collect(Collectors.joining(", "));
             return ResponseEntity.badRequest().body(Map.of("message", errors));
         }
         try {
             Pessoa usuarioLogado = pessoaService.getLoggedInUser();
-            encomendaService.criarEncomenda(dto, usuarioLogado);
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Encomenda registrada com sucesso."));
+            Encomenda encomendaSalva = encomendaService.criarEncomenda(dto, usuarioLogado);
+            
+            // CORREÇÃO: Usar .getEncCod() em vez de .getId()
+            EncomendaDTO encomendaDTO = encomendaService.buscarPorIdDTO(encomendaSalva.getEncCod(), usuarioLogado);
+            
+            popularModelParaFragmento(model, encomendaDTO, usuarioLogado);
+            return "fragments/encomenda-card :: card";
+            
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         }
     }
 
     @GetMapping("/{id}/retirar")
-    @Transactional(readOnly = true) // CORREÇÃO: Adicionado para corrigir LazyInitializationException
+    @Transactional(readOnly = true)
     public String getFormRetirarEncomenda(@PathVariable Long id, Model model) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         Encomenda encomenda = encomendaService.buscarPorIdEValidarAcesso(id, usuarioLogado, true);
@@ -156,15 +172,13 @@ public class EncomendaController {
         dto.setDataRetirada(LocalDate.now());
         dto.setHoraRetirada(LocalTime.now().withSecond(0).withNano(0));
 
-        // CORREÇÃO (Linha 153): Classe EncomendaDTO agora é importada
         model.addAttribute("encomenda", new EncomendaDTO(encomenda));
         model.addAttribute("retiradaRequestDTO", dto);
         return "fragments/encomenda-retirada-form :: form-modal-content";
     }
 
     @PostMapping("/{id}/retirar")
-    @ResponseBody
-    public ResponseEntity<?> registrarRetirada(@PathVariable Long id, @Valid @ModelAttribute EncomendaRetiradaRequestDTO dto, BindingResult bindingResult) {
+    public Object registrarRetirada(@PathVariable Long id, @Valid @ModelAttribute EncomendaRetiradaRequestDTO dto, BindingResult bindingResult, Model model) {
         if (bindingResult.hasErrors()) {
             String errors = bindingResult.getAllErrors().stream().map(e -> e.getDefaultMessage()).collect(Collectors.joining(", "));
             return ResponseEntity.badRequest().body(Map.of("message", errors));
@@ -172,14 +186,18 @@ public class EncomendaController {
         try {
             Pessoa usuarioLogado = pessoaService.getLoggedInUser();
             encomendaService.registrarRetirada(id, dto, usuarioLogado);
-            return ResponseEntity.ok(Map.of("message", "Retirada registrada com sucesso."));
+            
+            EncomendaDTO encomendaDTO = encomendaService.buscarPorIdDTO(id, usuarioLogado);
+            popularModelParaFragmento(model, encomendaDTO, usuarioLogado);
+            return "fragments/encomenda-card :: card";
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         }
     }
 
     @GetMapping("/{id}/atualizar-status")
-    @Transactional(readOnly = true) // CORREÇÃO: Adicionado para corrigir LazyInitializationException
+    @Transactional(readOnly = true)
     public String getFormAtualizarStatus(@PathVariable Long id, Model model) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         Encomenda encomenda = encomendaService.buscarPorIdEValidarAcesso(id, usuarioLogado, true);
@@ -188,7 +206,6 @@ public class EncomendaController {
         dto.setObservacoes(encomenda.getObservacaoAtualizacao());
         dto.setNovoStatus(encomenda.getStatus());
 
-        // CORREÇÃO (Linha 183): Classe EncomendaDTO agora é importada
         model.addAttribute("encomenda", new EncomendaDTO(encomenda));
         model.addAttribute("statusRequestDTO", dto);
         model.addAttribute("statusUpdateDisponiveis", List.of(EncomendaStatus.PENDENTE, EncomendaStatus.DEVOLVIDA, EncomendaStatus.EXTRAVIADA));
@@ -196,8 +213,7 @@ public class EncomendaController {
     }
 
     @PostMapping("/{id}/atualizar-status")
-    @ResponseBody
-    public ResponseEntity<?> atualizarStatus(@PathVariable Long id, @Valid @ModelAttribute EncomendaStatusRequestDTO dto, BindingResult bindingResult) {
+    public Object atualizarStatus(@PathVariable Long id, @Valid @ModelAttribute EncomendaStatusRequestDTO dto, BindingResult bindingResult, Model model) {
         if (bindingResult.hasErrors()) {
             String errors = bindingResult.getAllErrors().stream().map(e -> e.getDefaultMessage()).collect(Collectors.joining(", "));
             return ResponseEntity.badRequest().body(Map.of("message", errors));
@@ -205,7 +221,11 @@ public class EncomendaController {
         try {
             Pessoa usuarioLogado = pessoaService.getLoggedInUser();
             encomendaService.atualizarStatus(id, dto, usuarioLogado);
-            return ResponseEntity.ok(Map.of("message", "Status atualizado com sucesso."));
+
+            EncomendaDTO encomendaDTO = encomendaService.buscarPorIdDTO(id, usuarioLogado);
+            popularModelParaFragmento(model, encomendaDTO, usuarioLogado);
+            return "fragments/encomenda-card :: card";
+            
         } catch (ResponseStatusException e) {
              return ResponseEntity.status(e.getStatusCode()).body(Map.of("message", e.getReason()));
         } catch (Exception e) {

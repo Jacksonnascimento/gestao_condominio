@@ -11,8 +11,10 @@ import br.com.gestaocondominio.api.domain.service.CondominioService;
 import br.com.gestaocondominio.api.domain.service.PessoaService;
 import br.com.gestaocondominio.api.domain.service.UnidadeService;
 import br.com.gestaocondominio.api.domain.service.UsuarioCondominioService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -21,6 +23,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -39,6 +42,14 @@ public class UnidadeViewController {
         model.addAttribute("statusOcupacao", UnidadeStatusOcupacao.values());
     }
 
+    private boolean getShowCondominioInfo(List<Condominio> condominiosDisponiveis) {
+         return condominiosDisponiveis.size() > 1;
+    }
+    
+    private boolean getIsGerencial(Pessoa usuarioLogado) {
+        return usuarioLogado.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuarioLogado, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM);
+    }
+
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public String listarUnidades(Model model,
@@ -49,7 +60,6 @@ public class UnidadeViewController {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         carregarDadosPadrao(model);
 
-        // CORREÇÃO: Altera o primeiro parâmetro para 'false' para não incluir inativas por padrão.
         List<Unidade> unidades = unidadeService.listarTodasUnidades(false, statusFiltro, busca);
 
         if (condominioId != null) {
@@ -58,13 +68,12 @@ public class UnidadeViewController {
                 .collect(Collectors.toList());
         }
         
-        boolean isGerencial = usuarioLogado.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuarioLogado, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM);
-        model.addAttribute("isGerencial", isGerencial);
+        model.addAttribute("isGerencial", getIsGerencial(usuarioLogado));
 
         List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
         model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
         
-        boolean showCondominioInfo = condominiosDisponiveis.size() > 1;
+        boolean showCondominioInfo = getShowCondominioInfo(condominiosDisponiveis);
         
         model.addAttribute("unidades", unidades);
         model.addAttribute("condominioFiltro", condominioId);
@@ -88,7 +97,7 @@ public class UnidadeViewController {
         List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
         model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
 
-        boolean showCondominioInfo = condominiosDisponiveis.size() > 1;
+        boolean showCondominioInfo = getShowCondominioInfo(condominiosDisponiveis);
         if (!showCondominioInfo && !condominiosDisponiveis.isEmpty()) {
             dto.setConCod(condominiosDisponiveis.get(0).getConCod());
         }
@@ -110,7 +119,7 @@ public class UnidadeViewController {
             List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
             model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
 
-            boolean showCondominioInfo = condominiosDisponiveis.size() > 1;
+            boolean showCondominioInfo = getShowCondominioInfo(condominiosDisponiveis);
             
             model.addAttribute("showCondominioInfo", showCondominioInfo);
             model.addAttribute("unidadeId", id);
@@ -122,22 +131,36 @@ public class UnidadeViewController {
     }
 
     @PostMapping("/salvar")
-    @ResponseBody
-    public ResponseEntity<?> salvarUnidade(@ModelAttribute("unidade") UnidadeRequestDTO dto) {
+    public Object salvarUnidade(@ModelAttribute("unidade") UnidadeRequestDTO dto, Model model) {
         try {
             Unidade novaUnidade = unidadeService.cadastrarUnidade(dto);
-            return ResponseEntity.ok(new UnidadeRequestDTO(novaUnidade));
+            
+            List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
+            
+            model.addAttribute("unidade", novaUnidade);
+            model.addAttribute("showCondominioInfo", getShowCondominioInfo(condominiosDisponiveis));
+            model.addAttribute("isGerencial", getIsGerencial(pessoaService.getLoggedInUser()));
+
+            return "fragments/unidade-card :: card";
+            
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Collections.singletonMap("message", e.getMessage()));
         }
     }
     
     @PostMapping("/editar/{id}")
-    @ResponseBody
-    public ResponseEntity<?> atualizarUnidade(@PathVariable("id") Integer id, @ModelAttribute("unidade") UnidadeRequestDTO dto) {
+    public Object atualizarUnidade(@PathVariable("id") Integer id, @ModelAttribute("unidade") UnidadeRequestDTO dto, Model model) {
         try {
             Unidade unidadeAtualizada = unidadeService.atualizarUnidade(id, dto);
-            return ResponseEntity.ok(new UnidadeRequestDTO(unidadeAtualizada));
+
+            List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
+            
+            model.addAttribute("unidade", unidadeAtualizada);
+            model.addAttribute("showCondominioInfo", getShowCondominioInfo(condominiosDisponiveis));
+            model.addAttribute("isGerencial", getIsGerencial(pessoaService.getLoggedInUser()));
+            
+            return "fragments/unidade-card :: card";
+
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Collections.singletonMap("message", e.getMessage()));
         }

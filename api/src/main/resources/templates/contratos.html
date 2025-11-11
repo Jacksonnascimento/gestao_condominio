@@ -62,36 +62,15 @@
                 </div>
             </div>
 
-            <div th:if="${#lists.isEmpty(contratos)}" class="text-center p-5">
+            <div th:if="${#lists.isEmpty(contratos)}" id="empty-placeholder" class="text-center p-5">
                 <i class='bx bx-folder-open' style="font-size: 4rem; color: #ccc;"></i>
                 <p class="mt-3">Nenhum contrato encontrado para os filtros selecionados.</p>
             </div>
 
-            <div th:if="${not #lists.isEmpty(contratos) and filtroAtivo != 'historico'}" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
-                <div th:each="contrato : ${contratos}" class="col">
-                    <div class="card unit-card h-100">
-                        <div class="card-header">
-                            <div>
-                                <span th:if="${showCondominioInfo}" class="badge bg-secondary mb-1" th:text="${contrato.condominio.conNome}"></span>
-                                <h3 class="card-title h6 mb-0" th:text="${contrato.empresa}"></h3>
-                            </div>
-                            <span class="status-badge" th:classappend="'status-' + ${#strings.toLowerCase(contrato.status)}" th:text="${contrato.status.descricao}"></span>
-                        </div>
-                        <div class="card-body">
-                            <p class="fw-bold" style="margin-bottom: 1rem;" th:text="${contrato.servico}"></p>
-                            <p class="info-item"><i class='bx bxs-dollar-circle'></i><strong>Valor:</strong> <span th:text="${'R$ ' + #numbers.formatDecimal(contrato.valor, 1, 'POINT', 2, 'COMMA')}"></span></p>
-                            <p class="info-item"><i class='bx bxs-user-pin'></i><strong>Responsável:</strong> <span th:text="${contrato.responsavel}"></span></p>
-                            <p class="info-item"><i class='bx bxs-calendar-check'></i><strong>Início:</strong> <span th:text="${#temporals.format(contrato.dataInicio, 'dd/MM/yyyy')}"></span></p>
-                            <p class="info-item"><i class='bx bxs-calendar-x'></i><strong>Fim:</strong> <span th:text="${#temporals.format(contrato.dataFim, 'dd/MM/yyyy')}"></span></p>
-                        </div>
-                        <div class="card-footer">
-                            <button class="btn btn-sm btn-outline-primary btn-edit" th:data-url="'/contratos/editar/' + ${contrato.id}"><i class='bx bxs-edit'></i> Editar</button>
-                            <form th:action="@{/contratos/excluir/{id}(id=${contrato.id})}" method="post" onsubmit="return confirm('Tem certeza?');" class="d-inline">
-                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class='bx bxs-trash'></i> Excluir</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
+            <div th:if="${not #lists.isEmpty(contratos) and filtroAtivo != 'historico'}" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" id="lista-contratos">
+                <th:block th:each="contrato : ${contratos}">
+                    <div th:replace="~{fragments/contrato-card :: card(contrato=${contrato}, showCondominioInfo=${showCondominioInfo}, isGerencial=${isGerencial})}"></div>
+                </th:block>
             </div>
 
             <div th:if="${not #lists.isEmpty(contratos) and filtroAtivo == 'historico'}" class="card responsive-table-container">

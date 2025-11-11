@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div class="col" th:fragment="card(ocupante, isGerencial)" th:data-ocupante-id="${ocupante.id}">
+    <div class="card unit-card h-100">
+        <div class="card-header">
+            <div>
+                <span th:if="${showCondominioInfo}" class="badge bg-secondary mb-1" th:text="${ocupante.condominioNome}"></span>
+                <h3 class="card-title h6 mb-0" th:text="${ocupante.nomeCompleto}"></h3>
+            </div>
+            <span class="status-badge" th:text="${ocupante.vinculo.getDescricao()}" th:classappend="${'status-' + #strings.toLowerCase(ocupante.vinculo.name())}"></span>
+        </div>
+        <div class="card-body">
+            <p class="info-item"><i class='bx bxs-building-house'></i><strong>Unidade:</strong> <span th:text="${ocupante.unidadeNumero} + (${ocupante.unidadeBloco != null ? ' / ' + ocupante.unidadeBloco : ''})"></span></p>
+            <p class="info-item"><i class='bx bxs-envelope'></i><strong>Email:</strong> <span th:text="${ocupante.email}"></span></p>
+            <p class="info-item"><i class='bx bxs-phone'></i><strong>Telefone:</strong> <span th:text="${ocupante.telefone}"></span></p>
+            <p class="info-item"><i class='bx bxs-calendar-check'></i><strong>Início:</strong> <span th:text="${#temporals.format(ocupante.inicioOcupacao, 'dd/MM/yyyy')}"></span></p>
+        </div>
+        <div class="card-footer" th:if="${isGerencial}">
+            <button class="btn btn-sm btn-outline-primary btn-edit" th:data-url="'/ocupantes/editar/' + ${ocupante.id}"><i class='bx bxs-edit'></i> Editar</button>
+            <form th:action="@{/ocupantes/excluir/{id}(id=${ocupante.id})}" method="post" class="d-inline" onsubmit="return confirm('Deseja realmente excluir este ocupante?');">
+                <button type="submit" class="btn btn-sm btn-outline-danger"><i class='bx bxs-trash'></i> Excluir</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

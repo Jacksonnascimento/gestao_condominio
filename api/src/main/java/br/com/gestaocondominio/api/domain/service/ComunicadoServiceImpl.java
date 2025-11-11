@@ -138,7 +138,8 @@ public class ComunicadoServiceImpl implements ComunicadoService {
 
     @Override
     @Transactional
-    public void criar(ComunicadoRequestDTO dto, MultipartFile anexo) {
+    // MUDANÇA: de 'void' para 'Comunicado'
+    public Comunicado criar(ComunicadoRequestDTO dto, MultipartFile anexo) {
         Pessoa criador = pessoaService.getLoggedInUser();
         String caminhoAnexo = null;
 
@@ -162,7 +163,8 @@ public class ComunicadoServiceImpl implements ComunicadoService {
                     .condominios(condominiosAlvo)
                     .build();
 
-            comunicadoRepository.save(comunicado);
+            // MUDANÇA: Salva e retorna a entidade
+            return comunicadoRepository.save(comunicado);
 
         } catch (Exception e) {
             if (caminhoAnexo != null) {
@@ -175,7 +177,8 @@ public class ComunicadoServiceImpl implements ComunicadoService {
 
     @Override
     @Transactional
-    public void atualizar(Integer id, ComunicadoRequestDTO dto, MultipartFile anexo) {
+    // MUDANÇA: de 'void' para 'Comunicado'
+    public Comunicado atualizar(Integer id, ComunicadoRequestDTO dto, MultipartFile anexo) {
         Pessoa editor = pessoaService.getLoggedInUser();
         Comunicado comunicado = comunicadoRepository.findById(id)
                 .map(c -> {
@@ -204,12 +207,15 @@ public class ComunicadoServiceImpl implements ComunicadoService {
             comunicado.setIsUrgente(dto.getIsUrgente());
             comunicado.setCondominios(condominiosAlvo);
 
-            comunicadoRepository.save(comunicado);
+            // MUDANÇA: Salva e retorna a entidade
+            Comunicado comunicadoSalvo = comunicadoRepository.save(comunicado);
 
             if (novoCaminhoAnexo != null && antigoCaminhoAnexo != null) {
                 String simpleFilename = Paths.get(antigoCaminhoAnexo).getFileName().toString();
                 fileStorageService.delete(simpleFilename, COMUNICADOS_DIR);
             }
+            
+            return comunicadoSalvo;
 
         } catch (Exception e) {
             if (novoCaminhoAnexo != null && !novoCaminhoAnexo.equals(antigoCaminhoAnexo)) {

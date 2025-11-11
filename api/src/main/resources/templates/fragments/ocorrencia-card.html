@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div class="col" th:fragment="card(oco, showCondominioInfo)" th:data-ocorrencia-id="${oco.id}">
+    <div class="card unit-card h-100">
+        <div class="card-header">
+            <div>
+                <span th:if="${showCondominioInfo}" class="badge bg-secondary mb-1" th:text="${oco.condominioNome}"></span>
+                <h3 class="card-title h6 mb-0" th:text="${oco.titulo}"></h3>
+            </div>
+             <span class="status-badge"
+                  th:text="${oco.status.descricao}"
+                  th:classappend="'status-ocorrencia-' + ${#strings.toLowerCase(oco.status.name())}">
+             </span>
+        </div>
+        <div class="card-body">
+            <p class="info-item"><i class='bx bxs-building-house'></i><strong>Unidade:</strong> <span th:text="${oco.unidadeNumero} + (${oco.unidadeBloco != null ? ' / ' + oco.unidadeBloco : ''})"></span></p>
+            <p class="info-item"><i class='bx bx-purchase-tag-alt'></i><strong>Tipo:</strong> <span th:text="${oco.tipo.descricao}"></span></p>
+            <p class="info-item"><i class='bx bxs-calendar'></i><strong>Registrada em:</strong> <span th:text="${#temporals.format(oco.dataRegistro, 'dd/MM/yyyy HH:mm')}"></span></p>
+            <p class="info-item"><i class='bx bx-text'></i><strong>Descrição:</strong> <span th:text="${oco.descricaoCurta}"></span></p>
+        </div>
+        <div class="card-footer">
+            <button class="btn btn-sm btn-outline-primary btn-ver-detalhes" th:data-ocorrencia-id="${oco.id}"><i class='bx bx-show'></i> Ver Detalhes</button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

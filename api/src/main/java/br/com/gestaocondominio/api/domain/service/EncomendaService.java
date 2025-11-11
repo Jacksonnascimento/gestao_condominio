@@ -25,4 +25,7 @@ public interface EncomendaService {
     Encomenda atualizarStatus(Long encomendaId, EncomendaStatusRequestDTO dto, Pessoa usuarioLogado);
 
     Encomenda buscarPorIdEValidarAcesso(Long id, Pessoa usuarioLogado, boolean paraEscrita);
+
+    
+    EncomendaDTO buscarPorIdDTO(Long id, Pessoa usuarioLogado);
 }

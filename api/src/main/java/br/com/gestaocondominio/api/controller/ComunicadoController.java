@@ -29,6 +29,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/comunicados")
@@ -78,13 +79,15 @@ public class ComunicadoController {
             List<UsuarioCondominio> associacoes = usuarioCondominioRepository.findByPesCod(pessoaLogada.getPesCod());
             usuarioPodeGerenciar = associacoes.stream()
                     .anyMatch(uc -> uc.getUscPapel() == UserRole.ADMIN ||
-                                  uc.getUscPapel() == UserRole.SINDICO);
+                                    uc.getUscPapel() == UserRole.SINDICO);
         }
         model.addAttribute("usuarioPodeGerenciar", usuarioPodeGerenciar);
 
         if (isGlobalAdmin) {
             List<Condominio> allCondominios = condominioRepository.findAll();
             model.addAttribute("allCondominios", allCondominios);
+        } else {
+            model.addAttribute("allCondominios", null); // Garante que a variável exista
         }
 
         model.addAttribute("filtroTitulo", titulo);
@@ -129,29 +132,59 @@ public class ComunicadoController {
     }
 
     @PostMapping
-    @ResponseBody
-    public ResponseEntity<?> criarComunicado(
+    public Object criarComunicado(
             @RequestPart("comunicado") ComunicadoRequestDTO dto,
-            @RequestPart(value = "anexo", required = false) MultipartFile anexo) {
+            @RequestPart(value = "anexo", required = false) MultipartFile anexo,
+            Model model) {
         try {
-            comunicadoService.criar(dto, anexo);
-            return ResponseEntity.ok().build();
+            // MUDANÇA: Agora o serviço retorna o comunicado salvo
+            Comunicado comunicadoSalvo = comunicadoService.criar(dto, anexo);
+            
+            Pessoa pessoaLogada = pessoaService.getLoggedInUser();
+            boolean isGlobalAdmin = pessoaLogada.getPesIsGlobalAdmin();
+
+            model.addAttribute("comunicado", comunicadoSalvo);
+            model.addAttribute("usuarioPodeGerenciar", true); // Se pode criar, pode gerenciar
+            model.addAttribute("isGlobalAdmin", isGlobalAdmin);
+            
+            if (isGlobalAdmin) {
+                model.addAttribute("allCondominios", condominioRepository.findAll());
+            } else {
+                 model.addAttribute("allCondominios", null);
+            }
+
+            return "fragments/comunicado-card :: card";
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
 
     @PostMapping("/editar/{id}")
-    @ResponseBody
-    public ResponseEntity<?> atualizarComunicado(
+    public Object atualizarComunicado(
             @PathVariable Integer id,
             @RequestPart("comunicado") ComunicadoRequestDTO dto,
-            @RequestPart(value = "anexo", required = false) MultipartFile anexo) {
+            @RequestPart(value = "anexo", required = false) MultipartFile anexo,
+            Model model) {
         try {
-            comunicadoService.atualizar(id, dto, anexo);
-            return ResponseEntity.ok().build();
+            // MUDANÇA: Agora o serviço retorna o comunicado salvo
+            Comunicado comunicadoSalvo = comunicadoService.atualizar(id, dto, anexo);
+
+            Pessoa pessoaLogada = pessoaService.getLoggedInUser();
+            boolean isGlobalAdmin = pessoaLogada.getPesIsGlobalAdmin();
+
+            model.addAttribute("comunicado", comunicadoSalvo);
+            model.addAttribute("usuarioPodeGerenciar", true); // Se pode editar, pode gerenciar
+            model.addAttribute("isGlobalAdmin", isGlobalAdmin);
+
+            if (isGlobalAdmin) {
+                model.addAttribute("allCondominios", condominioRepository.findAll());
+            } else {
+                 model.addAttribute("allCondominios", null);
+            }
+
+            return "fragments/comunicado-card :: card";
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
 
@@ -162,7 +195,8 @@ public class ComunicadoController {
             comunicadoService.excluir(id);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            // MUDANÇA: Retorna um JSON padronizado
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
 
@@ -178,9 +212,13 @@ public class ComunicadoController {
             String filename = Paths.get(comunicado.getCaminhoAnexo()).getFileName().toString();
             Resource file = fileStorageService.loadAsResource(filename, "comunicados");
 
-            String contentType = "application/octet-stream";
+            String contentType = "application/octet-stream"; // Padrão
             try {
-                contentType = request.getServletContext().getMimeType(file.getFile().getAbsolutePath());
+                // CORREÇÃO: Verifica se o getMimeType não é nulo
+                String determinedContentType = request.getServletContext().getMimeType(file.getFile().getAbsolutePath());
+                if (determinedContentType != null) {
+                    contentType = determinedContentType;
+                }
             } catch (IOException ex) {
                 // Log do erro se necessário, mas mantém o tipo padrão como fallback
             }

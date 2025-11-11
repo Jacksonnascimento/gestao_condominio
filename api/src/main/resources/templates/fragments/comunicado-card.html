@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div class="card mb-3" 
+     th:fragment="card(comunicado, usuarioPodeGerenciar, isGlobalAdmin, allCondominios)" 
+     th:data-comunicado-id="${comunicado.comId}">
+    
+    <div class="card-header d-flex justify-content-between align-items-center" th:classappend="${comunicado.isUrgente} ? 'bg-danger-subtle text-danger-emphasis'">
+        <h5 class="mb-0 card-title-h5" th:text="${comunicado.titulo}">Título do Comunicado</h5>
+        <small th:text="${#temporals.format(comunicado.dataCadastro, 'dd/MM/yyyy HH:mm')}"></small>
+    </div>
+    <div class="card-body">
+        <p class="card-text preserve-line-breaks" th:text="${comunicado.mensagem}">Corpo da mensagem do comunicado.</p>
+    </div>
+    <div class="card-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="d-flex flex-wrap gap-2">
+            <span class="badge bg-primary-subtle text-primary-emphasis"><i class='bx bxs-user'></i> [[${comunicado.criador.pesNome}]]</span>
+            <span class="badge bg-secondary-subtle text-secondary-emphasis"><i class='bx bxs-user-pin'></i> [[${comunicado.publicoDestino.getDescricao()}]]</span>
+            <span th:if="${isGlobalAdmin and allCondominios != null and allCondominios.size() > 1 and comunicado.condominios.size() == 1}" class="badge bg-info-subtle text-info-emphasis" th:text="${comunicado.condominios.iterator().next().conNome}"></span>
+            <span th:if="${isGlobalAdmin and allCondominios != null and allCondominios.size() > 1 and comunicado.condominios.size() > 1}" class="badge bg-info-subtle text-info-emphasis">Múltiplos Condomínios</span>
+        </div>
+        <div class="d-flex gap-2">
+            <button th:if="${comunicado.caminhoAnexo}" class="btn btn-sm btn-outline-secondary btn-ver-anexo" th:data-id="${comunicado.comId}"><i class='bx bxs-file-blank'></i> Ver Anexo</button>
+            <button th:if="${comunicado.caminhoAnexo}" class="btn btn-sm btn-outline-success btn-baixar-anexo" th:data-id="${comunicado.comId}"><i class='bx bxs-download'></i> Baixar</button>
+            <button th:if="${usuarioPodeGerenciar}" class="btn btn-sm btn-outline-primary btn-edit" th:data-id="${comunicado.comId}"><i class='bx bxs-edit'></i></button>
+            <button th:if="${usuarioPodeGerenciar}" class="btn btn-sm btn-outline-danger btn-excluir" th:data-id="${comunicado.comId}"><i class='bx bxs-trash'></i></button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

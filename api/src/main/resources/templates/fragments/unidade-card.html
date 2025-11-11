@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div class="col" th:fragment="card(unidade, showCondominioInfo)">
+    <div class="card unit-card h-100">
+        <div class="card-header">
+            <div>
+                <span th:if="${showCondominioInfo}" class="badge bg-secondary mb-1" th:text="${unidade.condominio.conNome}"></span>
+                <h3 class="card-title h6 mb-0 clickable-title"
+                    th:text="'Unidade ' + ${unidade.uniNumero}"
+                    th:data-unidade-id="${unidade.uniCod}"
+                    title="Clique para ver os detalhes"></h3>
+            </div>
+            <span class="status-badge" th:if="${unidade.uniStatusOcupacao != null}" th:text="${unidade.uniStatusOcupacao.getDescricao()}" th:classappend="${'status-' + #strings.toLowerCase(unidade.uniStatusOcupacao.name())}"></span>
+        </div>
+        <div class="card-body">
+            <p class="info-item"><i class='bx bx-buildings'></i><strong>Bloco:</strong> <span th:text="${unidade.bloco}"></span></p>
+            <p class="info-item"><i class='bx bx-compass'></i><strong>Fração Ideal:</strong> <span th:text="${unidade.fracaoIdeal != null ? #numbers.formatDecimal(unidade.fracaoIdeal, 1, 2, 'COMMA') + '%' : 'N/A'}"></span></p>
+            <p class="info-item"><i class='bx bx-area'></i><strong>Área:</strong> <span th:text="${unidade.areaPrivada != null ? #numbers.formatDecimal(unidade.areaPrivada, 1, 2, 'COMMA') + ' m²' : 'N/A'}"></span></p>
+            <p class="info-item"><i class='bx bx-purchase-tag-alt'></i><strong>Tipo:</strong> <span th:text="${unidade.unidadeTipo != null ? unidade.unidadeTipo.getDescricao() : 'Não definido'}"></span></p>
+        </div>
+        <div class="card-footer" th:if="${isGerencial}">
+            <button class="btn btn-sm btn-outline-primary btn-edit" th:data-url="'/unidades/editar/' + ${unidade.uniCod}"><i class='bx bxs-edit'></i> Editar</button>
+            <form th:action="@{'/unidades/excluir/' + ${unidade.uniCod}}" method="post" class="d-inline" onsubmit="return confirm('Deseja realmente excluir esta unidade?');">
+                <button type="submit" class="btn btn-sm btn-outline-danger btn-delete"><i class='bx bxs-trash'></i> Excluir</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

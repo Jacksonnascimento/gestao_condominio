@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div class="col" th:fragment="card(enc, showCondominioInfo, usuarioPodeGerenciarEncomendas)" th:data-encomenda-id="${enc.id}">
+    <div class="card unit-card h-100">
+        <div class="card-header">
+            <div>
+                <span th:if="${showCondominioInfo}" class="badge bg-secondary mb-1" th:text="${enc.condominioNome}"></span>
+                <h3 class="card-title h6 mb-0" th:text="${enc.destinatario}"></h3>
+            </div>
+            <span class="status-badge" th:text="${enc.statusDescricao}" th:classappend="'status-encomenda-' + ${#strings.toLowerCase(enc.status.name())}"></span>
+        </div>
+        <div class="card-body">
+            <p class="info-item"><i class='bx bxs-building-house'></i><strong>Unidade:</strong> <span th:text="${enc.unidadeNumero} + (${enc.unidadeBloco != null ? ' / ' + enc.unidadeBloco : ''})"></span></p>
+            <p class="info-item"><i class='bx bx-purchase-tag-alt'></i><strong>Tipo:</strong> <span th:text="${enc.tipoDescricao}"></span></p>
+            <p class="info-item"><i class='bx bx-text'></i><strong>Descrição:</strong> <span th:text="${enc.descricao} ?: 'N/A'"></span></p>
+            <p class="info-item"><i class='bx bxs-calendar-check'></i><strong>Recebimento:</strong> <span th:text="${#temporals.format(enc.dataRecebimento, 'dd/MM/yyyy HH:mm')}"></span></p>
+            <p class="info-item"><i class='bx bxs-user-pin'></i><strong>Recebido por:</strong> <span th:text="${enc.nomeRecebidoPor}"></span></p>
+            <p class="info-item" th:if="${enc.observacoes}"><i class='bx bx-comment-detail'></i><strong>Obs:</strong> <span th:text="${enc.observacoes}"></span></p>
+            
+            <th:block th:if="${enc.status.name() == 'RETIRADA'}">
+                <hr class="my-2">
+                <p class="info-item text-success mb-1"><i class='bx bxs-calendar-check'></i><strong>Retirada:</strong> <span th:text="${#temporals.format(enc.dataRetirada, 'dd/MM/yyyy HH:mm')}"></span></p>
+                <p class="info-item text-success"><i class='bx bxs-user-check'></i><strong>Retirado por:</strong> <span th:text="${enc.nomeRetirada}"></span></p>
+            </th:block>
+
+            <th:block th:if="${enc.status.name() == 'DEVOLVIDA' or enc.status.name() == 'EXTRAVIADA'}">
+                <hr class="my-2">
+                <p class="info-item text-danger"><i class='bx bxs-comment-error'></i><strong>Obs. Status:</strong> <span th:text="${enc.observacaoAtualizacao}"></span></p>
+            </th:block>
+
+        </div>
+        <div class="card-footer" th:if="${usuarioPodeGerenciarEncomendas}">
+            <button th:if="${enc.status.name() == 'PENDENTE'}" class="btn btn-sm btn-success btn-registrar-retirada" th:data-encomenda-id="${enc.id}">
+                <i class='bx bx-check'></i> Registrar Retirada
+            </button>
+            <button th:if="${enc.status.name() != 'RETIRADA'}" class="btn btn-sm btn-outline-secondary btn-atualizar-status" th:data-encomenda-id="${enc.id}">
+                <i class='bx bx-edit-alt'></i> Atualizar Status
+            </button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

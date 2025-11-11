@@ -4,10 +4,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const formModal = createStaticModal(formModalElement);
     const modalContent = document.getElementById('modalContent');
+    const listaContratos = document.getElementById('lista-contratos');
 
     const handleFormSubmit = async (event) => {
         event.preventDefault();
         const form = event.target;
+        const url = form.action;
 
         const dataInicioInput = form.querySelector('#dataInicio');
         const dataFimInput = form.querySelector('#dataFim');
@@ -32,13 +34,58 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: new URLSearchParams(new FormData(form))
             });
 
+            // O 'response.ok' vai funcionar agora porque o Spring vai retornar 200 OK com o HTML
             if (response.ok) {
-                formModal.hide();
-                await Swal.fire({ icon: 'success', title: 'Sucesso!', text: 'Contrato salvo com sucesso.', timer: 2000, showConfirmButton: false });
-                window.location.reload();
+                const responseHtml = await response.text();
+                
+                // Se a resposta NÃO for um JSON de erro, é o nosso HTML
+                try {
+                    // Tenta parsear como JSON. Se falhar, é porque veio HTML (sucesso)
+                    const errorData = JSON.parse(responseHtml);
+                    Swal.fire({ icon: 'error', title: 'Erro!', text: errorData.message || 'Ocorreu um erro ao salvar o contrato.' });
+                
+                } catch (e) {
+                    // SUCESSO! Veio HTML.
+                    formModal.hide();
+                    await Swal.fire({ icon: 'success', title: 'Sucesso!', text: 'Contrato salvo com sucesso.', timer: 2000, showConfirmButton: false });
+
+                    const placeholder = document.getElementById('empty-placeholder');
+                    if (placeholder) {
+                        placeholder.remove();
+                    }
+
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = responseHtml;
+                    const newCardElement = tempDiv.firstElementChild;
+
+                    if (!newCardElement || !newCardElement.querySelector('.btn-edit')) {
+                         // Fallback se algo der errado na renderização do fragmento
+                         console.error("Fragmento de HTML inválido recebido.");
+                         window.location.reload();
+                         return;
+                    }
+
+                    let isEdit = url.includes("/editar/");
+                    if (isEdit) {
+                        const contratoId = newCardElement.querySelector('.btn-edit').dataset.url.split('/').pop();
+                        const existingCard = listaContratos?.querySelector(`.btn-edit[data-url$="${contratoId}"]`)?.closest('.col');
+                        if (existingCard) {
+                            existingCard.replaceWith(newCardElement);
+                        } else if (listaContratos) {
+                            listaContratos.prepend(newCardElement);
+                        }
+                    } else if (listaContratos) {
+                        listaContratos.prepend(newCardElement);
+                    }
+                    
+                    if (newCardElement) {
+                        addCardListeners(newCardElement);
+                    }
+                }
             } else {
-                const errorData = await response.json();
-                Swal.fire({ icon: 'error', title: 'Erro!', text: errorData.message || 'Ocorreu um erro ao salvar o contrato.' });
+                 // Erros 400, 500, etc.
+                 const errorData = await response.json();
+                 Swal.fire({ icon: 'error', title: 'Erro!', text: errorData.message || 'Ocorreu um erro ao salvar o contrato.' });
             }
         } catch (error) {
             console.error('Erro no submit do formulário:', error);
@@ -58,16 +105,30 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
+    function addCardListeners(cardElement) {
+        cardElement.querySelector('.btn-edit')?.addEventListener('click', (e) => {
+            const url = e.currentTarget.dataset.url;
+            openFormModal(url);
+        });
+    }
+
     document.getElementById('btnNovoContrato')?.addEventListener('click', (e) => {
         const urlParams = new URLSearchParams(window.location.search);
         const condominioId = urlParams.get('condominioId') || '';
         openFormModal(`/contratos/novo?condominioId=${condominioId}`);
     });
 
-    document.querySelectorAll('.btn-edit').forEach(btn => {
-        btn.addEventListener('click', () => openFormModal(btn.dataset.url));
+    // Adiciona listeners aos cards já existentes na página
+    document.querySelectorAll('#lista-contratos .col').forEach(cardElement => {
+        addCardListeners(cardElement);
+    });
+    
+    // Adiciona listeners aos botões da tabela de histórico
+    document.querySelectorAll('.responsive-table-container .btn-edit').forEach(button => {
+         button.addEventListener('click', () => openFormModal(button.dataset.url));
     });
 
+    // Adiciona o listener de submit ao modal
     modalContent.addEventListener('submit', (event) => {
         if (event.target.matches('#contratoForm')) {
             handleFormSubmit(event);

@@ -4,11 +4,10 @@ document.addEventListener('DOMContentLoaded', function () {
         console.error('Elemento do modal #formModal não encontrado.');
         return;
     }
-    // Utiliza a função global para criar o modal com o comportamento estático
     const formModal = createStaticModal(formModalElement);
     const modalContent = document.getElementById('modalContent');
+    const listaUnidades = document.getElementById('lista-unidades');
 
-    // Função para tratar o submit do formulário de NOVO/EDIÇÃO
     const handleFormSubmit = async (event) => {
         event.preventDefault();
         const form = event.target;
@@ -22,6 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             if (response.ok) {
+                const responseHtml = await response.text();
                 formModal.hide();
                 await Swal.fire({
                     title: 'Sucesso!',
@@ -30,7 +30,31 @@ document.addEventListener('DOMContentLoaded', function () {
                     timer: 2000,
                     showConfirmButton: false
                 });
-                window.location.reload();
+                
+                const placeholder = document.getElementById('empty-placeholder');
+                if (placeholder) {
+                    placeholder.remove();
+                }
+
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = responseHtml;
+                const newCardElement = tempDiv.firstElementChild;
+
+                let isEdit = url.includes("/editar/");
+                if (isEdit) {
+                    const unidadeId = newCardElement.querySelector('.clickable-title').dataset.unidadeId;
+                    const existingCard = listaUnidades.querySelector(`.clickable-title[data-unidade-id="${unidadeId}"]`)?.closest('.col');
+                    if (existingCard) {
+                        existingCard.replaceWith(newCardElement);
+                    } else {
+                        listaUnidades.prepend(newCardElement);
+                    }
+                } else {
+                    listaUnidades.prepend(newCardElement);
+                }
+                
+                addCardListeners(newCardElement);
+
             } else {
                 const errorData = await response.json();
                 Swal.fire('Erro!', errorData.message || 'Ocorreu um erro ao salvar a unidade.', 'error');
@@ -41,7 +65,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    // Função genérica para abrir o modal de formulário
     const openFormModal = async (url) => {
         try {
             const response = await fetch(url);
@@ -60,13 +83,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    // Lógica para abrir o modal de DETALHES, consumindo a API
     const openDetailsModal = async (unidadeId) => {
         modalContent.innerHTML = `<div class="modal-body"><p class="text-center">Carregando...</p></div>`;
         formModal.show();
 
         try {
-            // Busca dados da unidade e dos ocupantes em paralelo
             const [unidadeResponse, ocupantesResponse] = await Promise.all([
                 fetch(`/api/unidades/${unidadeId}`),
                 fetch(`/api/ocupantes?unidadeId=${unidadeId}`)
@@ -78,7 +99,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const unidade = await unidadeResponse.json();
             const ocupantes = await ocupantesResponse.json();
 
-            // Monta o HTML dos ocupantes
             let ocupantesHtml = '<p class="text-muted">Nenhum ocupante encontrado.</p>';
             if (ocupantes.length > 0) {
                 ocupantesHtml = '<ul class="list-group">' + ocupantes.map(o => `
@@ -93,11 +113,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 `).join('') + '</ul>';
             }
 
-            // Formata os dados da unidade
-            const fracaoIdeal = unidade.fracaoIdeal ? `${unidade.fracaoIdeal.toLocaleString('pt-BR', {minimumFractionDigits: 4})}%` : 'N/A';
-            const areaPrivada = unidade.areaPrivada ? `${unidade.areaPrivada.toLocaleString('pt-BR', {minimumFractionDigits: 2})} m²` : 'N/A';
+            const fracaoIdeal = unidade.fracaoIdeal ? `${parseFloat(unidade.fracaoIdeal).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 4})}%` : 'N/A';
+            const areaPrivada = unidade.areaPrivada ? `${parseFloat(unidade.areaPrivada).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})} m²` : 'N/A';
+            const statusOcupacao = unidade.uniStatusOcupacao ? (unidade.uniStatusOcupacao.descricao || unidade.uniStatusOcupacao) : 'N/A';
+            const tipoUnidade = unidade.unidadeTipo ? (unidade.unidadeTipo.descricao || unidade.unidadeTipo) : 'N/A';
 
-            // Monta o HTML final do modal
             const detailsHtml = `
                 <div class="modal-header">
                     <h5 class="modal-title">Detalhes da Unidade ${unidade.uniNumero || ''}</h5>
@@ -111,8 +131,8 @@ document.addEventListener('DOMContentLoaded', function () {
                             <div class="col-md-6 info-item"><strong>Andar:</strong> <span>${unidade.andar || 'N/A'}</span></div>
                             <div class="col-md-6 info-item"><strong>Fração Ideal:</strong> <span>${fracaoIdeal}</span></div>
                             <div class="col-md-6 info-item"><strong>Área:</strong> <span>${areaPrivada}</span></div>
-                            <div class="col-md-6 info-item"><strong>Tipo:</strong> <span>${unidade.unidadeTipo ? unidade.unidadeTipo.descricao : 'N/A'}</span></div>
-                            <div class="col-md-6 info-item"><strong>Status:</strong> <span>${unidade.unidadeStatusOcupacao ? unidade.uniStatusOcupacao.descricao : 'N/A'}</span></div>
+                            <div class="col-md-6 info-item"><strong>Tipo:</strong> <span>${tipoUnidade}</span></div>
+                            <div class="col-md-6 info-item"><strong>Status:</strong> <span>${statusOcupacao}</span></div>
                             <div class="col-12 info-item"><strong>Observações:</strong> <span>${unidade.observacao || 'Nenhuma'}</span></div>
                         </div>
                     </div>
@@ -141,23 +161,24 @@ document.addEventListener('DOMContentLoaded', function () {
             `;
         }
     };
+    
+    function addCardListeners(cardElement) {
+        cardElement.querySelector('.btn-edit')?.addEventListener('click', (e) => {
+            const url = e.currentTarget.dataset.url;
+            openFormModal(url);
+        });
 
-    // Adiciona os event listeners aos botões
+        cardElement.querySelector('.clickable-title')?.addEventListener('click', (e) => {
+            const unidadeId = e.currentTarget.dataset.unidadeId;
+            openDetailsModal(unidadeId);
+        });
+    }
+
     document.getElementById('btnNovaUnidade')?.addEventListener('click', () => {
         openFormModal('/unidades/novo');
     });
 
-    document.querySelectorAll('.btn-edit').forEach(button => {
-        button.addEventListener('click', () => {
-            const url = button.dataset.url;
-            openFormModal(url);
-        });
-    });
-
-    document.querySelectorAll('.clickable-title').forEach(title => {
-        title.addEventListener('click', () => {
-            const unidadeId = title.dataset.unidadeId;
-            openDetailsModal(unidadeId);
-        });
+    document.querySelectorAll('.col').forEach(cardElement => {
+        addCardListeners(cardElement);
     });
 });

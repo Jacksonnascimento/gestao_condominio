@@ -114,10 +114,10 @@ public class OcupanteViewController {
                   model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
                   model.addAttribute("showCondominioInfo", condominiosDisponiveis.size() > 1);
                   if (condominioId != null) {
-                        dto.setCondominioId(condominioId);
-                        model.addAttribute("unidadesDisponiveis", unidadeService.findByCondominioId(condominioId));
+                       dto.setCondominioId(condominioId);
+                       model.addAttribute("unidadesDisponiveis", unidadeService.findByCondominioId(condominioId));
                   } else {
-                        model.addAttribute("unidadesDisponiveis", Collections.emptyList());
+                       model.addAttribute("unidadesDisponiveis", Collections.emptyList());
                   }
              } else {
                   Integer idCondoUsuario = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
@@ -137,11 +137,15 @@ public class OcupanteViewController {
     }
 
     @PostMapping("/salvar")
-    @ResponseBody
-    public ResponseEntity<?> salvarOcupante(OcupanteRequestDTO ocupanteRequestDTO) {
+    public Object salvarOcupante(OcupanteRequestDTO ocupanteRequestDTO, Model model) {
         try {
             OcupanteResponseDTO responseDTO = ocupanteService.cadastrarOcupante(ocupanteRequestDTO);
-            return ResponseEntity.ok(responseDTO);
+            Pessoa usuarioLogado = pessoaService.getLoggedInUser();
+
+            model.addAttribute("ocupante", responseDTO);
+            model.addAttribute("isGerencial", usuarioLogado.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuarioLogado, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM));
+            
+            return "fragments/ocupante-card :: card";
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
@@ -180,11 +184,15 @@ public class OcupanteViewController {
     }
 
     @PostMapping("/editar/{id}")
-    @ResponseBody
-    public ResponseEntity<?> atualizarOcupante(@PathVariable Integer id, OcupanteRequestDTO ocupanteRequestDTO) {
+    public Object atualizarOcupante(@PathVariable Integer id, OcupanteRequestDTO ocupanteRequestDTO, Model model) {
         try {
-            OcupanteResponseDTO responseDTO = ocupanteService.editarOcupante(id, ocupanteRequestDTO, pessoaService.getLoggedInUser());
-            return ResponseEntity.ok(responseDTO);
+            Pessoa usuarioLogado = pessoaService.getLoggedInUser();
+            OcupanteResponseDTO responseDTO = ocupanteService.editarOcupante(id, ocupanteRequestDTO, usuarioLogado);
+            
+            model.addAttribute("ocupante", responseDTO);
+            model.addAttribute("isGerencial", usuarioLogado.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuarioLogado, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM));
+
+            return "fragments/ocupante-card :: card";
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }

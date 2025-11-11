@@ -190,12 +190,10 @@ public class EncomendaServiceImpl implements EncomendaService {
             }
         }
 
-        // Se não é gestor e está tentando escrever, bloqueia
         if (paraEscrita) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado. Você não pode modificar esta encomenda.");
         }
 
-        // Se for apenas leitura (não-gestor), verifica se é morador da unidade
         boolean isMoradorDaUnidade = ocupanteRepository.findByPessoa(usuarioLogado).stream()
                 .anyMatch(oc -> oc.getUnidade().getUniCod().equals(encomenda.getUnidade().getUniCod()));
 
@@ -204,5 +202,13 @@ public class EncomendaServiceImpl implements EncomendaService {
         }
 
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado.");
+    }
+
+    // NOVO MÉTODO ADICIONADO
+    @Override
+    @Transactional(readOnly = true)
+    public EncomendaDTO buscarPorIdDTO(Long id, Pessoa usuarioLogado) {
+        Encomenda encomenda = this.buscarPorIdEValidarAcesso(id, usuarioLogado, false); // false = apenas leitura
+        return new EncomendaDTO(encomenda);
     }
 }

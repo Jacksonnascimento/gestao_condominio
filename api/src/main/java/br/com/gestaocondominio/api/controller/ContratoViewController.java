@@ -58,6 +58,19 @@ public class ContratoViewController {
         }
     }
 
+    private boolean getShowCondominioInfo(Pessoa usuarioLogado, List<Condominio> condominiosDisponiveis) {
+         if (usuarioLogado.getPesIsGlobalAdmin()) {
+             return condominiosDisponiveis.size() > 1;
+         }
+         return false;
+    }
+    
+    // Método para verificar permissão de gerenciamento
+    private boolean getIsGerencial(Pessoa usuarioLogado) {
+        if (usuarioLogado.getPesIsGlobalAdmin()) return true;
+        return usuarioCondominioService.possuiRole(usuarioLogado, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM);
+    }
+
     @GetMapping
     public String listarContratos(Model model,
                                   @RequestParam(required = false) Integer condominioId,
@@ -72,6 +85,7 @@ public class ContratoViewController {
 
         List<Contrato> contratos;
         Map<StatusContrato, Long> totais;
+        List<Condominio> condominiosDisponiveis = Collections.emptyList();
         boolean showCondominioInfo = false;
 
         boolean isProximoVencimento = "a-vencer".equals(filtro);
@@ -81,11 +95,9 @@ public class ContratoViewController {
         Integer idCondominioParaFiltrar = condominioId;
 
         if (usuarioLogado.getPesIsGlobalAdmin()) {
-            List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(true);
+            condominiosDisponiveis = condominioService.listarTodosCondominios(true);
             model.addAttribute("condominiosDisponiveis", condominiosDisponiveis);
-            if (condominiosDisponiveis.size() > 1) {
-                showCondominioInfo = true;
-            }
+            showCondominioInfo = getShowCondominioInfo(usuarioLogado, condominiosDisponiveis);
         } else {
             idCondominioParaFiltrar = usuarioCondominioService.findByPessoa(usuarioLogado).stream()
                 .findFirst().map(uc -> uc.getCondominio().getConCod()).orElse(null);
@@ -115,6 +127,9 @@ public class ContratoViewController {
         model.addAttribute("filtroAtivo", filtro);
         model.addAttribute("showCondominioInfo", showCondominioInfo);
 
+        // **CORREÇÃO PRINCIPAL**
+        model.addAttribute("isGerencial", getIsGerencial(usuarioLogado));
+
         return "contratos";
     }
 
@@ -140,14 +155,19 @@ public class ContratoViewController {
     }
 
     @PostMapping("/novo")
-    @ResponseBody
-    public ResponseEntity<?> salvarNovoContrato(ContratoRequestDTO contratoDTO) {
+    public Object salvarNovoContrato(ContratoRequestDTO contratoDTO, Model model) {
         try {
-            checarPermissaoAcesso(pessoaService.getLoggedInUser());
+            Pessoa usuarioLogado = pessoaService.getLoggedInUser();
+            checarPermissaoAcesso(usuarioLogado);
             Contrato novoContrato = contratoService.criarContrato(contratoDTO.getCondominioId(), contratoDTO);
-            ContratoRequestDTO responseDto = new ContratoRequestDTO();
-            responseDto.fromEntity(novoContrato);
-            return ResponseEntity.ok(responseDto);
+            
+            List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
+
+            model.addAttribute("contrato", novoContrato);
+            model.addAttribute("showCondominioInfo", getShowCondominioInfo(usuarioLogado, condominiosDisponiveis));
+            model.addAttribute("isGerencial", getIsGerencial(usuarioLogado)); // Adiciona a variável que faltava
+
+            return "fragments/contrato-card :: card";
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
@@ -170,14 +190,19 @@ public class ContratoViewController {
     }
 
     @PostMapping("/editar/{id}")
-    @ResponseBody
-    public ResponseEntity<?> salvarEdicaoContrato(@PathVariable Long id, ContratoRequestDTO contratoDTO) {
+    public Object salvarEdicaoContrato(@PathVariable Long id, ContratoRequestDTO contratoDTO, Model model) {
         try {
-            checarPermissaoAcesso(pessoaService.getLoggedInUser());
+            Pessoa usuarioLogado = pessoaService.getLoggedInUser();
+            checarPermissaoAcesso(usuarioLogado);
             Contrato contratoAtualizado = contratoService.atualizarContrato(id, contratoDTO);
-            ContratoRequestDTO responseDto = new ContratoRequestDTO();
-            responseDto.fromEntity(contratoAtualizado);
-            return ResponseEntity.ok(responseDto);
+            
+            List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
+
+            model.addAttribute("contrato", contratoAtualizado);
+            model.addAttribute("showCondominioInfo", getShowCondominioInfo(usuarioLogado, condominiosDisponiveis));
+            model.addAttribute("isGerencial", getIsGerencial(usuarioLogado)); // Adiciona a variável que faltava
+
+            return "fragments/contrato-card :: card";
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }

@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const formModal = createStaticModal(formModalElement);
     const modalContent = document.getElementById('modalContent');
+    const listaDesktop = document.getElementById('lista-usuarios-desktop');
+    const listaMobile = document.getElementById('lista-usuarios-mobile');
 
     const showLoading = (title = 'Processando...') => {
         Swal.fire({
@@ -13,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     };
 
-    const showSuccess = (message, reload = true) => {
+    const showSuccess = (message, reload = false) => { // MUDANÇA: reload = false
         Swal.fire({
             icon: 'success', title: 'Sucesso!', text: message, timer: 2000, showConfirmButton: false
         }).then(() => { if (reload) window.location.reload(); });
@@ -28,17 +30,75 @@ document.addEventListener('DOMContentLoaded', function () {
         event.preventDefault();
         showLoading('Salvando...');
         const form = event.target;
+        const isEdit = form.id === 'usuarioEditForm';
+        
         try {
             const response = await fetch(form.action, {
                 method: 'POST',
                 body: new URLSearchParams(new FormData(form))
             });
 
-            const responseData = await response.json();
+            const responseHtml = await response.text(); // Espera HTML ou JSON
+
             if (response.ok) {
-                formModal.hide();
-                showSuccess(responseData.message || 'Operação realizada com sucesso.');
+                try {
+                    // Tenta parsear como JSON. Se falhar, é HTML (sucesso)
+                    const errorData = JSON.parse(responseHtml);
+                    // Caso especial: "Nenhuma alteração detectada" ainda é um sucesso
+                    if (errorData.message && errorData.message.includes("Nenhuma alteração")) {
+                         formModal.hide();
+                         showSuccess(errorData.message, false);
+                    } else {
+                        showError(errorData.message || 'Ocorreu um erro.');
+                    }
+                } catch (e) {
+                    // SUCESSO! Veio HTML.
+                    formModal.hide();
+                    showSuccess('Usuário salvo com sucesso.', false);
+
+                    const placeholder = document.getElementById('empty-placeholder');
+                    if (placeholder) {
+                        placeholder.remove();
+                    }
+
+                    // Renderiza o HTML recebido
+                    const tempTable = document.createElement('tbody');
+                    tempTable.innerHTML = responseHtml;
+                    const newRow = tempTable.firstElementChild;
+                    
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = responseHtml.replace("fragment-row", "fragment-card"); // Adapta para o card
+                    const newCard = tempDiv.firstElementChild;
+                    
+                    if (!newRow || !newCard || !newRow.dataset.usuarioId) {
+                        console.error("Fragmento de HTML inválido recebido.");
+                        window.location.reload(); // Fallback
+                        return;
+                    }
+                    
+                    const userId = newRow.dataset.usuarioId;
+
+                    if (isEdit) {
+                        // Atualiza ou adiciona (caso o filtro tenha mudado)
+                        const existingRow = listaDesktop?.querySelector(`tr[data-usuario-id="${userId}"]`);
+                        if(existingRow) existingRow.replaceWith(newRow);
+                        else if(listaDesktop) listaDesktop.prepend(newRow);
+
+                        const existingCard = listaMobile?.querySelector(`.col[data-usuario-id="${userId}"]`);
+                        if(existingCard) existingCard.replaceWith(newCard);
+                        else if(listaMobile) listaMobile.prepend(newCard);
+                    } else {
+                        // Adiciona novo
+                        if(listaDesktop) listaDesktop.prepend(newRow);
+                        if(listaMobile) listaMobile.prepend(newCard);
+                    }
+                    
+                    // Adiciona listeners aos botões do novo item
+                    addCardListeners(newRow);
+                    addCardListeners(newCard);
+                }
             } else {
+                const responseData = JSON.parse(responseHtml);
                 showError(responseData.message || 'Ocorreu um erro.');
             }
         } catch (error) {
@@ -66,7 +126,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // --- Lógica específica do formulário de usuários ---
-
     const toggleFormFields = () => {
         const papelSelect = document.getElementById('papel');
         if (!papelSelect) return; 
@@ -90,17 +149,19 @@ document.addEventListener('DOMContentLoaded', function () {
             blocoMorador.style.display = 'block';
             blocoNovoUsuario.style.display = 'none';
             [cpfInput, nomeInput, emailInput].forEach(input => {
-                input.value = '';
-                input.required = false;
+                if(input) {
+                    input.value = '';
+                    input.required = false;
+                }
             });
         } else if (papel) {
             blocoMorador.style.display = 'none';
             blocoNovoUsuario.style.display = 'block';
             [cpfInput, nomeInput, emailInput].forEach(input => {
-                input.required = true;
+                if(input) input.required = true;
             });
             selectOcupante.value = '';
-            pessoaIdInput.value = '';
+            if(pessoaIdInput) pessoaIdInput.value = '';
         } else {
             blocoMorador.style.display = 'none';
             blocoNovoUsuario.style.display = 'none';
@@ -160,65 +221,81 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    document.addEventListener('click', async (event) => {
-        const btnExcluir = event.target.closest('.btn-excluir-vinculo');
-        if (btnExcluir) {
-            const { pessoaId, condominioId, papel } = btnExcluir.dataset;
-            
-            const result = await Swal.fire({
-                title: 'Confirmar Exclusão', text: "Deseja realmente remover o acesso deste usuário?", icon: 'warning',
-                showCancelButton: true, confirmButtonColor: '#d33', cancelButtonText: 'Cancelar', confirmButtonText: 'Sim, Excluir!'
-            });
+    // Função para adicionar listeners aos botões
+    function addCardListeners(element) {
+        element.querySelector('.btn-excluir-vinculo')?.addEventListener('click', handleExcluirClick);
+        element.querySelector('.btn-enviar-link')?.addEventListener('click', handleEnviarLinkClick);
+        element.querySelector('.btn-edit-vinculo')?.addEventListener('click', handleEditarClick);
+    }
+    
+    // Handlers dos botões
+    const handleExcluirClick = async (event) => {
+        const btnExcluir = event.currentTarget;
+        const { pessoaId, condominioId, papel } = btnExcluir.dataset;
+        
+        const result = await Swal.fire({
+            title: 'Confirmar Exclusão', text: "Deseja realmente remover o acesso deste usuário?", icon: 'warning',
+            showCancelButton: true, confirmButtonColor: '#d33', cancelButtonText: 'Cancelar', confirmButtonText: 'Sim, Excluir!'
+        });
 
-            if (result.isConfirmed) {
-                showLoading('Excluindo...');
-                const formData = new URLSearchParams();
-                formData.append('pessoaId', pessoaId);
-                formData.append('condominioId', condominioId);
-                formData.append('papel', papel);
-
-                try {
-                    const response = await fetch('/usuarios/excluir-vinculo', { method: 'POST', body: formData });
-                    const responseData = await response.json();
-                    if(response.ok) {
-                        showSuccess(responseData.message);
-                    } else {
-                        showError(responseData.message || 'Erro ao excluir.');
-                    }
-                } catch(e) {
-                    showError('Erro de comunicação.');
-                }
-            }
-        }
-
-        const btnEnviarLink = event.target.closest('.btn-enviar-link');
-        if (btnEnviarLink) {
-            const { pessoaId } = btnEnviarLink.dataset;
-            showLoading('Enviando link...');
+        if (result.isConfirmed) {
+            showLoading('Excluindo...');
             const formData = new URLSearchParams();
             formData.append('pessoaId', pessoaId);
+            formData.append('condominioId', condominioId);
+            formData.append('papel', papel);
 
             try {
-                const response = await fetch('/usuarios/enviar-link-reset', { method: 'POST', body: formData });
+                const response = await fetch('/usuarios/excluir-vinculo', { method: 'POST', body: formData });
                 const responseData = await response.json();
                 if(response.ok) {
+                    // MUDANÇA: Remove do DOM em vez de recarregar
+                    const userId = `${pessoaId}-${condominioId}`;
+                    listaDesktop?.querySelector(`tr[data-usuario-id="${userId}"]`)?.remove();
+                    listaMobile?.querySelector(`.col[data-usuario-id="${userId}"]`)?.remove();
                     showSuccess(responseData.message, false);
                 } else {
-                    showError(responseData.message || 'Erro ao enviar.');
+                    showError(responseData.message || 'Erro ao excluir.');
                 }
             } catch(e) {
                 showError('Erro de comunicação.');
             }
         }
+    };
 
-        const btnEditar = event.target.closest('.btn-edit-vinculo');
-        if (btnEditar) {
-            const { pessoaId, condominioId, papel } = btnEditar.dataset;
-            const url = `/usuarios/editar?pessoaId=${pessoaId}&condominioId=${condominioId}&papel=${papel}`;
-            openFormModal(url);
+    const handleEnviarLinkClick = async (event) => {
+        const btnEnviarLink = event.currentTarget;
+        const { pessoaId } = btnEnviarLink.dataset;
+        showLoading('Enviando link...');
+        const formData = new URLSearchParams();
+        formData.append('pessoaId', pessoaId);
+
+        try {
+            const response = await fetch('/usuarios/enviar-link-reset', { method: 'POST', body: formData });
+            const responseData = await response.json();
+            if(response.ok) {
+                showSuccess(responseData.message, false); // Não recarrega
+            } else {
+                showError(responseData.message || 'Erro ao enviar.');
+            }
+        } catch(e) {
+            showError('Erro de comunicação.');
         }
-    });
+    };
 
+    const handleEditarClick = (event) => {
+        const btnEditar = event.currentTarget;
+        const { pessoaId, condominioId, papel } = btnEditar.dataset;
+        const url = `/usuarios/editar?pessoaId=${pessoaId}&condominioId=${condominioId}&papel=${papel}`;
+        openFormModal(url);
+    };
+
+    // Adiciona listeners para os itens já na tela
+    document.querySelectorAll('.btn-excluir-vinculo').forEach(btn => btn.addEventListener('click', handleExcluirClick));
+    document.querySelectorAll('.btn-enviar-link').forEach(btn => btn.addEventListener('click', handleEnviarLinkClick));
+    document.querySelectorAll('.btn-edit-vinculo').forEach(btn => btn.addEventListener('click', handleEditarClick));
+
+    // Listeners do Modal
     modalContent.addEventListener('submit', (event) => {
         if (event.target.matches('#usuarioForm') || event.target.matches('#usuarioEditForm')) {
             handleFormSubmit(event);

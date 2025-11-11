@@ -6,12 +6,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
-
 public interface ComunicadoService {
 
-    void criar(ComunicadoRequestDTO dto, MultipartFile anexo);
+    Comunicado criar(ComunicadoRequestDTO dto, MultipartFile anexo);
 
-    void atualizar(Integer id, ComunicadoRequestDTO dto, MultipartFile anexo);
+    Comunicado atualizar(Integer id, ComunicadoRequestDTO dto, MultipartFile anexo);
 
     void excluir(Integer id);
 

@@ -58,35 +58,15 @@
                 </div>
             </div>
 
-            <div th:if="${ocorrenciasPage.empty}" class="text-center p-5">
+            <div th:if="${ocorrenciasPage.empty}" id="empty-placeholder" class="text-center p-5">
                 <i class='bx bx-comment-x' style="font-size: 4rem; color: #ccc;"></i>
                 <p class="mt-3">Nenhuma ocorrência encontrada para os filtros selecionados.</p>
             </div>
 
-            <div th:if="${not ocorrenciasPage.empty}" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
-                <div class="col" th:each="oco : ${ocorrenciasPage.content}">
-                    <div class="card unit-card h-100">
-                        <div class="card-header">
-                            <div>
-                                <span th:if="${showCondominioInfo}" class="badge bg-secondary mb-1" th:text="${oco.condominioNome}"></span>
-                                <h3 class="card-title h6 mb-0" th:text="${oco.titulo}"></h3>
-                            </div>
-                             <span class="status-badge"
-                                  th:text="${oco.status.descricao}"
-                                  th:classappend="'status-ocorrencia-' + ${#strings.toLowerCase(oco.status.name())}">
-                             </span>
-                        </div>
-                        <div class="card-body">
-                            <p class="info-item"><i class='bx bxs-building-house'></i><strong>Unidade:</strong> <span th:text="${oco.unidadeNumero} + (${oco.unidadeBloco != null ? ' / ' + oco.unidadeBloco : ''})"></span></p>
-                            <p class="info-item"><i class='bx bx-purchase-tag-alt'></i><strong>Tipo:</strong> <span th:text="${oco.tipo.descricao}"></span></p>
-                            <p class="info-item"><i class='bx bxs-calendar'></i><strong>Registrada em:</strong> <span th:text="${#temporals.format(oco.dataRegistro, 'dd/MM/yyyy HH:mm')}"></span></p>
-                            <p class="info-item"><i class='bx bx-text'></i><strong>Descrição:</strong> <span th:text="${oco.descricaoCurta}"></span></p>
-                        </div>
-                        <div class="card-footer">
-                            <button class="btn btn-sm btn-outline-primary btn-ver-detalhes" th:data-ocorrencia-id="${oco.id}"><i class='bx bx-show'></i> Ver Detalhes</button>
-                        </div>
-                    </div>
-                </div>
+            <div th:if="${not ocorrenciasPage.empty}" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" id="lista-ocorrencias">
+                <th:block th:each="oco : ${ocorrenciasPage.content}">
+                    <div th:replace="~{fragments/ocorrencia-card :: card(oco=${oco}, showCondominioInfo=${showCondominioInfo})}"></div>
+                </th:block>
             </div>
 
             <nav aria-label="Page navigation" th:if="${ocorrenciasPage != null and ocorrenciasPage.totalPages > 1}" class="mt-4 d-flex justify-content-center">

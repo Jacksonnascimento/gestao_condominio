@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const mainModalContent = document.getElementById('modalContent');
     const mainModal = createStaticModal(mainModalElement);
+    const listaEncomendas = document.getElementById('lista-encomendas');
 
     const showLoadingFeedback = (title = 'Processando...') => {
         Swal.fire({
@@ -16,7 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const showSuccessFeedback = (message = 'Operação realizada com sucesso.', reload = true) => {
+    // MUDANÇA: reload = false por padrão
+    const showSuccessFeedback = (message = 'Operação realizada com sucesso.', reload = false) => {
         Swal.fire({
             icon: 'success', title: 'Sucesso!', text: message, timer: 2000, showConfirmButton: false
         }).then(() => { if (reload) window.location.reload(); });
@@ -54,13 +56,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: new URLSearchParams(new FormData(form))
             });
 
-            const responseData = await response.json();
+            const responseHtml = await response.text(); // Espera HTML ou JSON
 
             if (response.ok) {
-                mainModal.hide();
-                showSuccessFeedback(responseData.message || 'Operação realizada com sucesso.');
+                try {
+                    // Tenta parsear como JSON. Se falhar, é porque veio HTML (sucesso)
+                    const errorData = JSON.parse(responseHtml);
+                    showErrorFeedback(errorData.message || 'Ocorreu um erro.');
+                
+                } catch (e) {
+                    // SUCESSO! Veio HTML.
+                    mainModal.hide();
+                    showSuccessFeedback('Operação realizada com sucesso.', false); // false = não recarregar
+
+                    const placeholder = document.getElementById('empty-placeholder');
+                    if (placeholder) {
+                        placeholder.remove();
+                    }
+                    
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = responseHtml;
+                    const newCardElement = tempDiv.firstElementChild;
+                    
+                    if (!newCardElement || !newCardElement.dataset.encomendaId) {
+                         console.error("Fragmento de HTML inválido recebido.");
+                         window.location.reload(); // Fallback
+                         return;
+                    }
+                    
+                    const id = newCardElement.dataset.encomendaId;
+                    const existingCard = listaEncomendas.querySelector(`.col[data-encomenda-id="${id}"]`);
+                    
+                    if (existingCard) {
+                        existingCard.replaceWith(newCardElement);
+                    } else {
+                        listaEncomendas.prepend(newCardElement);
+                    }
+                    addCardListeners(newCardElement); // Adiciona listeners ao card novo/atualizado
+                }
             } else {
-                showErrorFeedback(responseData.message || 'Ocorreu um erro.');
+                // Erro (400, 500, etc.)
+                const errorData = JSON.parse(responseHtml);
+                showErrorFeedback(errorData.message || 'Ocorreu um erro.');
             }
         } catch (error) {
             console.error('Erro no submit AJAX:', error);
@@ -97,27 +134,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    document.addEventListener('click', (event) => {
-        const target = event.target.closest('button');
-        if (!target) return;
-
-        if (target.id === 'btnNovaEncomenda') {
-            const urlParams = new URLSearchParams(window.location.search);
-            const condominioId = urlParams.get('condominioId') || '';
-            fetchAndInjectModalContent(`/encomendas/novo?condominioId=${condominioId}`);
-        }
-
-        if (target.classList.contains('btn-registrar-retirada')) {
-            const id = target.dataset.encomendaId;
+    // Nova função para adicionar listeners aos botões dos cards
+    function addCardListeners(cardElement) {
+        cardElement.querySelector('.btn-registrar-retirada')?.addEventListener('click', (e) => {
+            const id = e.currentTarget.dataset.encomendaId;
             fetchAndInjectModalContent(`/encomendas/${id}/retirar`);
-        }
+        });
 
-        if (target.classList.contains('btn-atualizar-status')) {
-            const id = target.dataset.encomendaId;
+        cardElement.querySelector('.btn-atualizar-status')?.addEventListener('click', (e) => {
+            const id = e.currentTarget.dataset.encomendaId;
             fetchAndInjectModalContent(`/encomendas/${id}/atualizar-status`);
-        }
+        });
+    }
+
+    // Listener para o botão "Nova Encomenda"
+    document.getElementById('btnNovaEncomenda')?.addEventListener('click', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const condominioId = urlParams.get('condominioId') || '';
+        fetchAndInjectModalContent(`/encomendas/novo?condominioId=${condominioId}`);
     });
 
+    // Adiciona listeners para todos os cards já existentes na página
+    document.querySelectorAll('#lista-encomendas .col').forEach(card => {
+        addCardListeners(card);
+    });
+
+    // Listener global para quando o conteúdo do modal é carregado
     document.addEventListener('modalContentLoaded', (event) => {
         const modalContent = event.detail.modalContent;
 

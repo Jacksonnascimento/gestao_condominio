@@ -25,7 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Transactional; // Import needed
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -67,7 +67,7 @@ public class OcorrenciaController {
     }
 
     @GetMapping
-    @Transactional(readOnly = true) // Annotation added here
+    @Transactional(readOnly = true)
     public String listarOcorrencias(
             @RequestParam(required = false) Integer condominioId,
             @RequestParam(required = false) String buscaUnidade,
@@ -108,7 +108,7 @@ public class OcorrenciaController {
     }
 
     @GetMapping("/novo")
-    @Transactional(readOnly = true) // Also added here for consistency
+    @Transactional(readOnly = true)
     public String getFormNovaOcorrencia(Model model) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         carregarDadosPadrao(model, usuarioLogado);
@@ -133,27 +133,36 @@ public class OcorrenciaController {
     }
 
     @PostMapping("/novo")
-    @ResponseBody
-    public ResponseEntity<?> criarOcorrencia(@Valid @ModelAttribute OcorrenciaRequestDTO dto, BindingResult bindingResult) {
+    public Object criarOcorrencia(@Valid @ModelAttribute OcorrenciaRequestDTO dto, BindingResult bindingResult, Model model) {
          if (bindingResult.hasErrors()) {
              String errors = bindingResult.getAllErrors().stream()
                  .map(e -> e.getDefaultMessage())
                  .collect(Collectors.joining(", "));
              return ResponseEntity.badRequest().body(Map.of("message", errors));
          }
-        try {
+         try {
             Pessoa usuarioLogado = pessoaService.getLoggedInUser();
             Ocorrencia novaOcorrencia = ocorrenciaService.criarOcorrencia(dto, usuarioLogado);
-            return ResponseEntity.status(HttpStatus.CREATED).body(new OcorrenciaResumoDTO(novaOcorrencia));
-        } catch (EntityNotFoundException | ResponseStatusException | IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erro interno ao criar ocorrência."));
-        }
+            OcorrenciaResumoDTO dtoParaCard = new OcorrenciaResumoDTO(novaOcorrencia);
+            
+            // Recalcula showCondominioInfo para o fragmento
+            List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
+            boolean showCondominioInfo = usuarioLogado.getPesIsGlobalAdmin() && condominiosDisponiveis.size() > 1;
+
+            model.addAttribute("oco", dtoParaCard);
+            model.addAttribute("showCondominioInfo", showCondominioInfo);
+            
+            return "fragments/ocorrencia-card :: card";
+            
+         } catch (EntityNotFoundException | ResponseStatusException | IllegalArgumentException e) {
+             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+         } catch (Exception e) {
+             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erro interno ao criar ocorrência."));
+         }
     }
 
     @GetMapping("/detalhes/{id}")
-    @Transactional(readOnly = true) // Also added here for consistency
+    @Transactional(readOnly = true)
     public String getDetalhesOcorrencia(@PathVariable Integer id, Model model) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         carregarDadosPadrao(model, usuarioLogado);
@@ -224,7 +233,7 @@ public class OcorrenciaController {
 
      @GetMapping("/{ocorrenciaId}/anexo/{anexoId}")
      @ResponseBody
-     @Transactional(readOnly = true) // Also added here for consistency
+     @Transactional(readOnly = true)
      public ResponseEntity<Resource> baixarAnexo(@PathVariable Integer ocorrenciaId, @PathVariable Integer anexoId, HttpServletRequest request) {
          try {
              Pessoa usuarioLogado = pessoaService.getLoggedInUser();
@@ -233,11 +242,13 @@ public class OcorrenciaController {
 
              String contentType = "application/octet-stream";
              try {
-                 contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
-                 if (contentType == null) {
-                     contentType = "application/octet-stream";
+                 // CORREÇÃO: Verifica se o contentType retornado é nulo
+                 String determinedContentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
+                 if (determinedContentType != null) {
+                     contentType = determinedContentType;
                  }
              } catch (IOException ex) {
+                 // Mantém o fallback
              }
 
              return ResponseEntity.ok()
@@ -279,10 +290,10 @@ public class OcorrenciaController {
                  return unidadeService.listarTodasUnidades(false, null, null);
              }
          } else if (usuarioCondominioService.possuiRole(usuarioLogado, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM)) {
-            Integer userCondoId = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
-            if (userCondoId != null) {
+             Integer userCondoId = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
+             if (userCondoId != null) {
                  return unidadeService.findByCondominioId(userCondoId);
-            }
+             }
          } else {
              return ocupanteRepository.findByPessoa(usuarioLogado).stream()
                      .map(Ocupante::getUnidade)
@@ -294,15 +305,15 @@ public class OcorrenciaController {
     }
 
      private List<Unidade> obterUnidadesParaCadastro(Pessoa usuarioLogado) {
-          if (usuarioLogado.getPesIsGlobalAdmin()) {
-               return Collections.emptyList();
-          }
-          
-          Integer userCondoId = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
-          if (userCondoId != null) {
-              return unidadeService.findAtivasByCondominioId(userCondoId);
-          }
-          
-          return Collections.emptyList();
+         if (usuarioLogado.getPesIsGlobalAdmin()) {
+             return Collections.emptyList();
+         }
+         
+         Integer userCondoId = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
+         if (userCondoId != null) {
+             return unidadeService.findAtivasByCondominioId(userCondoId);
+         }
+         
+         return Collections.emptyList();
      }
 }

@@ -46,7 +46,7 @@
                 </div>
             </div>
 
-            <div th:if="${#lists.isEmpty(usuarios)}" class="text-center p-5">
+            <div th:if="${#lists.isEmpty(usuarios)}" id="empty-placeholder" class="text-center p-5">
                 <i class='bx bx-user-x' style="font-size: 4rem; color: #ccc;"></i>
                 <p class="mt-3" th:text="${condominioFiltro == null ? 'Selecione um condomínio para ver os usuários.' : 'Nenhum usuário encontrado.'}"></p>
             </div>
@@ -62,76 +62,19 @@
                                 <th class="text-end">Ações</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr th:each="usuario : ${usuarios}">
-                                <td th:text="${usuario.pessoaNome}"></td>
-                                <td th:text="${usuario.pessoaEmail}" style="word-break: break-all;"></td>
-                                <td><span class="badge bg-primary" th:text="${usuario.papelDescricao}"></span></td>
-                                <td class="text-end">
-                                    <div>
-                                        <button class="btn btn-sm btn-outline-primary btn-edit-vinculo m-1"
-                                                th:data-pessoa-id="${usuario.pessoaId}"
-                                                th:data-condominio-id="${usuario.condominioId}"
-                                                th:data-papel="${usuario.papel}"
-                                                title="Editar Papel">
-                                            <i class='bx bxs-edit'></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-secondary btn-enviar-link m-1" 
-                                                th:data-pessoa-id="${usuario.pessoaId}" 
-                                                title="Enviar link de reset de senha">
-                                            <i class='bx bx-key'></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger btn-excluir-vinculo m-1"
-                                                th:data-pessoa-id="${usuario.pessoaId}"
-                                                th:data-condominio-id="${usuario.condominioId}"
-                                                th:data-papel="${usuario.papel}"
-                                                title="Remover Acesso">
-                                            <i class='bx bxs-trash'></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
+                        <tbody id="lista-usuarios-desktop">
+                            <th:block th:each="usuario : ${usuarios}">
+                                <tr th:replace="~{fragments/usuario-row :: row(usuario=${usuario}, isGlobalAdmin=${isGlobalAdmin}, showCondominioInfo=${showCondominioInfo})}"></tr>
+                            </th:block>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <div th:if="${not #lists.isEmpty(usuarios)}" class="row row-cols-1 row-cols-md-2 g-4 d-block d-lg-none">
-                <div class="col" th:each="usuario : ${usuarios}">
-                    <div class="card unit-card h-100">
-                        <div class="card-header">
-                            <div>
-                                <span th:if="${isGlobalAdmin and showCondominioInfo}" class="badge bg-secondary mb-1" th:text="${usuario.condominioNome}"></span>
-                                <h3 class="card-title h6 mb-0" th:text="${usuario.pessoaNome}"></h3>
-                            </div>
-                            <span class="badge bg-primary" th:text="${usuario.papelDescricao}"></span>
-                        </div>
-                        <div class="card-body">
-                            <p class="info-item"><i class='bx bxs-envelope'></i><strong>Email:</strong> <span th:text="${usuario.pessoaEmail}"></span></p>
-                        </div>
-                        <div class="card-footer">
-                            <button class="btn btn-sm btn-outline-primary btn-edit-vinculo"
-                                    th:data-pessoa-id="${usuario.pessoaId}"
-                                    th:data-condominio-id="${usuario.condominioId}"
-                                    th:data-papel="${usuario.papel}"
-                                    title="Editar Papel">
-                                <i class='bx bxs-edit'></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary btn-enviar-link" 
-                                    th:data-pessoa-id="${usuario.pessoaId}" 
-                                    title="Enviar link de reset de senha">
-                                <i class='bx bx-key'></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger btn-excluir-vinculo"
-                                    th:data-pessoa-id="${usuario.pessoaId}"
-                                    th:data-condominio-id="${usuario.condominioId}"
-                                    th:data-papel="${usuario.papel}"
-                                    title="Remover Acesso">
-                                <i class='bx bxs-trash'></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            <div th:if="${not #lists.isEmpty(usuarios)}" class="row row-cols-1 row-cols-md-2 g-4 d-block d-lg-none" id="lista-usuarios-mobile">
+                <th:block th:each="usuario : ${usuarios}">
+                    <div class->="col" th:replace="~{fragments/usuario-row :: card(usuario=${usuario}, isGlobalAdmin=${isGlobalAdmin}, showCondominioInfo=${showCondominioInfo})}"></div>
+                </th:block>
             </div>
 
         </div>

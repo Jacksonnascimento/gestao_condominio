@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div class="col" th:fragment="card(contrato, showCondominioInfo)">
+    <div class="card unit-card h-100">
+        <div class="card-header">
+            <div>
+                <span th:if="${showCondominioInfo}" class="badge bg-secondary mb-1" th:text="${contrato.condominio.conNome}"></span>
+                <h3 class="card-title h6 mb-0" th:text="${contrato.empresa}"></h3>
+            </div>
+            <span class="status-badge" th:classappend="'status-' + ${#strings.toLowerCase(contrato.status)}" th:text="${contrato.status.descricao}"></span>
+        </div>
+        <div class="card-body">
+            <p class="fw-bold" style="margin-bottom: 1rem;" th:text="${contrato.servico}"></p>
+            <p class="info-item"><i class='bx bxs-dollar-circle'></i><strong>Valor:</strong> <span th:text="${'R$ ' + #numbers.formatDecimal(contrato.valor, 1, 'POINT', 2, 'COMMA')}"></span></p>
+            <p class="info-item"><i class='bx bxs-user-pin'></i><strong>Responsável:</strong> <span th:text="${contrato.responsavel}"></span></p>
+            <p class="info-item"><i class='bx bxs-calendar-check'></i><strong>Início:</strong> <span th:text="${#temporals.format(contrato.dataInicio, 'dd/MM/yyyy')}"></span></p>
+            <p class="info-item"><i class='bx bxs-calendar-x'></i><strong>Fim:</strong> <span th:text="${#temporals.format(contrato.dataFim, 'dd/MM/yyyy')}"></span></p>
+        </div>
+        <div class="card-footer" th:if="${isGerencial}"> 
+            <button class="btn btn-sm btn-outline-primary btn-edit" th:data-url="'/contratos/editar/' + ${contrato.id}"><i class='bx bxs-edit'></i> Editar</button>
+            <form th:action="@{/contratos/excluir/{id}(id=${contrato.id})}" method="post" onsubmit="return confirm('Tem certeza?');" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-danger"><i class='bx bxs-trash'></i> Excluir</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

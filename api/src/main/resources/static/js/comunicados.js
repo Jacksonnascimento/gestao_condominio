@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const modalContent = document.getElementById('modalContent');
     const formModal = createStaticModal(modalElement);
+    const listaComunicados = document.getElementById('lista-comunicados');
 
     const handleFormSubmit = async (event) => {
         event.preventDefault();
@@ -43,14 +44,56 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (response.ok) {
-                formModal.hide();
-                Swal.fire({
-                    title: 'Sucesso!', text: 'Comunicado salvo com sucesso.', icon: 'success',
-                    timer: 2000, showConfirmButton: false
-                }).then(() => location.reload());
+                const responseHtml = await response.text();
+                
+                try {
+                    // Tenta parsear como JSON. Se falhar, é porque veio HTML (sucesso)
+                    const errorData = JSON.parse(responseHtml);
+                    Swal.fire('Erro!', errorData.message || 'Não foi possível salvar.', 'error');
+                
+                } catch(e) {
+                    // SUCESSO! Veio HTML.
+                    formModal.hide();
+                    await Swal.fire({
+                        title: 'Sucesso!', text: 'Comunicado salvo com sucesso.', icon: 'success',
+                        timer: 2000, showConfirmButton: false
+                    });
+
+                    const placeholder = document.getElementById('empty-placeholder');
+                    if (placeholder) {
+                        placeholder.remove();
+                    }
+                    
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = responseHtml;
+                    const newCardElement = tempDiv.firstElementChild;
+
+                    if (!newCardElement || !newCardElement.dataset.comunicadoId) {
+                        console.error("Fragmento de HTML inválido recebido.");
+                        location.reload(); // Fallback
+                        return;
+                    }
+                    
+                    const id = newCardElement.dataset.comunicadoId;
+                    const existingCard = listaComunicados.querySelector(`.card[data-comunicado-id="${id}"]`);
+                    
+                    if (existingCard) {
+                        // Se está editando, substitui o card antigo
+                        existingCard.replaceWith(newCardElement);
+                    } else {
+                        // Se é novo, adiciona no topo da lista
+                        listaComunicados.prepend(newCardElement);
+                    }
+                }
             } else {
+                // Trata erros 400/500
                 const errorMessage = await response.text();
-                Swal.fire('Erro!', errorMessage || 'Não foi possível salvar.', 'error');
+                try {
+                    const errorJson = JSON.parse(errorMessage);
+                    Swal.fire('Erro!', errorJson.message || 'Não foi possível salvar.', 'error');
+                } catch {
+                    Swal.fire('Erro!', errorMessage || 'Não foi possível salvar.', 'error');
+                }
             }
         } catch (error) {
             console.error('Erro ao submeter:', error);
@@ -128,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', (event) => {
         const target = event.target;
 
-        if (target.matches('#btnNovoComunicado')) {
+        if (target.matches('#btnNovoComunicado') || target.closest('#btnNovoComunicado')) {
             openComunicadoFormModal('/comunicados/novo');
             return;
         }
@@ -174,16 +217,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         const response = await fetch(`/comunicados/excluir/${id}`, { method: 'POST' });
 
                         if (response.ok) {
+                            // MUDANÇA: Remove o card do DOM em vez de recarregar
+                            btnExcluir.closest('.card').remove(); 
+                            
                             Swal.fire({
                                 title: 'Excluído!',
                                 text: 'O comunicado foi excluído com sucesso.',
                                 icon: 'success',
                                 timer: 2000,
                                 showConfirmButton: false
-                            }).then(() => location.reload());
+                            });
                         } else {
                             const errorMessage = await response.text();
-                            Swal.fire('Erro!', errorMessage || 'Não foi possível excluir.', 'error');
+                             try {
+                                const errorJson = JSON.parse(errorMessage);
+                                Swal.fire('Erro!', errorJson.message || 'Não foi possível excluir.', 'error');
+                            } catch {
+                                Swal.fire('Erro!', errorMessage || 'Não foi possível excluir.', 'error');
+                            }
                         }
                     } catch (error) {
                         console.error('Erro ao excluir:', error);

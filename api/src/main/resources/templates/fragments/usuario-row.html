@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<tr th:fragment="row(usuario, isGlobalAdmin, showCondominioInfo)" th:data-usuario-id="${usuario.pessoaId} + '-' + ${usuario.condominioId}">
+    <td th:text="${usuario.pessoaNome}"></td>
+    <td th:text="${usuario.pessoaEmail}" style="word-break: break-all;"></td>
+    <td><span class="badge bg-primary" th:text="${usuario.papelDescricao}"></span></td>
+    <td class="text-end">
+        <div>
+            <button class="btn btn-sm btn-outline-primary btn-edit-vinculo m-1"
+                    th:data-pessoa-id="${usuario.pessoaId}"
+                    th:data-condominio-id="${usuario.condominioId}"
+                    th:data-papel="${usuario.papel}"
+                    title="Editar Papel">
+                <i class='bx bxs-edit'></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary btn-enviar-link m-1" 
+                    th:data-pessoa-id="${usuario.pessoaId}" 
+                    title="Enviar link de reset de senha">
+                <i class='bx bx-key'></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger btn-excluir-vinculo m-1"
+                    th:data-pessoa-id="${usuario.pessoaId}"
+                    th:data-condominio-id="${usuario.condominioId}"
+                    th:data-papel="${usuario.papel}"
+                    title="Remover Acesso">
+                <i class='bx bxs-trash'></i>
+            </button>
+        </div>
+    </td>
+</tr>
+
+<div class="col" th:fragment="card(usuario, isGlobalAdmin, showCondominioInfo)" th:data-usuario-id="${usuario.pessoaId} + '-' + ${usuario.condominioId}">
+    <div class="card unit-card h-100">
+        <div class="card-header">
+            <div>
+                <span th:if="${isGlobalAdmin and showCondominioInfo}" class="badge bg-secondary mb-1" th:text="${usuario.condominioNome}"></span>
+                <h3 class="card-title h6 mb-0" th:text="${usuario.pessoaNome}"></h3>
+            </div>
+            <span class="badge bg-primary" th:text="${usuario.papelDescricao}"></span>
+        </div>
+        <div class="card-body">
+            <p class="info-item"><i class='bx bxs-envelope'></i><strong>Email:</strong> <span th:text="${usuario.pessoaEmail}"></span></p>
+        </div>
+        <div class="card-footer">
+            <button class="btn btn-sm btn-outline-primary btn-edit-vinculo"
+                    th:data-pessoa-id="${usuario.pessoaId}"
+                    th:data-condominio-id="${usuario.condominioId}"
+                    th:data-papel="${usuario.papel}"
+                    title="Editar Papel">
+                <i class='bx bxs-edit'></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary btn-enviar-link" 
+                    th:data-pessoa-id="${usuario.pessoaId}" 
+                    title="Enviar link de reset de senha">
+                <i class='bx bx-key'></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger btn-excluir-vinculo"
+                    th:data-pessoa-id="${usuario.pessoaId}"
+                    th:data-condominio-id="${usuario.condominioId}"
+                    th:data-papel="${usuario.papel}"
+                    title="Remover Acesso">
+                <i class='bx bxs-trash'></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

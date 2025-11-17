@@ -73,7 +73,7 @@
 
             <div th:if="${not #lists.isEmpty(usuarios)}" class="row row-cols-1 row-cols-md-2 g-4 d-block d-lg-none" id="lista-usuarios-mobile">
                 <th:block th:each="usuario : ${usuarios}">
-                    <div class->="col" th:replace="~{fragments/usuario-row :: card(usuario=${usuario}, isGlobalAdmin=${isGlobalAdmin}, showCondominioInfo=${showCondominioInfo})}"></div>
+                    <div class="col" th:replace="~{fragments/usuario-row :: card(usuario=${usuario}, isGlobalAdmin=${isGlobalAdmin}, showCondominioInfo=${showCondominioInfo})}"></div>
                 </th:block>
             </div>
 

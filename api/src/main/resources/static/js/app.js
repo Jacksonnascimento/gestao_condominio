@@ -1,4 +1,41 @@
 /**
+ * Intercepta o 'fetch' global para adicionar automaticamente o token CSRF
+ * em todas as requisições (exceto GET/HEAD/OPTIONS).
+ */
+(function(originalFetch) {
+    'use strict';
+
+    window.fetch = async function(url, options) {
+        const methodsWithBody = ['POST', 'PUT', 'DELETE', 'PATCH'];
+
+        if (options && methodsWithBody.includes(options.method?.toUpperCase())) {
+            const token = document.querySelector('meta[name="_csrf"]')?.content;
+            const headerName = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+            if (token && headerName) {
+                if (!options.headers) {
+                    options.headers = new Headers();
+                }
+
+                if (options.headers instanceof Headers) {
+                    if (!options.headers.has(headerName)) {
+                        options.headers.append(headerName, token);
+                    }
+                } else if (typeof options.headers === 'object') {
+                    if (!options.headers[headerName]) {
+                        options.headers[headerName] = token;
+                    }
+                }
+            }
+        }
+        
+        return originalFetch.apply(this, arguments);
+    };
+
+})(window.fetch);
+
+
+/**
  * Cria e retorna uma instância de um modal do Bootstrap com configurações padrão
  * para não fechar ao clicar fora ou pressionar a tecla ESC.
  * @param {HTMLElement|string} modalElement - O elemento do modal ou seu seletor CSS.

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div class="col" th:fragment="card(vis, showCondominioInfo, usuarioPodeGerenciarVisitantes)" th:data-visitante-id="${vis.id}">
+    <div class="card unit-card h-100">
+        <div class="card-header">
+            <div>
+                <span th:if="${showCondominioInfo}" class="badge bg-secondary mb-1" th:text="${vis.condominioNome}"></span>
+                <h3 class="card-title h6 mb-0" th:text="${vis.nome}"></h3>
+            </div>
+            <span class="status-badge" th:text="${vis.statusDescricao}" 
+                  th:classappend="${vis.status.name() == 'NO_LOCAL' ? 'status-ativo' : 'status-finalizado'}"></span>
+        </div>
+        <div class="card-body">
+            <p class="info-item"><i class='bx bxs-building-house'></i><strong>Unidade:</strong> <span th:text="${vis.unidadeNumero} + (${vis.unidadeBloco != null ? ' / ' + vis.unidadeBloco : ''})"></span></p>
+            <p class="info-item"><i class='bx bxs-user-check'></i><strong>Autorizado por:</strong> <span th:text="${vis.moradorNome} ?: 'N/A'"></span></p>
+            <p class="info-item"><i class='bx bxs-phone'></i><strong>Telefone:</strong> <span th:text="${vis.telefone} ?: 'SN'"></span></p>
+            <p class="info-item"><i class='bx bxs-calendar-check'></i><strong>Entrada:</strong> <span th:text="${#temporals.format(vis.dataEntrada, 'dd/MM/yyyy HH:mm')}"></span></p>
+            <p class="info-item" th:if="${vis.dataSaida}"><i class='bx bxs-calendar-x'></i><strong>Saída:</strong> <span th:text="${#temporals.format(vis.dataSaida, 'dd/MM/yyyy HH:mm')}"></span></p>
+        </div>
+        <div class="card-footer" th:if="${usuarioPodeGerenciarVisitantes}">
+            <button th:if="${vis.status.name() == 'NO_LOCAL'}" class="btn btn-sm btn-danger btn-registrar-saida" th:data-visitante-id="${vis.id}">
+                <i class='bx bx-log-out'></i> Registrar Saída
+            </button>
+            <button class="btn btn-sm btn-outline-primary btn-editar-visitante" th:data-visitante-id="${vis.id}">
+                <i class='bx bxs-edit'></i> Editar
+            </button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

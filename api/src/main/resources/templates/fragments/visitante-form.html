@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<body>
+<div th:fragment="form-modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="formModalLabel" th:text="${visitanteId != null ? 'Editar Visitante' : 'Novo Visitante'}">Novo Visitante</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <form id="visitanteForm" th:action="@{${visitanteId != null ? '/visitantes/editar/' + visitanteId : '/visitantes/salvar'}}" th:object="${visitanteRequestDTO}" method="post">
+        <div class="modal-body">
+            <div class="row g-3">
+
+                <div class="col-md-12" th:if="${isGlobalAdmin and #lists.size(condominiosDisponiveis) > 1}">
+                    <label for="condominioId" class="form-label">Condomínio <span class="text-danger">*</span></label>
+                    <select id="condominioId" class="form-select" th:field="*{condominioId}" required>
+                        <option value="">Selecione...</option>
+                        <option th:each="condo : ${condominiosDisponiveis}" th:value="${condo.conCod}" th:text="${condo.conNome}"></option>
+                    </select>
+                </div>
+                <input type="hidden" th:if="${!isGlobalAdmin or #lists.size(condominiosDisponiveis) <= 1}" th:field="*{condominioId}" />
+
+                <div class="col-md-6">
+                    <label for="nome" class="form-label">Nome <span class="text-danger">*</span></label>
+                    <input type="text" id="nome" class="form-control" th:field="*{nome}" required maxlength="100">
+                </div>
+
+                <div class="col-md-6">
+                    <label for="cpf" class="form-label">CPF</label>
+                    <input type="text" id="cpf" class="form-control" th:field="*{cpf}" placeholder="Apenas números" maxlength="14">
+                </div>
+
+                <div class="col-md-6">
+                    <label for="rg" class="form-label">RG</label>
+                    <input type="text" id="rg" class="form-control" th:field="*{rg}" maxlength="20">
+                </div>
+
+                <div class="col-md-6">
+                    <label for="telefone" class="form-label">Telefone</label>
+                    <input type="text" id="telefone" class="form-control" th:field="*{telefone}" maxlength="20">
+                </div>
+
+                <div class="col-md-6">
+                    <label for="unidadeId" class="form-label">Unidade <span class="text-danger">*</span></label>
+                    <select id="unidadeId" class="form-select" th:field="*{unidadeId}" required th:disabled="${#lists.isEmpty(unidadesSelecionaveis)}">
+                        <option value="">Selecione...</option>
+                        <option th:each="u : ${unidadesSelecionaveis}" th:value="${u.uniCod}" th:text="${u.uniNumero} + (${u.bloco != null ? ' - ' + u.bloco : ''})"></option>
+                        <option th:if="${#lists.isEmpty(unidadesSelecionaveis)}" value="" disabled>Selecione um condomínio</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="moradorId" class="form-label">Morador (Autorizou)</label>
+                    <select id="moradorId" class="form-select" th:field="*{moradorId}">
+                        <option value="">Selecione a unidade...</option>
+                        </select>
+                    <input type="hidden" id="selectedMoradorId" th:value="*{moradorId}" />
+                </div>
+
+                <div class="col-12">
+                    <label for="observacoes" class="form-label">Observações</label>
+                    <textarea id="observacoes" class="form-control" th:field="*{observacoes}" rows="3"></textarea>
+                </div>
+
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary" th:text="${visitanteId != null ? 'Salvar Alterações' : 'Salvar Visitante'}"></button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

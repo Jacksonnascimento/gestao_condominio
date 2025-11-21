@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<body>
+<div th:fragment="modal-content">
+    <div class="modal-header bg-danger-subtle">
+        <h5 class="modal-title text-danger" id="formModalLabel"><i class='bx bx-log-out'></i> Registrar Saída</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <form id="visitanteSaidaForm" th:action="@{/visitantes/saida/{id}(id=${vis.id})}" method="post">
+        <div class="modal-body">
+            <p>Confirma a saída do visitante <strong><span th:text="${vis.nome}"></span></strong>?</p>
+            <div class="alert alert-light border" role="alert">
+                <small class="d-block text-muted">Unidade: <span th:text="${vis.unidadeNumero}"></span></small>
+                <small class="d-block text-muted">Entrada: <span th:text="${#temporals.format(vis.dataEntrada, 'dd/MM/yyyy HH:mm')}"></span></small>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-danger">Confirmar Saída</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

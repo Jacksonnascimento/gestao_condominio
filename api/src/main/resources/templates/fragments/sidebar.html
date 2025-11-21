@@ -27,7 +27,7 @@
                     <i class='bx bxs-group'></i> Ocupantes
                 </a>
             </li>
-            <li>
+            <li th:if="${usuarioPodeVisualizarVisitantes}">
                 <a th:href="@{/visitantes}" class="nav-link"
                    th:classappend="${currentPage == 'visitantes' ? 'active' : ''}">
                     <i class='bx bxs-id-card'></i> Visitantes

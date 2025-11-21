@@ -37,39 +37,56 @@ public class GlobalControllerAdvice {
 
                 boolean usuarioPodeGerenciar = false;
                 boolean isUsuarioAdmin = false; 
-                boolean usuarioPodeGerenciarEncomendas = false; // <-- ADICIONADO
+                boolean usuarioPodeGerenciarEncomendas = false;
+                boolean usuarioPodeGerenciarVisitantes = false; // Apenas Gestores e Porteiros
+                boolean usuarioPodeVisualizarVisitantes = false; // Gestores, Porteiros e Moradores
 
                 if (Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin())) {
                     usuarioPodeGerenciar = true;
                     isUsuarioAdmin = true; 
-                    usuarioPodeGerenciarEncomendas = true; // <-- ADICIONADO
+                    usuarioPodeGerenciarEncomendas = true;
+                    usuarioPodeGerenciarVisitantes = true;
+                    usuarioPodeVisualizarVisitantes = true;
                 } else {
                     Set<UserRole> roles = usuarioCondominioService.findByPessoa(usuarioLogado)
                             .stream()
                             .map(UsuarioCondominio::getUscPapel)
                             .collect(Collectors.toSet());
                     
+                    // Permissão Geral (Contratos, etc)
                     if (!Collections.disjoint(roles, Set.of(UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM))) {
                         usuarioPodeGerenciar = true;
                     }
+                    // Permissão Admin (Usuários)
                     if (!Collections.disjoint(roles, Set.of(UserRole.SINDICO, UserRole.ADMIN))) { 
                         isUsuarioAdmin = true;
                     }
-                    // Adiciona a permissão específica para encomendas (Incluindo Porteiro)
+                    // Permissão Operacional (Encomendas e Visitantes - Escrita)
                     if (!Collections.disjoint(roles, Set.of(UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM, UserRole.PORTEIRO))) {
-                        usuarioPodeGerenciarEncomendas = true; // <-- ADICIONADO
+                        usuarioPodeGerenciarEncomendas = true;
+                        usuarioPodeGerenciarVisitantes = true;
+                    }
+                    // Permissão de Visualização de Visitantes (Inclui Morador)
+                    if (!Collections.disjoint(roles, Set.of(UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM, UserRole.PORTEIRO, UserRole.MORADOR))) {
+                        usuarioPodeVisualizarVisitantes = true;
                     }
                 }
                 model.addAttribute("usuarioPodeGerenciar", usuarioPodeGerenciar);
                 model.addAttribute("isUsuarioAdmin", isUsuarioAdmin); 
-                model.addAttribute("usuarioPodeGerenciarEncomendas", usuarioPodeGerenciarEncomendas); // <-- ADICIONADO
+                model.addAttribute("usuarioPodeGerenciarEncomendas", usuarioPodeGerenciarEncomendas);
+                
+                // Flags específicas para Visitantes
+                model.addAttribute("usuarioPodeGerenciarVisitantes", usuarioPodeGerenciarVisitantes); // Controla botões (Novo, Editar, Saída)
+                model.addAttribute("usuarioPodeVisualizarVisitantes", usuarioPodeVisualizarVisitantes); // Controla acesso ao Menu
 
             } catch (Exception e) {
                 model.addAttribute("nomeUsuarioLogado", "Usuário");
                 model.addAttribute("usuarioPodeGerenciar", false);
                 model.addAttribute("isUsuarioAdmin", false); 
                 model.addAttribute("pessoaIdLogado", null); 
-                model.addAttribute("usuarioPodeGerenciarEncomendas", false); // <-- ADICIONADO
+                model.addAttribute("usuarioPodeGerenciarEncomendas", false);
+                model.addAttribute("usuarioPodeGerenciarVisitantes", false);
+                model.addAttribute("usuarioPodeVisualizarVisitantes", false);
             }
         }
     }

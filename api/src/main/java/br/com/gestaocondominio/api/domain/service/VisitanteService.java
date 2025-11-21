@@ -3,17 +3,19 @@ package br.com.gestaocondominio.api.domain.service;
 import br.com.gestaocondominio.api.controller.dto.VisitanteDTO;
 import br.com.gestaocondominio.api.controller.dto.VisitanteRequestDTO;
 import br.com.gestaocondominio.api.domain.entity.Condominio;
+import br.com.gestaocondominio.api.domain.entity.Ocupante;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.entity.Unidade;
 import br.com.gestaocondominio.api.domain.entity.Visitante;
 import br.com.gestaocondominio.api.domain.enums.UserRole;
 import br.com.gestaocondominio.api.domain.enums.VisitanteStatus;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
+import br.com.gestaocondominio.api.domain.repository.OcupanteRepository;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
 import br.com.gestaocondominio.api.domain.repository.VisitanteRepository;
 import br.com.gestaocondominio.api.domain.repository.VisitanteSpecification;
 import br.com.gestaocondominio.api.domain.repository.UnidadeRepository;
-import br.com.gestaocondominio.api.util.ValidadorDocumento; // Importação Adicionada
+import br.com.gestaocondominio.api.util.ValidadorDocumento;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -22,7 +24,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils; // Importação Adicionada
+import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
@@ -40,17 +42,20 @@ public class VisitanteService {
     private final CondominioRepository condominioRepository;
     private final PessoaRepository pessoaRepository;
     private final UsuarioCondominioService usuarioCondominioService;
+    private final OcupanteRepository ocupanteRepository;
 
     public VisitanteService(VisitanteRepository visitanteRepository,
                             UnidadeRepository unidadeRepository,
                             CondominioRepository condominioRepository,
                             PessoaRepository pessoaRepository,
-                            UsuarioCondominioService usuarioCondominioService) {
+                            UsuarioCondominioService usuarioCondominioService,
+                            OcupanteRepository ocupanteRepository) {
         this.visitanteRepository = visitanteRepository;
         this.unidadeRepository = unidadeRepository;
         this.condominioRepository = condominioRepository;
         this.pessoaRepository = pessoaRepository;
         this.usuarioCondominioService = usuarioCondominioService;
+        this.ocupanteRepository = ocupanteRepository;
     }
 
     private boolean podeGerenciarVisitantes(Pessoa pessoa) {
@@ -60,18 +65,35 @@ public class VisitanteService {
 
     private Specification<Visitante> getSpec(Pessoa usuarioLogado, Integer condominioId, String nome, Integer unidadeId) {
         Integer idCondominioParaFiltrar = condominioId;
+        Specification<Visitante> spec = Specification.where(null);
 
         if (usuarioLogado.getPesIsGlobalAdmin()) {
-            // Admin Global usa o filtro da tela ou vê todos
+            // Admin Global vê tudo ou filtra
         } else if (podeGerenciarVisitantes(usuarioLogado)) {
+            // Gestores veem tudo do seu condomínio
             if (idCondominioParaFiltrar == null) {
                 idCondominioParaFiltrar = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
             }
         } else {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado.");
+            // MORADOR: Vê apenas visitantes vinculados às suas unidades
+            List<Unidade> unidadesDoMorador = ocupanteRepository.findByPessoa(usuarioLogado)
+                    .stream()
+                    .map(Ocupante::getUnidade)
+                    .collect(Collectors.toList());
+
+            if (unidadesDoMorador.isEmpty()) {
+                // Se não tem unidade, não vê nada
+                return (root, query, cb) -> cb.disjunction();
+            }
+
+            // Força o filtro para as unidades do morador
+            spec = spec.and((root, query, cb) -> root.get("unidade").in(unidadesDoMorador));
+            
+            // Ignora filtro de condomínio explícito, pois a unidade já define o escopo
+            idCondominioParaFiltrar = null; 
         }
 
-        return VisitanteSpecification.filtrar(idCondominioParaFiltrar, nome, unidadeId);
+        return spec.and(VisitanteSpecification.filtrar(idCondominioParaFiltrar, nome, unidadeId));
     }
 
     @Transactional(readOnly = true)
@@ -117,7 +139,6 @@ public class VisitanteService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado.");
         }
 
-        // Validação de CPF
         if (StringUtils.hasText(dto.getCpf())) {
             if (!ValidadorDocumento.isValid(dto.getCpf())) {
                 throw new IllegalArgumentException("O CPF informado é inválido.");
@@ -171,7 +192,6 @@ public class VisitanteService {
     public Visitante atualizarVisitante(Integer id, VisitanteRequestDTO dto, Pessoa usuarioLogado) {
         Visitante visitante = buscarPorIdEValidarAcesso(id, usuarioLogado, true);
 
-        // Validação de CPF na edição
         if (StringUtils.hasText(dto.getCpf())) {
             if (!ValidadorDocumento.isValid(dto.getCpf())) {
                 throw new IllegalArgumentException("O CPF informado é inválido.");
@@ -230,6 +250,17 @@ public class VisitanteService {
         if (podeGerenciarVisitantes(usuarioLogado)) {
             Integer conCodUsuario = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
             if (visitante.getCondominio().getConCod().equals(conCodUsuario)) {
+                return visitante;
+            }
+        }
+
+        // Validação para Morador (apenas leitura)
+        if (!paraEscrita) {
+            boolean isMoradorDaUnidade = ocupanteRepository.findByPessoa(usuarioLogado)
+                    .stream()
+                    .anyMatch(o -> o.getUnidade().getUniCod().equals(visitante.getUnidade().getUniCod()));
+            
+            if (isMoradorDaUnidade) {
                 return visitante;
             }
         }

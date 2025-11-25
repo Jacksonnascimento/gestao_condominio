@@ -89,8 +89,15 @@ document.addEventListener('DOMContentLoaded', function () {
                         else if(listaMobile) listaMobile.prepend(newCard);
                     } else {
                         // Adiciona novo
-                        if(listaDesktop) listaDesktop.prepend(newRow);
-                        if(listaMobile) listaMobile.prepend(newCard);
+                        // CORREÇÃO AQUI: Verifica se alguma das listas existe
+                        if (listaDesktop || listaMobile) {
+                            if(listaDesktop) listaDesktop.prepend(newRow);
+                            if(listaMobile) listaMobile.prepend(newCard);
+                        } else {
+                            // Se não existem as listas (primeiro item), recarrega
+                            window.location.reload();
+                            return;
+                        }
                     }
                     
                     // Adiciona listeners aos botões do novo item

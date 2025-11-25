@@ -84,15 +84,21 @@ document.addEventListener('DOMContentLoaded', () => {
                          return;
                     }
                     
-                    const id = newCardElement.dataset.encomendaId;
-                    const existingCard = listaEncomendas.querySelector(`.col[data-encomenda-id="${id}"]`);
-                    
-                    if (existingCard) {
-                        existingCard.replaceWith(newCardElement);
+                    // CORREÇÃO AQUI: Verifica se a lista existe antes de manipular
+                    if (listaEncomendas) {
+                        const id = newCardElement.dataset.encomendaId;
+                        const existingCard = listaEncomendas.querySelector(`.col[data-encomenda-id="${id}"]`);
+                        
+                        if (existingCard) {
+                            existingCard.replaceWith(newCardElement);
+                        } else {
+                            listaEncomendas.prepend(newCardElement);
+                        }
+                        addCardListeners(newCardElement); // Adiciona listeners ao card novo/atualizado
                     } else {
-                        listaEncomendas.prepend(newCardElement);
+                        // Se a lista não existe (primeiro item), recarrega para o servidor renderizar
+                        window.location.reload();
                     }
-                    addCardListeners(newCardElement); // Adiciona listeners ao card novo/atualizado
                 }
             } else {
                 // Erro (400, 500, etc.)

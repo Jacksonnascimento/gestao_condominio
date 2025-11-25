@@ -65,21 +65,27 @@ document.addEventListener('DOMContentLoaded', function () {
                          return;
                     }
 
-                    let isEdit = url.includes("/editar/");
-                    if (isEdit) {
-                        const contratoId = newCardElement.querySelector('.btn-edit').dataset.url.split('/').pop();
-                        const existingCard = listaContratos?.querySelector(`.btn-edit[data-url$="${contratoId}"]`)?.closest('.col');
-                        if (existingCard) {
-                            existingCard.replaceWith(newCardElement);
-                        } else if (listaContratos) {
+                    // CORREÇÃO AQUI: Verifica se a lista existe antes de manipular
+                    if (listaContratos) {
+                        let isEdit = url.includes("/editar/");
+                        if (isEdit) {
+                            const contratoId = newCardElement.querySelector('.btn-edit').dataset.url.split('/').pop();
+                            const existingCard = listaContratos.querySelector(`.btn-edit[data-url$="${contratoId}"]`)?.closest('.col');
+                            if (existingCard) {
+                                existingCard.replaceWith(newCardElement);
+                            } else {
+                                listaContratos.prepend(newCardElement);
+                            }
+                        } else {
                             listaContratos.prepend(newCardElement);
                         }
-                    } else if (listaContratos) {
-                        listaContratos.prepend(newCardElement);
-                    }
-                    
-                    if (newCardElement) {
-                        addCardListeners(newCardElement);
+                        
+                        if (newCardElement) {
+                            addCardListeners(newCardElement);
+                        }
+                    } else {
+                        // Se a lista não existe (primeiro item), recarrega
+                        window.location.reload();
                     }
                 }
             } else {

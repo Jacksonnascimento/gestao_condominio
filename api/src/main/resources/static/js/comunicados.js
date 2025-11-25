@@ -74,15 +74,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         return;
                     }
                     
-                    const id = newCardElement.dataset.comunicadoId;
-                    const existingCard = listaComunicados.querySelector(`.card[data-comunicado-id="${id}"]`);
-                    
-                    if (existingCard) {
-                        // Se está editando, substitui o card antigo
-                        existingCard.replaceWith(newCardElement);
+                    // CORREÇÃO AQUI: Verifica se a lista existe
+                    if (listaComunicados) {
+                        const id = newCardElement.dataset.comunicadoId;
+                        const existingCard = listaComunicados.querySelector(`.card[data-comunicado-id="${id}"]`);
+                        
+                        if (existingCard) {
+                            // Se está editando, substitui o card antigo
+                            existingCard.replaceWith(newCardElement);
+                        } else {
+                            // Se é novo, adiciona no topo da lista
+                            listaComunicados.prepend(newCardElement);
+                        }
                     } else {
-                        // Se é novo, adiciona no topo da lista
-                        listaComunicados.prepend(newCardElement);
+                        // Se a lista não existe (primeiro item), recarrega
+                        window.location.reload();
                     }
                 }
             } else {

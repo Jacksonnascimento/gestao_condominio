@@ -127,15 +127,21 @@ document.addEventListener('DOMContentLoaded', () => {
                          return;
                     }
                     
-                    const id = newCardElement.dataset.visitanteId;
-                    const existingCard = listaVisitantes.querySelector(`.col[data-visitante-id="${id}"]`);
-                    
-                    if (existingCard) {
-                        existingCard.replaceWith(newCardElement);
+                    // CORREÇÃO AQUI: Verifica se a lista existe
+                    if (listaVisitantes) {
+                        const id = newCardElement.dataset.visitanteId;
+                        const existingCard = listaVisitantes.querySelector(`.col[data-visitante-id="${id}"]`);
+                        
+                        if (existingCard) {
+                            existingCard.replaceWith(newCardElement);
+                        } else {
+                            listaVisitantes.prepend(newCardElement);
+                        }
+                        addCardListeners(newCardElement);
                     } else {
-                        listaVisitantes.prepend(newCardElement);
+                        // Se a lista não existe, recarrega a página
+                        window.location.reload();
                     }
-                    addCardListeners(newCardElement);
                 }
             } else {
                 const errorData = JSON.parse(responseHtml);

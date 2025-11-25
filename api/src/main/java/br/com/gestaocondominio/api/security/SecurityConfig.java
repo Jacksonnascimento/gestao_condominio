@@ -1,5 +1,8 @@
 package br.com.gestaocondominio.api.security;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -10,14 +13,20 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -45,7 +54,8 @@ public class SecurityConfig {
             .formLogin(form -> form
                 .loginPage("/login")
                 .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/dashboard", true)
+                // Substituído defaultSuccessUrl por successHandler customizado
+                .successHandler(authenticationSuccessHandler())
                 .failureUrl("/login?error=true")
                 .permitAll()
             )
@@ -60,6 +70,36 @@ public class SecurityConfig {
             );
 
         return http.build();
+    }
+
+    @Bean
+    public AuthenticationSuccessHandler authenticationSuccessHandler() {
+        return new AuthenticationSuccessHandler() {
+            @Override
+            public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+                                                Authentication authentication) throws IOException, ServletException {
+                Set<String> roles = authentication.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .collect(Collectors.toSet());
+
+                // Prioriza o redirecionamento para Dashboard se tiver qualquer papel administrativo ou operacional
+                if (roles.contains("ROLE_GLOBAL_ADMIN") || 
+                    roles.contains("ROLE_SINDICO") || 
+                    roles.contains("ROLE_ADMIN") || 
+                    roles.contains("ROLE_FUNCIONARIO_ADM") ||
+                    roles.contains("ROLE_PORTEIRO")) {
+                    response.sendRedirect("/dashboard");
+                } 
+                // Se for MORADOR (e não caiu no if acima), vai para Unidades
+                else if (roles.contains("ROLE_MORADOR")) {
+                    response.sendRedirect("/unidades");
+                } 
+                // Fallback
+                else {
+                    response.sendRedirect("/dashboard");
+                }
+            }
+        };
     }
 
     @Bean

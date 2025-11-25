@@ -9,7 +9,7 @@
         </a>
         <hr>
         <ul class="nav nav-pills flex-column mb-auto">
-            <li class="nav-item">
+            <li class="nav-item" th:if="${#authorization.expression('hasAnyRole(''GLOBAL_ADMIN'', ''SINDICO'', ''ADMIN'', ''FUNCIONARIO_ADM'', ''PORTEIRO'')')}">
                 <a th:href="@{/dashboard}" class="nav-link"
                     th:classappend="${currentPage == 'dashboard' ? 'active' : ''}">
                     <i class='bx bxs-dashboard'></i> Dashboard

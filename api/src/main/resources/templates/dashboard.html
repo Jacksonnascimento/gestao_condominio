@@ -52,7 +52,7 @@
                             <div class="card-icon icon-ocupantes"><i class='bx bxs-user-check'></i></div>
                             <div>
                                 <span class="label">Ocupantes Ativos</span>
-                                <span class="value">350</span>
+                                <span class="value" th:text="${totalOcupantes}">0</span>
                             </div>
                         </div>
                     </div>
@@ -74,7 +74,7 @@
                             <div class="card-icon icon-contratos"><i class='bx bxs-file-doc'></i></div>
                             <div>
                                 <span class="label">Contratos Ativos</span>
-                                <span class="value">40</span>
+                                <span class="value" th:text="${totalContratosAtivos}">0</span>
                             </div>
                         </div>
                     </div>
@@ -86,7 +86,7 @@
                     <div class="card widget-card h-100">
                         <div class="card-body">
                             <h3 class="card-title">Ocorrências Pendentes</h3>
-                            <p class="widget-value">3</p>
+                            <p class="widget-value" th:text="${totalOcorrenciasPendentes}">0</p>
                             <p class="widget-subtitle">Ocorrências requerem atenção</p>
                         </div>
                     </div>

@@ -66,14 +66,26 @@ document.addEventListener('DOMContentLoaded', function () {
                     const ocupanteId = newCardElement.dataset.ocupanteId;
                     
                     if (isEdit) {
-                        const existingCard = listaOcupantes?.querySelector(`.col[data-ocupante-id="${ocupanteId}"]`);
+                        // Verifica se a lista existe antes de tentar selecionar
+                        const existingCard = listaOcupantes ? listaOcupantes.querySelector(`.col[data-ocupante-id="${ocupanteId}"]`) : null;
+                        
                         if (existingCard) {
                             existingCard.replaceWith(newCardElement);
                         } else if (listaOcupantes) {
                             listaOcupantes.prepend(newCardElement);
+                        } else {
+                            window.location.reload();
+                            return;
                         }
-                    } else if (listaOcupantes) {
-                        listaOcupantes.prepend(newCardElement);
+                    } else {
+                        // CORREÇÃO: Verifica se a lista existe antes de manipular
+                        if (listaOcupantes) {
+                            listaOcupantes.prepend(newCardElement);
+                        } else {
+                            // Se a lista não existe (primeiro ocupante), recarrega a página
+                            window.location.reload();
+                            return;
+                        }
                     }
                     
                     if (newCardElement) {

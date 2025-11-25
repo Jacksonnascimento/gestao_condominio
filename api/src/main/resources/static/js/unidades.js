@@ -43,14 +43,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 let isEdit = url.includes("/editar/");
                 if (isEdit) {
                     const unidadeId = newCardElement.querySelector('.clickable-title').dataset.unidadeId;
-                    const existingCard = listaUnidades.querySelector(`.clickable-title[data-unidade-id="${unidadeId}"]`)?.closest('.col');
+                    // Verifica se a lista existe para evitar erro no querySelector
+                    const existingCard = listaUnidades ? listaUnidades.querySelector(`.clickable-title[data-unidade-id="${unidadeId}"]`)?.closest('.col') : null;
+                    
                     if (existingCard) {
                         existingCard.replaceWith(newCardElement);
-                    } else {
+                    } else if (listaUnidades) {
                         listaUnidades.prepend(newCardElement);
+                    } else {
+                        window.location.reload();
+                        return;
                     }
                 } else {
-                    listaUnidades.prepend(newCardElement);
+                    // CORREÇÃO: Verifica se a lista existe antes de manipular
+                    if (listaUnidades) {
+                        listaUnidades.prepend(newCardElement);
+                    } else {
+                        // Se a lista não existe (primeira unidade e container não renderizado), recarrega
+                        window.location.reload();
+                        return;
+                    }
                 }
                 
                 addCardListeners(newCardElement);

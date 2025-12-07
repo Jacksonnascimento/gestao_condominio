@@ -22,9 +22,7 @@
         </div>
         <div class="card-footer" th:if="${isGerencial}">
             <button class="btn btn-sm btn-outline-primary btn-edit" th:data-url="'/unidades/editar/' + ${unidade.uniCod}"><i class='bx bxs-edit'></i> Editar</button>
-            <form th:action="@{'/unidades/excluir/' + ${unidade.uniCod}}" method="post" class="d-inline" onsubmit="return confirm('Deseja realmente excluir esta unidade?');">
-                <button type="submit" class="btn btn-sm btn-outline-danger btn-delete"><i class='bx bxs-trash'></i> Excluir</button>
-            </form>
+            <button class="btn btn-sm btn-outline-danger btn-excluir" th:data-url="'/unidades/excluir/' + ${unidade.uniCod}"><i class='bx bxs-trash'></i> Excluir</button>
         </div>
     </div>
 </div>

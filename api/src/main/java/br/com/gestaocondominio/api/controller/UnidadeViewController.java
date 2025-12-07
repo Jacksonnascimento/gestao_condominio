@@ -14,12 +14,10 @@ import br.com.gestaocondominio.api.domain.service.UsuarioCondominioService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Collections;
 import java.util.List;
@@ -167,13 +165,13 @@ public class UnidadeViewController {
     }
 
     @PostMapping("/excluir/{id}")
-    public String inativarUnidade(@PathVariable("id") Integer id, RedirectAttributes redirectAttributes) {
+    @ResponseBody
+    public ResponseEntity<?> inativarUnidade(@PathVariable("id") Integer id) {
         try {
             unidadeService.inativarUnidade(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Unidade desativada com sucesso!");
+            return ResponseEntity.ok(Map.of("message", "Unidade desativada com sucesso!"));
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Erro ao desativar unidade: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("message", "Erro ao desativar unidade: " + e.getMessage()));
         }
-        return "redirect:/unidades";
     }
 }

@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         return;
                     }
                 } else {
-                    // CORREÇÃO: Verifica se a lista existe antes de manipular
+                    // Verifica se a lista existe antes de manipular
                     if (listaUnidades) {
                         listaUnidades.prepend(newCardElement);
                     } else {
@@ -173,6 +173,61 @@ document.addEventListener('DOMContentLoaded', function () {
             `;
         }
     };
+
+    const handleExcluirClick = async (event) => {
+        const btn = event.currentTarget;
+        const url = btn.dataset.url;
+
+        const result = await Swal.fire({
+            title: 'Tem certeza?',
+            text: "Você não poderá reverter esta ação!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sim, excluir!',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                // Exibe loading enquanto processa
+                Swal.fire({
+                    title: 'Excluindo...',
+                    didOpen: () => { Swal.showLoading(); },
+                    allowOutsideClick: false
+                });
+
+                const response = await fetch(url, { method: 'POST' });
+
+                if (response.ok) {
+                    // Remove o card da interface sem recarregar a página
+                    btn.closest('.col').remove();
+                    
+                    Swal.fire({
+                        title: 'Excluído!',
+                        text: 'A unidade foi excluída com sucesso.',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    let errorMessage = 'Não foi possível excluir a unidade.';
+                    try {
+                        const errorData = await response.json();
+                        if(errorData.message) errorMessage = errorData.message;
+                    } catch(e) {
+                        // Se não for JSON, pode ser HTML de erro ou texto simples
+                    }
+                    
+                    Swal.fire('Erro!', errorMessage, 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao excluir:', error);
+                Swal.fire('Erro de Conexão!', 'Não foi possível conectar ao servidor.', 'error');
+            }
+        }
+    };
     
     function addCardListeners(cardElement) {
         cardElement.querySelector('.btn-edit')?.addEventListener('click', (e) => {
@@ -184,6 +239,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const unidadeId = e.currentTarget.dataset.unidadeId;
             openDetailsModal(unidadeId);
         });
+
+        cardElement.querySelector('.btn-excluir')?.addEventListener('click', handleExcluirClick);
     }
 
     document.getElementById('btnNovaUnidade')?.addEventListener('click', () => {

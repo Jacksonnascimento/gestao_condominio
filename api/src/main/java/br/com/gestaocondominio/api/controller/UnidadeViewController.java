@@ -14,10 +14,12 @@ import br.com.gestaocondominio.api.domain.service.UsuarioCondominioService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
 
 import java.util.Collections;
 import java.util.List;
@@ -141,6 +143,17 @@ public class UnidadeViewController {
 
             return "fragments/unidade-card :: card";
             
+        } catch (IllegalStateException e) {
+            // Captura exceção de unidade inativa
+            if (e.getMessage().startsWith("UNIDADE_INATIVA:")) {
+                String idUnidade = e.getMessage().split(":")[1];
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(Map.of(
+                            "message", "Esta unidade já existiu anteriormente e foi excluída. Ao confirmar, o cadastro antigo será restaurado e atualizado com as novas informações.", 
+                            "unidadeId", idUnidade
+                        ));
+            }
+            return ResponseEntity.badRequest().body(Collections.singletonMap("message", e.getMessage()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Collections.singletonMap("message", e.getMessage()));
         }
@@ -172,6 +185,24 @@ public class UnidadeViewController {
             return ResponseEntity.ok(Map.of("message", "Unidade desativada com sucesso!"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", "Erro ao desativar unidade: " + e.getMessage()));
+        }
+    }
+
+    // Novo endpoint para reativar
+    @PostMapping("/{id}/reativar")
+    public Object reativarUnidade(@PathVariable("id") Integer id, Model model) {
+        try {
+            Unidade unidadeAtivada = unidadeService.ativarUnidade(id);
+            
+            List<Condominio> condominiosDisponiveis = condominioService.listarTodosCondominios(false);
+            
+            model.addAttribute("unidade", unidadeAtivada);
+            model.addAttribute("showCondominioInfo", getShowCondominioInfo(condominiosDisponiveis));
+            model.addAttribute("isGerencial", getIsGerencial(pessoaService.getLoggedInUser()));
+            
+            return "fragments/unidade-card :: card";
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Erro ao reativar unidade: " + e.getMessage()));
         }
     }
 }

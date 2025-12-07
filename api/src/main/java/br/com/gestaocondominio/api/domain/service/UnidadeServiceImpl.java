@@ -77,11 +77,19 @@ public class UnidadeServiceImpl implements UnidadeService {
             throw new IllegalArgumentException("Número da unidade não pode ser vazio.");
         }
 
-        unidadeRepository.findByCondominioAndUniNumeroAndBlocoAndUnidadeTipo(condominio, dto.getUniNumero(),
-                dto.getBloco(), dto.getUnidadeTipo()).ifPresent(u -> {
-                    throw new IllegalArgumentException(
-                            "Já existe uma unidade com este número, bloco e tipo para o condomínio informado.");
-                });
+        // VERIFICAÇÃO DE UNIDADE EXISTENTE (ATIVA OU INATIVA)
+        Optional<Unidade> unidadeExistente = unidadeRepository.findByCondominioAndUniNumeroAndBlocoAndUnidadeTipo(
+                condominio, dto.getUniNumero(), dto.getBloco(), dto.getUnidadeTipo());
+
+        if (unidadeExistente.isPresent()) {
+            Unidade u = unidadeExistente.get();
+            if (Boolean.FALSE.equals(u.getUniAtiva())) {
+                // Lança exceção específica que será capturada pelo Controller para oferecer reativação
+                throw new IllegalStateException("UNIDADE_INATIVA:" + u.getUniCod());
+            } else {
+                throw new IllegalArgumentException("Já existe uma unidade ativa com este número, bloco e tipo neste condomínio.");
+            }
+        }
 
         Unidade unidade = new Unidade();
         unidade.setCondominio(condominio);

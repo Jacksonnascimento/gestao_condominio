@@ -21,53 +21,33 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             if (response.ok) {
+                // Sucesso normal (Criação ou Edição)
                 const responseHtml = await response.text();
-                formModal.hide();
-                await Swal.fire({
-                    title: 'Sucesso!',
-                    text: 'Operação realizada com sucesso.',
-                    icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-                
-                const placeholder = document.getElementById('empty-placeholder');
-                if (placeholder) {
-                    placeholder.remove();
-                }
+                processarSucesso(responseHtml, url);
 
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = responseHtml;
-                const newCardElement = tempDiv.firstElementChild;
-
-                let isEdit = url.includes("/editar/");
-                if (isEdit) {
-                    const unidadeId = newCardElement.querySelector('.clickable-title').dataset.unidadeId;
-                    // Verifica se a lista existe para evitar erro no querySelector
-                    const existingCard = listaUnidades ? listaUnidades.querySelector(`.clickable-title[data-unidade-id="${unidadeId}"]`)?.closest('.col') : null;
-                    
-                    if (existingCard) {
-                        existingCard.replaceWith(newCardElement);
-                    } else if (listaUnidades) {
-                        listaUnidades.prepend(newCardElement);
-                    } else {
-                        window.location.reload();
-                        return;
-                    }
+            } else if (response.status === 409) {
+                // Conflito: Unidade inativa encontrada
+                const errorData = await response.json();
+                if (errorData.unidadeId) {
+                    Swal.fire({
+                        title: 'Registro Localizado',
+                        text: errorData.message,
+                        icon: 'info',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Restaurar Unidade',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            reativarUnidade(errorData.unidadeId);
+                        }
+                    });
                 } else {
-                    // Verifica se a lista existe antes de manipular
-                    if (listaUnidades) {
-                        listaUnidades.prepend(newCardElement);
-                    } else {
-                        // Se a lista não existe (primeira unidade e container não renderizado), recarrega
-                        window.location.reload();
-                        return;
-                    }
+                    Swal.fire('Erro!', errorData.message || 'Conflito de dados.', 'error');
                 }
-                
-                addCardListeners(newCardElement);
-
             } else {
+                // Erro genérico (400, 500, etc.)
                 const errorData = await response.json();
                 Swal.fire('Erro!', errorData.message || 'Ocorreu um erro ao salvar a unidade.', 'error');
             }
@@ -75,6 +55,79 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Erro no fetch:', error);
             Swal.fire('Erro!', 'Ocorreu um erro de comunicação.', 'error');
         }
+    };
+
+    const reativarUnidade = async (unidadeId) => {
+        try {
+            // Exibe loading
+            Swal.fire({
+                title: 'Restaurando...',
+                didOpen: () => { Swal.showLoading(); },
+                allowOutsideClick: false
+            });
+
+            const response = await fetch(`/unidades/${unidadeId}/reativar`, { method: 'POST' });
+            
+            if (response.ok) {
+                const responseHtml = await response.text();
+                processarSucesso(responseHtml, ''); // URL vazia indica inclusão
+            } else {
+                const errorData = await response.json();
+                Swal.fire('Erro!', errorData.message || 'Erro ao reativar unidade.', 'error');
+            }
+        } catch (error) {
+            console.error('Erro ao reativar:', error);
+            Swal.fire('Erro!', 'Erro de comunicação ao reativar unidade.', 'error');
+        }
+    };
+
+    const processarSucesso = async (responseHtml, urlOriginal) => {
+        formModal.hide();
+        
+        // Fecha qualquer swal de loading aberto
+        if (Swal.isLoading()) { Swal.close(); }
+
+        await Swal.fire({
+            title: 'Sucesso!',
+            text: 'Operação realizada com sucesso.',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+        });
+        
+        const placeholder = document.getElementById('empty-placeholder');
+        if (placeholder) {
+            placeholder.remove();
+        }
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = responseHtml;
+        const newCardElement = tempDiv.firstElementChild;
+
+        let isEdit = urlOriginal && urlOriginal.includes("/editar/");
+        
+        if (isEdit) {
+            const unidadeId = newCardElement.querySelector('.clickable-title').dataset.unidadeId;
+            const existingCard = listaUnidades ? listaUnidades.querySelector(`.clickable-title[data-unidade-id="${unidadeId}"]`)?.closest('.col') : null;
+            
+            if (existingCard) {
+                existingCard.replaceWith(newCardElement);
+            } else if (listaUnidades) {
+                listaUnidades.prepend(newCardElement);
+            } else {
+                window.location.reload();
+                return;
+            }
+        } else {
+            if (listaUnidades) {
+                listaUnidades.prepend(newCardElement);
+            } else {
+                window.location.reload();
+                return;
+            }
+        }
+        
+        addCardListeners(newCardElement);
     };
 
     const openFormModal = async (url) => {

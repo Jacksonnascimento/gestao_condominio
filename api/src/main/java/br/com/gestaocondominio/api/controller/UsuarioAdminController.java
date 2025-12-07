@@ -5,7 +5,6 @@ import br.com.gestaocondominio.api.controller.dto.PessoaUpdateRequest;
 import br.com.gestaocondominio.api.controller.dto.UsuarioCondominioDTO;
 import br.com.gestaocondominio.api.controller.dto.UsuarioCondominioRequestDTO;
 import br.com.gestaocondominio.api.domain.entity.Condominio;
-import br.com.gestaocondominio.api.domain.entity.Ocupante;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.entity.UsuarioCondominio;
 import br.com.gestaocondominio.api.domain.entity.UsuarioCondominioId;

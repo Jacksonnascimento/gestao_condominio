@@ -78,7 +78,6 @@ document.addEventListener('DOMContentLoaded', function () {
                             return;
                         }
                     } else {
-                        // CORREÇÃO: Verifica se a lista existe antes de manipular
                         if (listaOcupantes) {
                             listaOcupantes.prepend(newCardElement);
                         } else {
@@ -107,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const url = btn.dataset.url;
 
         const result = await Swal.fire({
-            title: 'Tem certeza?',
+            title: 'Tem certeza que deseja excluir este Ocupante?',
             text: "Você não poderá reverter esta ação!",
             icon: 'warning',
             showCancelButton: true,

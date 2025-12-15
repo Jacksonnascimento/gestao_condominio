@@ -21,12 +21,11 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             if (response.ok) {
-                // Sucesso normal (Criação ou Edição)
                 const responseHtml = await response.text();
-                processarSucesso(responseHtml, url);
+                // Adicionado 'await' aqui para garantir que erros dentro da função sejam capturados corretamente
+                await processarSucesso(responseHtml, url);
 
             } else if (response.status === 409) {
-                // Conflito: Unidade inativa encontrada
                 const errorData = await response.json();
                 if (errorData.unidadeId) {
                     Swal.fire({
@@ -47,19 +46,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     Swal.fire('Erro!', errorData.message || 'Conflito de dados.', 'error');
                 }
             } else {
-                // Erro genérico (400, 500, etc.)
                 const errorData = await response.json();
                 Swal.fire('Erro!', errorData.message || 'Ocorreu um erro ao salvar a unidade.', 'error');
             }
         } catch (error) {
             console.error('Erro no fetch:', error);
-            Swal.fire('Erro!', 'Ocorreu um erro de comunicação.', 'error');
+            // Exibe a mensagem real do erro no console para facilitar debug, mas mantém mensagem amigável no alert
+            Swal.fire('Erro!', 'Ocorreu um erro de comunicação ou processamento.', 'error');
         }
     };
 
     const reativarUnidade = async (unidadeId) => {
         try {
-            // Exibe loading
             Swal.fire({
                 title: 'Restaurando...',
                 didOpen: () => { Swal.showLoading(); },
@@ -70,7 +68,11 @@ document.addEventListener('DOMContentLoaded', function () {
             
             if (response.ok) {
                 const responseHtml = await response.text();
-                processarSucesso(responseHtml, ''); // URL vazia indica inclusão
+                // Fecha o loading antes de processar
+                if (Swal.isLoading()) { Swal.close(); }
+                
+                await processarSucesso(responseHtml, ''); // URL vazia trata como novo item na lista
+
             } else {
                 const errorData = await response.json();
                 Swal.fire('Erro!', errorData.message || 'Erro ao reativar unidade.', 'error');
@@ -104,17 +106,31 @@ document.addEventListener('DOMContentLoaded', function () {
         tempDiv.innerHTML = responseHtml;
         const newCardElement = tempDiv.firstElementChild;
 
+        // Verificação de segurança: se o HTML retornado estiver vazio ou inválido
+        if (!newCardElement) {
+            console.warn("HTML retornado pelo servidor parece inválido ou vazio. Recarregando a página.");
+            window.location.reload();
+            return;
+        }
+
         let isEdit = urlOriginal && urlOriginal.includes("/editar/");
-        
+
         if (isEdit) {
-            const unidadeId = newCardElement.querySelector('.clickable-title').dataset.unidadeId;
-            const existingCard = listaUnidades ? listaUnidades.querySelector(`.clickable-title[data-unidade-id="${unidadeId}"]`)?.closest('.col') : null;
-            
-            if (existingCard) {
-                existingCard.replaceWith(newCardElement);
-            } else if (listaUnidades) {
-                listaUnidades.prepend(newCardElement);
+            const titleElement = newCardElement.querySelector('.clickable-title');
+            if (titleElement) {
+                const unidadeId = titleElement.dataset.unidadeId;
+                const existingCard = listaUnidades ? listaUnidades.querySelector(`.clickable-title[data-unidade-id="${unidadeId}"]`)?.closest('.col') : null;
+                
+                if (existingCard) {
+                    existingCard.replaceWith(newCardElement);
+                } else if (listaUnidades) {
+                    listaUnidades.prepend(newCardElement);
+                } else {
+                    window.location.reload();
+                    return;
+                }
             } else {
+                // Se não encontrar o título clicável (estrutura inesperada), recarrega
                 window.location.reload();
                 return;
             }
@@ -122,6 +138,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (listaUnidades) {
                 listaUnidades.prepend(newCardElement);
             } else {
+                // Se a lista não existe (ex: era a primeira unidade e só tinha o placeholder), recarrega para criar a estrutura
                 window.location.reload();
                 return;
             }
@@ -232,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const url = btn.dataset.url;
 
         const result = await Swal.fire({
-            title: 'Tem certeza?',
+            title: 'Tem certeza que deseja excluir esta Unidade?',
             text: "Você não poderá reverter esta ação!",
             icon: 'warning',
             showCancelButton: true,

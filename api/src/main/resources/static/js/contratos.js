@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const url = btn.dataset.url;
 
         const result = await Swal.fire({
-            title: 'Tem certeza?',
+            title: 'Tem certeza que deseja excluir este Contrato?',
             text: "Você não poderá reverter esta ação!",
             icon: 'warning',
             showCancelButton: true,
@@ -117,7 +117,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 const response = await fetch(url, { method: 'POST' });
 
                 if (response.ok) {
-                    // Verifica se está removendo um card (.col) ou uma linha de tabela (tr)
                     const card = btn.closest('.col');
                     const row = btn.closest('tr');
 
@@ -174,12 +173,10 @@ document.addEventListener('DOMContentLoaded', function () {
         openFormModal(`/contratos/novo?condominioId=${condominioId}`);
     });
 
-    // Adiciona listeners aos cards já existentes na página
     document.querySelectorAll('#lista-contratos .col').forEach(cardElement => {
         addCardListeners(cardElement);
     });
     
-    // Adiciona listeners aos botões da tabela de histórico (caso a tabela esteja visível)
     document.querySelectorAll('.responsive-table-container .btn-edit').forEach(button => {
          button.addEventListener('click', (e) => {
              const url = e.currentTarget.dataset.url;
@@ -187,7 +184,6 @@ document.addEventListener('DOMContentLoaded', function () {
          });
     });
 
-    // Adiciona listeners aos botões de excluir da tabela de histórico
     document.querySelectorAll('.responsive-table-container .btn-excluir').forEach(button => {
         button.addEventListener('click', handleExcluirClick);
     });

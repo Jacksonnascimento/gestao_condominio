@@ -20,7 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -199,13 +199,13 @@ public class OcupanteViewController {
     }
 
     @PostMapping("/excluir/{id}")
-    public String excluirOcupante(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+    @ResponseBody
+    public ResponseEntity<?> excluirOcupante(@PathVariable Integer id) {
         try {
             ocupanteService.excluirOcupante(id, pessoaService.getLoggedInUser());
-            redirectAttributes.addFlashAttribute("successMessage", "Ocupante excluído com sucesso!");
+            return ResponseEntity.ok(Map.of("message", "Ocupante excluído com sucesso!"));
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Erro ao excluir ocupante: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("message", "Erro ao excluir ocupante: " + e.getMessage()));
         }
-        return "redirect:/ocupantes";
     }
 }

@@ -19,9 +19,7 @@
         </div>
         <div class="card-footer" th:if="${isGerencial}">
             <button class="btn btn-sm btn-outline-primary btn-edit" th:data-url="'/ocupantes/editar/' + ${ocupante.id}"><i class='bx bxs-edit'></i> Editar</button>
-            <form th:action="@{/ocupantes/excluir/{id}(id=${ocupante.id})}" method="post" class="d-inline" onsubmit="return confirm('Deseja realmente excluir este ocupante?');">
-                <button type="submit" class="btn btn-sm btn-outline-danger"><i class='bx bxs-trash'></i> Excluir</button>
-            </form>
+            <button class="btn btn-sm btn-outline-danger btn-excluir" th:data-url="'/ocupantes/excluir/' + ${ocupante.id}"><i class='bx bxs-trash'></i> Excluir</button>
         </div>
     </div>
 </div>

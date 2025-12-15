@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
 <body>
     <div id="sidebar" class="sidebar d-flex flex-column flex-shrink-0 p-3" th:fragment="sidebar">
-        <a th:href="@{/dashboard}"
+        <a th:href="${#authorization.expression('hasAnyRole(''GLOBAL_ADMIN'', ''SINDICO'', ''ADMIN'', ''FUNCIONARIO_ADM'', ''PORTEIRO'')')} ? @{/dashboard} : @{/unidades}"
             class="d-flex flex-column align-items-center mb-3 mb-md-0 text-decoration-none sidebar-logo-area">
             <img th:src="@{/images/logo.png}" alt="CONDIGTAL Logo" class="sidebar-logo">
             <span class="sidebar-title">CONDIGTAL</span>

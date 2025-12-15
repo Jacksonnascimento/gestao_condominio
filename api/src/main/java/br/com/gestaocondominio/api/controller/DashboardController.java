@@ -4,6 +4,7 @@ import br.com.gestaocondominio.api.controller.dto.OcupanteResponseDTO;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.entity.Unidade;
 import br.com.gestaocondominio.api.domain.enums.StatusContrato;
+import br.com.gestaocondominio.api.domain.enums.UserRole;
 import br.com.gestaocondominio.api.domain.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -28,6 +29,14 @@ public class DashboardController {
     @GetMapping
     public String dashboard(Model model) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
+        
+        // Verificação de segurança: Morador não acessa dashboard
+        boolean isGerencial = usuarioLogado.getPesIsGlobalAdmin() || 
+                              usuarioCondominioService.possuiRole(usuarioLogado, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM, UserRole.PORTEIRO);
+        
+        if (!isGerencial) {
+            return "redirect:/unidades";
+        }
         
         // Determina o contexto do condomínio para filtros (se não for Global Admin)
         Integer condominioId = null;

@@ -20,9 +20,7 @@
         </div>
         <div class="card-footer" th:if="${isGerencial}"> 
             <button class="btn btn-sm btn-outline-primary btn-edit" th:data-url="'/contratos/editar/' + ${contrato.id}"><i class='bx bxs-edit'></i> Editar</button>
-            <form th:action="@{/contratos/excluir/{id}(id=${contrato.id})}" method="post" onsubmit="return confirm('Tem certeza?');" class="d-inline">
-                <button type="submit" class="btn btn-sm btn-outline-danger"><i class='bx bxs-trash'></i> Excluir</button>
-            </form>
+            <button class="btn btn-sm btn-outline-danger btn-excluir" th:data-url="@{/contratos/excluir/{id}(id=${contrato.id})}"><i class='bx bxs-trash'></i> Excluir</button>
         </div>
     </div>
 </div>

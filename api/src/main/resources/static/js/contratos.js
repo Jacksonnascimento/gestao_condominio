@@ -34,18 +34,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: new URLSearchParams(new FormData(form))
             });
 
-            // O 'response.ok' vai funcionar agora porque o Spring vai retornar 200 OK com o HTML
             if (response.ok) {
                 const responseHtml = await response.text();
                 
-                // Se a resposta NÃO for um JSON de erro, é o nosso HTML
                 try {
-                    // Tenta parsear como JSON. Se falhar, é porque veio HTML (sucesso)
                     const errorData = JSON.parse(responseHtml);
                     Swal.fire({ icon: 'error', title: 'Erro!', text: errorData.message || 'Ocorreu um erro ao salvar o contrato.' });
                 
                 } catch (e) {
-                    // SUCESSO! Veio HTML.
                     formModal.hide();
                     await Swal.fire({ icon: 'success', title: 'Sucesso!', text: 'Contrato salvo com sucesso.', timer: 2000, showConfirmButton: false });
 
@@ -59,13 +55,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     const newCardElement = tempDiv.firstElementChild;
 
                     if (!newCardElement || !newCardElement.querySelector('.btn-edit')) {
-                         // Fallback se algo der errado na renderização do fragmento
                          console.error("Fragmento de HTML inválido recebido.");
                          window.location.reload();
                          return;
                     }
 
-                    // CORREÇÃO AQUI: Verifica se a lista existe antes de manipular
                     if (listaContratos) {
                         let isEdit = url.includes("/editar/");
                         if (isEdit) {
@@ -84,18 +78,72 @@ document.addEventListener('DOMContentLoaded', function () {
                             addCardListeners(newCardElement);
                         }
                     } else {
-                        // Se a lista não existe (primeiro item), recarrega
                         window.location.reload();
                     }
                 }
             } else {
-                 // Erros 400, 500, etc.
                  const errorData = await response.json();
                  Swal.fire({ icon: 'error', title: 'Erro!', text: errorData.message || 'Ocorreu um erro ao salvar o contrato.' });
             }
         } catch (error) {
             console.error('Erro no submit do formulário:', error);
             Swal.fire({ icon: 'error', title: 'Erro de Comunicação!', text: 'Não foi possível conectar ao servidor.' });
+        }
+    };
+
+    const handleExcluirClick = async (event) => {
+        const btn = event.currentTarget;
+        const url = btn.dataset.url;
+
+        const result = await Swal.fire({
+            title: 'Tem certeza?',
+            text: "Você não poderá reverter esta ação!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sim, excluir!',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                Swal.fire({
+                    title: 'Excluindo...',
+                    didOpen: () => { Swal.showLoading(); },
+                    allowOutsideClick: false
+                });
+
+                const response = await fetch(url, { method: 'POST' });
+
+                if (response.ok) {
+                    // Verifica se está removendo um card (.col) ou uma linha de tabela (tr)
+                    const card = btn.closest('.col');
+                    const row = btn.closest('tr');
+
+                    if (card) card.remove();
+                    if (row) row.remove();
+                    
+                    Swal.fire({
+                        title: 'Excluído!',
+                        text: 'Contrato excluído com sucesso.',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    let errorMessage = 'Não foi possível excluir o contrato.';
+                    try {
+                        const errorData = await response.json();
+                        if(errorData.message) errorMessage = errorData.message;
+                    } catch(e) {}
+                    
+                    Swal.fire('Erro!', errorMessage, 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao excluir:', error);
+                Swal.fire('Erro de Conexão!', 'Não foi possível conectar ao servidor.', 'error');
+            }
         }
     };
 
@@ -116,6 +164,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const url = e.currentTarget.dataset.url;
             openFormModal(url);
         });
+
+        cardElement.querySelector('.btn-excluir')?.addEventListener('click', handleExcluirClick);
     }
 
     document.getElementById('btnNovoContrato')?.addEventListener('click', (e) => {
@@ -129,12 +179,19 @@ document.addEventListener('DOMContentLoaded', function () {
         addCardListeners(cardElement);
     });
     
-    // Adiciona listeners aos botões da tabela de histórico
+    // Adiciona listeners aos botões da tabela de histórico (caso a tabela esteja visível)
     document.querySelectorAll('.responsive-table-container .btn-edit').forEach(button => {
-         button.addEventListener('click', () => openFormModal(button.dataset.url));
+         button.addEventListener('click', (e) => {
+             const url = e.currentTarget.dataset.url;
+             openFormModal(url);
+         });
     });
 
-    // Adiciona o listener de submit ao modal
+    // Adiciona listeners aos botões de excluir da tabela de histórico
+    document.querySelectorAll('.responsive-table-container .btn-excluir').forEach(button => {
+        button.addEventListener('click', handleExcluirClick);
+    });
+
     modalContent.addEventListener('submit', (event) => {
         if (event.target.matches('#contratoForm')) {
             handleFormSubmit(event);

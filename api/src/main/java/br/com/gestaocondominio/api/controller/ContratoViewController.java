@@ -65,7 +65,6 @@ public class ContratoViewController {
          return false;
     }
     
-    // Método para verificar permissão de gerenciamento
     private boolean getIsGerencial(Pessoa usuarioLogado) {
         if (usuarioLogado.getPesIsGlobalAdmin()) return true;
         return usuarioCondominioService.possuiRole(usuarioLogado, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM);
@@ -127,7 +126,6 @@ public class ContratoViewController {
         model.addAttribute("filtroAtivo", filtro);
         model.addAttribute("showCondominioInfo", showCondominioInfo);
 
-        // **CORREÇÃO PRINCIPAL**
         model.addAttribute("isGerencial", getIsGerencial(usuarioLogado));
 
         return "contratos";
@@ -165,7 +163,7 @@ public class ContratoViewController {
 
             model.addAttribute("contrato", novoContrato);
             model.addAttribute("showCondominioInfo", getShowCondominioInfo(usuarioLogado, condominiosDisponiveis));
-            model.addAttribute("isGerencial", getIsGerencial(usuarioLogado)); // Adiciona a variável que faltava
+            model.addAttribute("isGerencial", getIsGerencial(usuarioLogado));
 
             return "fragments/contrato-card :: card";
         } catch (Exception e) {
@@ -200,7 +198,7 @@ public class ContratoViewController {
 
             model.addAttribute("contrato", contratoAtualizado);
             model.addAttribute("showCondominioInfo", getShowCondominioInfo(usuarioLogado, condominiosDisponiveis));
-            model.addAttribute("isGerencial", getIsGerencial(usuarioLogado)); // Adiciona a variável que faltava
+            model.addAttribute("isGerencial", getIsGerencial(usuarioLogado));
 
             return "fragments/contrato-card :: card";
         } catch (Exception e) {
@@ -209,9 +207,14 @@ public class ContratoViewController {
     }
 
     @PostMapping("/excluir/{id}")
-    public String excluirContrato(@PathVariable Long id) {
-        checarPermissaoAcesso(pessoaService.getLoggedInUser());
-        contratoService.deletarContrato(id);
-        return "redirect:/contratos";
+    @ResponseBody
+    public ResponseEntity<?> excluirContrato(@PathVariable Long id) {
+        try {
+            checarPermissaoAcesso(pessoaService.getLoggedInUser());
+            contratoService.deletarContrato(id);
+            return ResponseEntity.ok(Map.of("message", "Contrato excluído com sucesso!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Erro ao excluir contrato: " + e.getMessage()));
+        }
     }
 }

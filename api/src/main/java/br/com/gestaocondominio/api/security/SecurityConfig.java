@@ -42,10 +42,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            // Configuração para permitir POST externo no endpoint de leads (ignorando CSRF apenas para /public/)
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/public/**")
+            )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/login", "/css/**", "/js/**", "/images/**", "/webjars/**",
-                    "/esqueci-senha", "/definir-senha"
+                    "/esqueci-senha", "/definir-senha",
+                    "/public/**" // Permite acesso público ao endpoint de leads
                 ).permitAll()
                 .anyRequest().authenticated()
             )
@@ -54,7 +59,6 @@ public class SecurityConfig {
             .formLogin(form -> form
                 .loginPage("/login")
                 .loginProcessingUrl("/login")
-                // Substituído defaultSuccessUrl por successHandler customizado
                 .successHandler(authenticationSuccessHandler())
                 .failureUrl("/login?error=true")
                 .permitAll()
@@ -82,7 +86,6 @@ public class SecurityConfig {
                         .map(GrantedAuthority::getAuthority)
                         .collect(Collectors.toSet());
 
-                // Prioriza o redirecionamento para Dashboard se tiver qualquer papel administrativo ou operacional
                 if (roles.contains("ROLE_GLOBAL_ADMIN") || 
                     roles.contains("ROLE_SINDICO") || 
                     roles.contains("ROLE_ADMIN") || 
@@ -90,11 +93,9 @@ public class SecurityConfig {
                     roles.contains("ROLE_PORTEIRO")) {
                     response.sendRedirect("/dashboard");
                 } 
-                // Se for MORADOR (e não caiu no if acima), vai para Unidades
                 else if (roles.contains("ROLE_MORADOR")) {
                     response.sendRedirect("/unidades");
                 } 
-                // Fallback
                 else {
                     response.sendRedirect("/dashboard");
                 }

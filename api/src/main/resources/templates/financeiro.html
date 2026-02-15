@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONDIGTAL - Financeiro</title>
+
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+
+    <link rel="icon" type="image/png" th:href="@{/images/logo.png}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        /* Estilos específicos para impressão do boleto */
+        @media print {
+            @page {
+                margin: 0;
+                size: A4;
+            }
+
+            body * {
+                visibility: hidden;
+            }
+
+            #area-impressao,
+            #area-impressao * {
+                visibility: visible;
+            }
+
+            #area-impressao {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: white;
+                color: black !important;
+                padding: 20px;
+                z-index: 9999;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .boleto-border {
+                border: 1px solid #000 !important;
+            }
+
+            .boleto-border-bottom {
+                border-bottom: 1px solid #000 !important;
+            }
+
+            .boleto-border-right {
+                border-right: 1px solid #000 !important;
+            }
+        }
+
+        /* Layout do Boleto */
+        .boleto-container {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .boleto-header {
+            display: flex;
+            align-items: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 2px;
+            margin-bottom: 5px;
+        }
+
+        .banco-logo {
+            font-size: 18px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .banco-codigo {
+            font-size: 20px;
+            font-weight: bold;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            padding: 0 10px;
+            margin: 0 10px;
+        }
+
+        .linha-digitavel {
+            font-size: 16px;
+            font-weight: bold;
+            flex-grow: 1;
+            text-align: right;
+        }
+
+        .campo-boleto {
+            padding: 2px 5px;
+            overflow: hidden;
+            height: 100%;
+            position: relative;
+        }
+
+        .campo-titulo {
+            font-size: 9px;
+            color: #333;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .campo-valor {
+            font-size: 12px;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .row-boleto {
+            display: flex;
+            border-bottom: 1px solid #000;
+        }
+
+        .col-boleto {
+            border-right: 1px solid #000;
+        }
+
+        .col-boleto:last-child {
+            border-right: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-wrapper">
+        <div th:replace="~{fragments/sidebar :: sidebar(currentPage='financeiro')}"></div>
+
+        <div class="main-content">
+            <header class="mobile-header">
+                <button class="btn" id="sidebar-toggle-btn"><i class='bx bx-menu'></i></button>
+                <span class="mobile-header-title">Financeiro</span>
+            </header>
+
+            <div class="content-body p-4">
+                <div
+                    class="page-header d-flex flex-column flex-md-row justify-content-md-between align-items-md-center mb-4">
+                    <div class="text-center text-md-start">
+                        <h1 class="page-title">Financeiro <span
+                                class="badge bg-warning text-dark fs-6 align-middle ms-2">Demonstração</span></h1>
+                        <p class="page-subtitle d-none d-md-block">Gestão de boletos, cobranças e histórico financeiro
+                        </p>
+                    </div>
+                    <div class="d-grid d-md-block mt-3 mt-md-0" th:if="${!isMorador}">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalGerarBoleto">
+                            <i class='bx bx-plus'></i> Novo Boleto Avulso
+                        </button>
+                    </div>
+                </div>
+
+                <ul class="nav nav-pills filter-tabs mb-4" id="financeiroTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="abertos-tab" data-bs-toggle="tab" data-bs-target="#abertos"
+                            type="button" role="tab">Em Aberto</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="vencidos-tab" data-bs-toggle="tab" data-bs-target="#vencidos"
+                            type="button" role="tab">Vencidos</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="historico-tab" data-bs-toggle="tab" data-bs-target="#historico"
+                            type="button" role="tab">Histórico</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="financeiroTabContent">
+
+                    <div class="tab-pane fade show active" id="abertos" role="tabpanel">
+                        <div th:if="${#lists.isEmpty(boletosAbertos)}" id="empty-placeholder" class="text-center p-5">
+                            <i class='bx bx-check-circle' style="font-size: 4rem; color: #ccc;"></i>
+                            <p class="mt-3">Nenhum boleto pendente.</p>
+                        </div>
+
+                        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4"
+                            th:unless="${#lists.isEmpty(boletosAbertos)}">
+                            <div class="col" th:each="boleto : ${boletosAbertos}">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="card-title mb-0 fw-bold text-primary"
+                                                th:text="${boleto.unidadeNome}">Unidade</h5>
+                                            <span class="badge bg-primary bg-opacity-10 text-primary">A VENCER</span>
+                                        </div>
+                                        <h6 class="text-muted mb-2" th:text="${boleto.nomeTaxa}">Taxa Condominial</h6>
+
+                                        <h3 class="fw-bold my-3 text-body"
+                                            th:text="${'R$ ' + #numbers.formatDecimal(boleto.valor, 1, 'POINT', 2, 'COMMA')}">
+                                            R$ 0,00</h3>
+
+                                        <div class="d-flex justify-content-between text-muted small mb-3">
+                                            <span><i class='bx bx-calendar'></i> Vencimento:</span>
+                                            <strong class="text-body"
+                                                th:text="${#temporals.format(boleto.dataVencimento, 'dd/MM/yyyy')}">Date</strong>
+                                        </div>
+
+                                        <div class="d-grid">
+                                            <button class="btn btn-outline-primary"
+                                                th:onclick="prepararImpressao([[${boleto.unidadeNome}]], [[${boleto.valor}]], [[${boleto.dataVencimento}]], [[${boleto.linhaDigitavel}]], [[${boleto.nomeTaxa}]], [[${boleto.codigoPix}]])">
+                                                <i class='bx bx-printer'></i> Imprimir Boleto
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="vencidos" role="tabpanel">
+                        <div th:if="${#lists.isEmpty(boletosVencidos)}" id="empty-placeholder" class="text-center p-5">
+                            <i class='bx bx-smile' style="font-size: 4rem; color: #ccc;"></i>
+                            <p class="mt-3">Nenhuma pendência vencida.</p>
+                        </div>
+
+                        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4"
+                            th:unless="${#lists.isEmpty(boletosVencidos)}">
+                            <div class="col" th:each="boleto : ${boletosVencidos}">
+                                <div class="card h-100 border-start border-4 border-danger">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="card-title mb-0 fw-bold text-danger"
+                                                th:text="${boleto.unidadeNome}">Unidade</h5>
+                                            <span class="badge bg-danger">VENCIDO</span>
+                                        </div>
+                                        <h6 class="text-muted mb-2" th:text="${boleto.nomeTaxa}">Taxa</h6>
+                                        <h3 class="fw-bold my-3 text-danger"
+                                            th:text="${'R$ ' + #numbers.formatDecimal(boleto.valor, 1, 'POINT', 2, 'COMMA')}">
+                                            R$ 0,00</h3>
+
+                                        <div class="d-flex justify-content-between small mb-3">
+                                            <span class="text-danger"><i class='bx bx-error-circle'></i> Venceu
+                                                em:</span>
+                                            <strong class="text-danger"
+                                                th:text="${#temporals.format(boleto.dataVencimento, 'dd/MM/yyyy')}">Date</strong>
+                                        </div>
+
+                                        <div class="d-grid">
+                                            <button class="btn btn-danger"
+                                                th:onclick="prepararImpressao([[${boleto.unidadeNome}]], [[${boleto.valor}]], [[${boleto.dataVencimento}]], [[${boleto.linhaDigitavel}]], [[${boleto.nomeTaxa}]], [[${boleto.codigoPix}]])">
+                                                <i class='bx bx-refresh'></i> Atualizar e Imprimir
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="historico" role="tabpanel">
+                        <div class="card">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th class="ps-4">Unidade</th>
+                                            <th>Descrição</th>
+                                            <th>Valor</th>
+                                            <th>Vencimento</th>
+                                            <th>Status</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="boleto : ${boletosHistorico}">
+                                            <td class="ps-4 fw-bold" th:text="${boleto.unidadeNome}">Unidade</td>
+                                            <td th:text="${boleto.nomeTaxa}">Desc</td>
+                                            <td
+                                                th:text="${'R$ ' + #numbers.formatDecimal(boleto.valor, 1, 'POINT', 2, 'COMMA')}">
+                                                Valor</td>
+                                            <td th:text="${#temporals.format(boleto.dataVencimento, 'dd/MM/yyyy')}">Date
+                                            </td>
+                                            <td><span class="badge bg-success rounded-pill">PAGO</span></td>
+                                            <td class="text-end pe-4">
+                                                <button class="btn btn-sm btn-icon text-muted" disabled><i
+                                                        class='bx bx-download'></i></button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalGerarBoleto" tabindex="-1" aria-hidden="true" th:if="${!isMorador}">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Gerar Boleto Avulso</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formGerarBoleto" th:action="@{/financeiro/gerar}" method="post">
+                        <div class="mb-3">
+                            <label for="unidadeId" class="form-label">Unidade Pagadora</label>
+                            <select class="form-select" id="unidadeId" name="unidadeId" required>
+                                <option value="">Selecione...</option>
+                                <option th:each="u : ${todasUnidades}" th:value="${u.uniCod}"
+                                    th:text="${'Unidade ' + u.uniNumero + (u.bloco != null && !#strings.isEmpty(u.bloco) ? ', Bloco ' + u.bloco : '')}">
+                                </option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nomeTaxa" class="form-label">Descrição</label>
+                            <input type="text" class="form-control" id="nomeTaxa" name="nomeTaxa" required
+                                placeholder="Ex: Multa por barulho">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="valor" class="form-label">Valor (R$)</label>
+                                <input type="number" class="form-control" id="valor" name="valor" step="0.01" min="0"
+                                    required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="dataVencimento" class="form-label">Vencimento</label>
+                                <input type="date" class="form-control" id="dataVencimento" name="dataVencimento"
+                                    required>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="submeterBoleto()">Gerar Boleto</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="area-impressao" class="d-none">
+        <div class="boleto-container">
+            <div class="mb-4">
+                <div class="boleto-header">
+                    <div class="banco-logo"><i class='bx bxs-bank'></i> BANCO DEMO</div>
+                    <div class="banco-codigo">341-7</div>
+                    <div class="linha-digitavel">RECIBO DO PAGADOR</div>
+                </div>
+                <div class="row-boleto boleto-border">
+                    <div class="col-boleto w-50">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">Beneficiário</span>
+                            <span class="campo-valor" th:text="${condominio.conNome}">Condomínio Exemplo</span>
+                        </div>
+                    </div>
+                    <div class="col-boleto w-50">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">Pagador</span>
+                            <span class="campo-valor" id="reciboPagador"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row-boleto boleto-border-bottom boleto-border-right boleto-border-left">
+                    <div class="col-boleto" style="width: 20%;">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">Vencimento</span>
+                            <span class="campo-valor" id="reciboVencimento"></span>
+                        </div>
+                    </div>
+                    <div class="col-boleto" style="width: 20%;">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">Valor Documento</span>
+                            <span class="campo-valor" id="reciboValor"></span>
+                        </div>
+                    </div>
+                    <div class="col-boleto" style="width: 60%;">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">Descrição / Instruções</span>
+                            <span class="campo-valor" id="reciboDescricao"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr style="border-top: 2px dashed #000; margin: 30px 0;">
+
+            <div class="boleto-header">
+                <div class="banco-logo"><i class='bx bxs-bank'></i> BANCO DEMO</div>
+                <div class="banco-codigo">341-7</div>
+                <div class="linha-digitavel" id="printLinha"></div>
+            </div>
+
+            <div style="border: 1px solid #000;" class="boleto-border">
+                <div class="row-boleto">
+                    <div class="col-boleto" style="width: 70%;">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">Local de Pagamento</span>
+                            <span class="campo-valor">PAGÁVEL EM QUALQUER BANCO ATÉ O VENCIMENTO</span>
+                        </div>
+                    </div>
+                    <div class="col-boleto" style="width: 30%; background-color: #eee;">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">Vencimento</span>
+                            <span class="campo-valor" id="printVencimento"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row-boleto">
+                    <div class="col-boleto" style="width: 70%;">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">Beneficiário</span>
+                            <span class="campo-valor"
+                                th:text="${condominio.conNome} + ' - CNPJ: 00.000.000/0001-00'"></span><br>
+                            <span class="campo-titulo" style="margin-top:2px"
+                                th:text="${condominio.conLogradouro} + ', ' + ${condominio.conNumero}"></span>
+                        </div>
+                    </div>
+                    <div class="col-boleto" style="width: 30%;">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">Agência / Código Beneficiário</span>
+                            <span class="campo-valor">1234 / 56789-0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row-boleto">
+                    <div class="col-boleto" style="width: 15%;">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">Data Documento</span>
+                            <span class="campo-valor" id="printDataDoc"></span>
+                        </div>
+                    </div>
+                    <div class="col-boleto" style="width: 15%;">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">Nº Documento</span>
+                            <span class="campo-valor">001234</span>
+                        </div>
+                    </div>
+                    <div class="col-boleto" style="width: 10%;">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">Espécie Doc.</span>
+                            <span class="campo-valor">RC</span>
+                        </div>
+                    </div>
+                    <div class="col-boleto" style="width: 10%;">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">Aceite</span>
+                            <span class="campo-valor">N</span>
+                        </div>
+                    </div>
+                    <div class="col-boleto" style="width: 20%;">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">Data Processamento</span>
+                            <span class="campo-valor" id="printDataProc"></span>
+                        </div>
+                    </div>
+                    <div class="col-boleto" style="width: 30%;">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">Nosso Número</span>
+                            <span class="campo-valor">109/12345678-9</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row-boleto" style="border-bottom: none;">
+                    <div class="col-boleto" style="width: 70%; border-bottom: 1px solid #000;">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">Uso do Banco</span>
+                            <span class="campo-valor">&nbsp;</span>
+                        </div>
+                    </div>
+                    <div class="col-boleto" style="width: 30%; background-color: #eee; border-bottom: 1px solid #000;">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">(=) Valor do Documento</span>
+                            <span class="campo-valor" id="printValor"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex;">
+                    <div style="width: 70%; border-right: 1px solid #000; padding: 10px;">
+                        <span class="campo-titulo">Instruções (Texto de responsabilidade do beneficiário)</span>
+                        <p class="mt-2 mb-1"><strong><span id="printDescricao"></span></strong></p>
+                        <p class="mb-1">Sr. Caixa, não receber após o vencimento sem os encargos.</p>
+                        <p class="mb-1">Multa de 2% e Juros de 1% ao mês após o vencimento.</p>
+
+                        <div class="d-flex align-items-center mt-3 pt-3 border-top">
+                            <div id="qrcode-container" style="margin-right: 15px;"></div>
+                            <div>
+                                <strong>Pague com Pix</strong><br>
+                                <small>Utilize o QR Code ao lado para pagamento instantâneo.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="width: 30%; display: flex; flex-direction: column;">
+                        <div class="campo-boleto" style="border-bottom: 1px solid #000; height: 30px;">
+                            <span class="campo-titulo">(-) Desconto / Abatimento</span>
+                        </div>
+                        <div class="campo-boleto" style="border-bottom: 1px solid #000; height: 30px;">
+                            <span class="campo-titulo">(-) Outras Deduções</span>
+                        </div>
+                        <div class="campo-boleto" style="border-bottom: 1px solid #000; height: 30px;">
+                            <span class="campo-titulo">(+) Mora / Multa</span>
+                        </div>
+                        <div class="campo-boleto" style="border-bottom: 1px solid #000; height: 30px;">
+                            <span class="campo-titulo">(+) Outros Acréscimos</span>
+                        </div>
+                        <div class="campo-boleto" style="flex-grow: 1;">
+                            <span class="campo-titulo">(=) Valor Cobrado</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row-boleto" style="border-top: 1px solid #000;">
+                    <div class="col-boleto" style="width: 100%; border: none;">
+                        <div class="campo-boleto">
+                            <span class="campo-titulo">Pagador</span>
+                            <span class="campo-valor" id="printUnidade"></span><br>
+                            <span class="campo-titulo" style="margin-top: 2px;">Endereço da Unidade</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-2 ps-2">
+                <span class="campo-titulo" style="margin-left: 0;">Código de Baixa</span>
+                <svg id="barcode"></svg>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/sidebar.js}"></script>
+    <script th:src="@{/js/financeiro.js}"></script>
+
+    <script>
+        function prepararImpressao(unidade, valor, dataVencimento, linhaDigitavel, descricao, codigoPix) {
+            // 1. Referência à área de impressão
+            const areaPrint = document.getElementById('area-impressao');
+            const qrContainer = document.getElementById("qrcode-container");
+            const barcodeElement = document.getElementById("barcode");
+
+            // 2. Limpeza prévia (Crítico para evitar sobreposição ou erro)
+            qrContainer.innerHTML = "";
+
+            // 3. Formatação de Dados
+            const valorFormatado = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+            const dataHoje = new Date().toLocaleDateString('pt-BR');
+
+            let dataVencFmt = dataVencimento;
+            if (typeof dataVencimento === 'string' && dataVencimento.includes('-')) {
+                const parts = dataVencimento.split('-');
+                dataVencFmt = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+
+            // 4. Preencher Campos de Texto
+            document.getElementById('reciboPagador').textContent = unidade;
+            document.getElementById('reciboValor').textContent = valorFormatado;
+            document.getElementById('reciboVencimento').textContent = dataVencFmt;
+            document.getElementById('reciboDescricao').textContent = descricao;
+
+            document.getElementById('printUnidade').textContent = unidade;
+            document.getElementById('printValor').textContent = valorFormatado;
+            document.getElementById('printDescricao').textContent = descricao;
+            document.getElementById('printLinha').textContent = linhaDigitavel;
+            document.getElementById('printVencimento').textContent = dataVencFmt;
+            document.getElementById('printDataDoc').textContent = dataHoje;
+            document.getElementById('printDataProc').textContent = dataHoje;
+
+            // 5. CORREÇÃO PRINCIPAL: Tornar visível ANTES de gerar os gráficos
+            // Isso permite que as bibliotecas calculem as dimensões corretas (width/height)
+            areaPrint.classList.remove('d-none');
+
+            // Pequeno delay para o navegador renderizar o CSS (display: block) antes de desenhar o Canvas
+            requestAnimationFrame(() => {
+                try {
+                    // --- GERAÇÃO DO QR CODE PIX ---
+                    new QRCode(qrContainer, {
+                        text: codigoPix || "00020126330014BR.GOV.BCB.PIX0114+5511999999995204000053039865802BR5913CONDIGTAL DEMO6008SAO PAULO62070503***6304",
+                        width: 90,
+                        height: 90,
+                        correctLevel: QRCode.CorrectLevel.L
+                    });
+
+                    // --- GERAÇÃO DO CÓDIGO DE BARRAS ---
+                    const numerosBoleto = linhaDigitavel.replace(/\D/g, '').substring(0, 44) || "34191000000000000000000000000000000000000000";
+                    JsBarcode("#barcode", numerosBoleto, {
+                        format: "CODE128",
+                        lineColor: "#000",
+                        width: 1.5,
+                        height: 50,
+                        displayValue: false
+                    });
+
+                    // 6. Acionar Impressão
+                    setTimeout(() => {
+                        window.print();
+
+                        // Ocultar novamente após o diálogo de impressão fechar (ou após delay)
+                        setTimeout(() => {
+                            areaPrint.classList.add('d-none');
+                        }, 500); // Reduzi o tempo para evitar flash na tela
+                    }, 300);
+
+                } catch (e) {
+                    console.error("Erro ao gerar gráficos do boleto:", e);
+                    alert("Erro ao gerar visualização do boleto. Tente novamente.");
+                    areaPrint.classList.add('d-none'); // Garante que esconde se der erro
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

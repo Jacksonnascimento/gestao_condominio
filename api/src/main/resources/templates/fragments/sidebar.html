@@ -57,6 +57,12 @@
                     <i class='bx bxs-package'></i> Encomendas
                 </a>
             </li>
+            <li>
+                <a th:href="@{/financeiro}" class="nav-link"
+                   th:classappend="${currentPage == 'financeiro' ? 'active' : ''}">
+                    <i class='bx bxs-dollar-circle'></i> Financeiro
+                </a>
+            </li>
         </ul>
         <div class="sidebar-footer pt-3 mt-auto">
             

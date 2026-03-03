@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONDIGTAL - Gestão de Reservas</title>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link rel="icon" type="image/png" th:href="@{/images/logo.png}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+<div class="main-wrapper">
+    <div th:replace="~{fragments/sidebar :: sidebar(currentPage='reservas')}"></div>
+
+    <div class="main-content">
+        <header class="mobile-header">
+            <button class="btn" id="sidebar-toggle-btn"><i class='bx bx-menu'></i></button>
+            <span class="mobile-header-title">Gestão de Reservas</span>
+        </header>
+
+        <div class="content-body p-4">
+            <div class="page-header d-flex flex-column flex-md-row justify-content-md-between align-items-md-center mb-4">
+                <div class="text-center text-md-start">
+                    <h1 class="page-title">Gestão de Reservas</h1>
+                    <p class="page-subtitle d-none d-md-block">Acompanhe e solicite o uso de espaços do condomínio.</p>
+                </div>
+                <div class="d-grid d-md-block mt-3 mt-md-0" th:if="${!isGerencial}">
+                    <button class="btn btn-primary" onclick="abrirModalNovaReserva()">
+                        <i class='bx bx-plus'></i> Solicitar Reserva
+                    </button>
+                </div>
+            </div>
+
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xxl-5 g-4 mb-4 d-none d-lg-flex">
+                <div class="col"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="card-icon icon-unidades"><i class='bx bx-calendar-event'></i></div><div><span class="label">Total</span><span class="value" th:text="${totalReservas}">0</span></div></div></div></div>
+                <div class="col"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="card-icon icon-vazias"><i class='bx bx-time'></i></div><div><span class="label">Pendentes</span><span class="value" th:text="${totalPendentes}">0</span></div></div></div></div>
+                <div class="col"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="card-icon icon-ocupantes"><i class='bx bx-check-double'></i></div><div><span class="label">Aprovadas</span><span class="value" th:text="${totalAprovadas}">0</span></div></div></div></div>
+            </div>
+
+            <div class="card mb-4 shadow-sm border-0">
+                <div class="card-body">
+                    <form th:action="@{/reservas}" method="get" class="row g-2 align-items-end">
+                        <input type="hidden" name="status" th:value="${statusFiltro}" />
+                        
+                        <div class="col-12 col-md-4 col-lg-3" th:if="${isGerencial}">
+                            <label class="form-label small text-muted mb-1">Pesquisar</label>
+                            <input type="search" name="busca" class="form-control bg-body-tertiary" placeholder="Solicitante ou unidade..." th:value="${buscaFiltro}">
+                        </div>
+                        
+                        <div class="col-12 col-md-4 col-lg-3" th:if="${showCondominioInfo}">
+                            <label class="form-label small text-muted mb-1">Condomínio</label>
+                            <select name="conCod" class="form-select bg-body-tertiary" onchange="this.form.submit()">
+                                <option value="">Todos os Condomínios</option>
+                                <option th:each="c : ${condominios}" th:value="${c.conCod}" th:text="${c.conNome}" th:selected="${c.conCod == conCodSelecionado}"></option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-4 col-lg-2" th:if="${areasParaFiltro != null and !areasParaFiltro.isEmpty()}">
+                            <label class="form-label small text-muted mb-1">Área Comum</label>
+                            <select name="areaFiltro" class="form-select bg-body-tertiary" onchange="this.form.submit()">
+                                <option value="">Todas as Áreas</option>
+                                <option th:each="a : ${areasParaFiltro}" th:value="${a.areCod}" th:text="${a.nome}" th:selected="${a.areCod == areaSelecionada}"></option>
+                            </select>
+                        </div>
+
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <label class="form-label small text-muted mb-1">De (Data)</label>
+                            <input type="date" name="inicioApos" class="form-control bg-body-tertiary" th:value="${inicioAposFiltro}">
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <label class="form-label small text-muted mb-1">Até (Data)</label>
+                            <input type="date" name="fimAntes" class="form-control bg-body-tertiary" th:value="${fimAntesFiltro}">
+                        </div>
+
+                        <div class="col-12 col-md-auto ms-auto d-flex gap-2 mt-3 mt-md-0">
+                            <button type="submit" class="btn btn-secondary flex-grow-1"><i class='bx bx-filter-alt'></i> Filtrar</button>
+                            <a th:href="@{/reservas}" class="btn btn-outline-secondary flex-grow-1"><i class='bx bx-eraser'></i> Limpar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <ul class="nav nav-pills filter-tabs mb-4">
+                <li class="nav-item"><a class="nav-link" th:href="@{/reservas(conCod=${conCodSelecionado}, busca=${buscaFiltro}, areaFiltro=${areaSelecionada}, inicioApos=${inicioAposFiltro}, fimAntes=${fimAntesFiltro})}" th:classappend="${statusFiltro == null} ? 'active'">Todas</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/reservas(status='PENDENTE_APROVACAO', conCod=${conCodSelecionado}, busca=${buscaFiltro}, areaFiltro=${areaSelecionada}, inicioApos=${inicioAposFiltro}, fimAntes=${fimAntesFiltro})}" th:classappend="${statusFiltro != null and statusFiltro.name() == 'PENDENTE_APROVACAO'} ? 'active'">Pendentes</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/reservas(status='APROVADA', conCod=${conCodSelecionado}, busca=${buscaFiltro}, areaFiltro=${areaSelecionada}, inicioApos=${inicioAposFiltro}, fimAntes=${fimAntesFiltro})}" th:classappend="${statusFiltro != null and statusFiltro.name() == 'APROVADA'} ? 'active'">Aprovadas</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/reservas(status='REJEITADA', conCod=${conCodSelecionado}, busca=${buscaFiltro}, areaFiltro=${areaSelecionada}, inicioApos=${inicioAposFiltro}, fimAntes=${fimAntesFiltro})}" th:classappend="${statusFiltro != null and statusFiltro.name() == 'REJEITADA'} ? 'active'">Rejeitadas</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/reservas(status='CANCELADA_PELO_MORADOR', conCod=${conCodSelecionado}, busca=${buscaFiltro}, areaFiltro=${areaSelecionada}, inicioApos=${inicioAposFiltro}, fimAntes=${fimAntesFiltro})}" th:classappend="${statusFiltro != null and statusFiltro.name() == 'CANCELADA_PELO_MORADOR'} ? 'active'">Canceladas</a></li>
+            </ul>
+
+            <div th:if="${reservas.isEmpty()}" id="empty-placeholder" class="text-center p-5">
+                <i class='bx bx-calendar-x' style="font-size: 4rem; color: #ccc;"></i>
+                <p class="mt-3">Nenhuma reserva encontrada para os filtros selecionados.</p>
+            </div>
+
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" id="listaReservas">
+                <th:block th:each="reserva : ${reservas}">
+                    <div class="col item-card" th:id="'reserva-container-' + ${reserva.resCod}">
+                        <div th:replace="~{fragments/reserva-card :: card}"></div>
+                    </div>
+                </th:block>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block th:insert="~{fragments/reserva-form :: modal}"></th:block>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/app.js}"></script>
+<script th:src="@{/js/sidebar.js}"></script>
+<script th:src="@{/js/reservas.js}"></script>
+</body>
+</html>

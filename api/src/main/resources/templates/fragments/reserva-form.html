@@ -1,0 +1,74 @@
+<div th:fragment="modal" class="modal fade" id="modalReserva" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalReservaTitle">Nova Reserva</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formReserva">
+                    <div class="row g-3">
+                        <div class="col-md-12 mb-2" th:if="${unidadesUsuario != null and !unidadesUsuario.isEmpty()}">
+                            <label for="uniCod" class="form-label">Sua Unidade *</label>
+                            <select class="form-select" id="uniCod" name="uniCod" required>
+                                <option value="">Selecione sua unidade...</option>
+                                <option th:each="uni : ${unidadesUsuario}" th:value="${uni.uniCod}" th:text="${uni.uniNumero} + ' ' + (${uni.bloco} ?: '')"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-12 mb-2" th:if="${unidadesUsuario == null or unidadesUsuario.isEmpty()}">
+                            <div class="alert alert-warning p-2 small">Nenhuma unidade vinculada ao seu usuário. Você não pode solicitar reservas.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="areCodSelect" class="form-label">Área Comum *</label>
+                            <select class="form-select" id="areCodSelect" name="areCod" required onchange="carregarDetalhesArea(this)">
+                                <option value="">Selecione...</option>
+                                <option th:each="area : ${areasAtivas}" 
+                                        th:value="${area.areCod}" 
+                                        th:text="${area.nome}"
+                                        th:attr="data-permite=${area.permiteConvidados}, data-limite=${area.limiteConvidados}, data-termos=${area.termosUso}, data-taxa=${area.taxaValor}">
+                                </option>
+                            </select>
+                            <div id="taxaContainer" class="alert alert-info p-2 small mt-2 mb-0" style="display: none;">
+                                <i class='bx bx-money'></i> <span id="taxaTexto" class="fw-bold"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="dataReserva" class="form-label">Data *</label>
+                            <input type="date" class="form-control" id="dataReserva" name="data" required>
+                        </div>
+                        <div class="col-md-12" id="divTurnos" style="display: none;">
+                            <label for="turCodSelect" class="form-label">Turno</label>
+                            <select class="form-select" id="turCodSelect" name="turCod">
+                                <option value="">Dia Inteiro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="secaoConvidados" class="mt-4" style="display: none;">
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">Lista de Convidados <span id="limiteTexto" class="text-muted small"></span></h6>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="adicionarConvidado()"><i class='bx bx-plus'></i> Adicionar Convidado</button>
+                        </div>
+                        <div id="convidadosContainer"></div>
+                    </div>
+
+                    <div id="secaoTermos" class="mt-4" style="display: none;">
+                        <hr>
+                        <h6 class="mb-2">Termos de Uso</h6>
+                        <div class="p-3 border rounded bg-body-tertiary text-body small mb-2" id="textoTermos" style="max-height: 150px; overflow-y: auto;"></div>
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" id="termosAceitos" required>
+                            <label class="form-check-label text-danger fw-bold" for="termosAceitos">Li e concordo com os termos de uso *</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarReserva()">Solicitar Reserva</button>
+            </div>
+        </div>
+    </div>
+</div>

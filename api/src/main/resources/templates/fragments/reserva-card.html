@@ -1,0 +1,50 @@
+<div th:fragment="card" class="card h-100 shadow-sm" th:id="'reserva-card-' + ${reserva.resCod}">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="card-title mb-0" th:text="${reserva.areaComum.nome}"></h5>
+            <span th:if="${reserva.status.name() == 'PENDENTE_APROVACAO'}" class="badge bg-warning text-dark">Pendente</span>
+            <span th:if="${reserva.status.name() == 'APROVADA'}" class="badge bg-success">Aprovada</span>
+            <span th:if="${reserva.status.name() == 'REJEITADA'}" class="badge bg-danger">Rejeitada</span>
+            <span th:if="${reserva.status.name() == 'CANCELADA_PELO_MORADOR'}" class="badge bg-secondary">Cancelada</span>
+            <span th:if="${reserva.status.name() == 'CONCLUIDA'}" class="badge bg-info">Concluída</span>
+        </div>
+        
+        <p th:if="${showCondominioInfo}" class="text-muted small mb-1"><i class='bx bx-buildings'></i> <span th:text="${reserva.areaComum.condominio.conNome}"></span></p>
+        
+        <p class="text-muted small mb-3">
+            <i class='bx bx-calendar'></i> <span th:text="${#temporals.format(reserva.data, 'dd/MM/yyyy')}"></span>
+            <span th:if="${reserva.turno != null}" th:text="' - ' + ${reserva.turno.nome} + ' (' + ${reserva.turno.horaInicio} + ' às ' + ${reserva.turno.horaFim} + ')'"></span>
+        </p>
+        
+        <ul class="list-unstyled small mb-3">
+            <li><i class='bx bx-user'></i> Solicitante: <span th:text="${reserva.morador.pesNome}"></span></li>
+            <li><i class='bx bx-door-open'></i> Unidade: <span th:text="${reserva.unidade.uniNumero} + ' ' + (${reserva.unidade.bloco} ?: '')"></span></li>
+            
+            <li th:if="${!reserva.convidados.isEmpty()}">
+                <i class='bx bx-group'></i> Convidados: <span th:text="${reserva.convidados.size()}"></span>
+                <a data-bs-toggle="collapse" th:href="'#collapseConvidados-' + ${reserva.resCod}" role="button" aria-expanded="false" class="ms-2 small text-decoration-none border-start ps-2">Ver lista</a>
+                
+                <div class="collapse mt-2" th:id="'collapseConvidados-' + ${reserva.resCod}">
+                    <ul class="list-group list-group-flush small border rounded">
+                        <li class="list-group-item py-1 px-2 bg-body-tertiary" th:each="conv : ${reserva.convidados}">
+                            <span class="fw-medium" th:text="${conv.nome}"></span> 
+                            <span th:if="${conv.documento != null and conv.documento != ''}" th:text="' - ' + ${conv.documento}" class="text-muted"></span>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+        </ul>
+
+        <div th:if="${reserva.motivoRejeicao != null}" class="alert alert-danger p-2 small mb-3">
+            <strong>Motivo Rejeição:</strong> <span th:text="${reserva.motivoRejeicao}"></span>
+        </div>
+
+        <div class="d-flex gap-2 mt-auto border-top pt-3">
+            <th:block th:if="${reserva.status.name() == 'PENDENTE_APROVACAO'}">
+                <button th:if="${usuarioLogado.pesIsGlobalAdmin == true or isGerencial}" class="btn btn-sm btn-success flex-grow-1" th:attr="onclick=|aprovarReserva(${reserva.resCod})|">Aprovar</button>
+                <button th:if="${usuarioLogado.pesIsGlobalAdmin == true or isGerencial}" class="btn btn-sm btn-danger flex-grow-1" th:attr="onclick=|rejeitarReserva(${reserva.resCod})|">Rejeitar</button>
+            </th:block>
+            <button th:if="${reserva.morador.pesCod == usuarioLogado.pesCod and (reserva.status.name() == 'PENDENTE_APROVACAO' or reserva.status.name() == 'APROVADA')}" class="btn btn-sm btn-outline-danger w-100" th:attr="onclick=|cancelarReserva(${reserva.resCod})|">Cancelar Reserva</button>
+        </div>
+    </div>
+</div>

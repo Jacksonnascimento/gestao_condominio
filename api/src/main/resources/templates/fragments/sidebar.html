@@ -39,6 +39,19 @@
                     <i class='bx bxs-file-doc'></i> Contratos
                 </a>
             </li>
+            
+            <li th:if="${usuarioPodeGerenciar}">
+                <a th:href="@{/areas-comuns}" class="nav-link"
+                    th:classappend="${currentPage == 'areas-comuns' ? 'active' : ''}">
+                    <i class='bx bxs-layer'></i> Áreas Comuns
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/reservas}" class="nav-link"
+                    th:classappend="${currentPage == 'reservas' ? 'active' : ''}">
+                    <i class='bx bxs-calendar-event'></i> Reservas
+                </a>
+            </li>
             <li>
                 <a th:href="@{/comunicados}" class="nav-link"
                     th:classappend="${currentPage == 'comunicados' ? 'active' : ''}">

@@ -1,0 +1,19 @@
+<div th:fragment="card" class="card h-100 shadow-sm" th:id="'area-card-' + ${area.areCod}">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="card-title mb-0" th:text="${area.nome}"></h5>
+            <span th:class="${area.ativa} ? 'badge bg-success' : 'badge bg-danger'" th:text="${area.ativa} ? 'Ativa' : 'Inativa'"></span>
+        </div>
+        <p th:if="${showCondominioInfo}" class="text-muted small mb-2"><i class='bx bx-buildings'></i> <span th:text="${area.condominio.conNome}"></span></p>
+        <p class="card-text small" th:text="${area.descricao}"></p>
+        <ul class="list-unstyled small mb-3">
+            <li><i class='bx bx-group'></i> Capacidade: <span th:text="${area.capacidadeMaxima} ?: 'N/A'"></span></li>
+            <li><i class='bx bx-calendar'></i> Antecedência: <span th:text="${area.diasAntecedenciaMin} + ' a ' + ${area.diasAntecedenciaMax} + ' dias'"></span></li>
+            <li><i class='bx bx-money'></i> Taxa: <span th:text="${area.taxaValor != null} ? 'R$ ' + ${area.taxaValor} : 'Gratuito'"></span></li>
+        </ul>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-primary flex-grow-1" th:attr="onclick=|editarArea(${area.areCod})|">Editar</button>
+            <button class="btn btn-sm btn-outline-danger" th:attr="onclick=|excluirArea(${area.areCod})|"><i class='bx bx-trash'></i></button>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,82 @@
+<div th:fragment="modal" class="modal fade" id="modalAreaComum" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAreaComumTitle">Área Comum</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAreaComum">
+                    <input type="hidden" id="areCod" name="areCod">
+                    
+                    <div class="row g-3">
+                        <div class="col-md-12" th:if="${condominios != null and condominios.size() > 1}">
+                            <label for="conCod" class="form-label">Condomínio *</label>
+                            <select class="form-select" id="conCod" name="conCod" required>
+                                <option value="">Selecione o Condomínio...</option>
+                                <option th:each="cond : ${condominios}" th:value="${cond.conCod}" th:text="${cond.conNome}" th:selected="${cond.conCod == conCodSelecionado}"></option>
+                            </select>
+                        </div>
+                        <input type="hidden" id="conCod" name="conCod" th:if="${condominios != null and condominios.size() == 1}" th:value="${condominios[0].conCod}">
+
+                        <div class="col-md-8">
+                            <label for="nome" class="form-label">Nome da Área *</label>
+                            <input type="text" class="form-control" id="nome" name="nome" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="capacidadeMaxima" class="form-label">Capacidade Máx.</label>
+                            <input type="number" class="form-control" id="capacidadeMaxima" name="capacidadeMaxima" min="1">
+                        </div>
+                        <div class="col-md-12">
+                            <label for="descricao" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="descricao" name="descricao" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <label for="termosUso" class="form-label">Termos de Uso</label>
+                            <textarea class="form-control" id="termosUso" name="termosUso" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="permiteConvidados" name="permiteConvidados">
+                                <label class="form-check-label" for="permiteConvidados">Permite Convidados Externos</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="limiteConvidados" class="form-label">Limite de Convidados</label>
+                            <input type="number" class="form-control" id="limiteConvidados" name="limiteConvidados" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="taxaValor" class="form-label">Taxa de Uso (R$)</label>
+                            <input type="number" class="form-control" id="taxaValor" name="taxaValor" step="0.01" min="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="diasAntecedenciaMin" class="form-label">Dias Antecedência (Mín)</label>
+                            <input type="number" class="form-control" id="diasAntecedenciaMin" name="diasAntecedenciaMin" value="1" min="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="diasAntecedenciaMax" class="form-label">Dias Antecedência (Máx)</label>
+                            <input type="number" class="form-control" id="diasAntecedenciaMax" name="diasAntecedenciaMax" value="30" min="1">
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="ativa" name="ativa" checked>
+                                <label class="form-check-label" for="ativa">Área Ativa</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Turnos de Horário</h6>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="adicionarTurno()"><i class='bx bx-plus'></i> Adicionar Turno</button>
+                    </div>
+                    <div id="turnosContainer"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarArea()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -58,15 +58,18 @@ public class VisitanteApiController {
     }
 
     @GetMapping
-    @Operation(summary = "Lista os visitantes visíveis para quem está logado, das entradas mais recentes para as mais antigas")
+    @Operation(summary = "Lista os visitantes visíveis para quem está logado, das entradas mais recentes para as mais "
+            + "antigas; com status, só os que estão no condomínio (NO_LOCAL) ou só os que saíram (SAIU)")
     public Pagina<VisitanteResumo> listar(@RequestParam(required = false) Integer condominioId,
                                           @RequestParam(required = false) String busca,
                                           @RequestParam(required = false) Integer unidadeId,
+                                          @RequestParam(required = false) VisitanteStatus status,
                                           @RequestParam(defaultValue = "0") int pagina,
                                           @RequestParam(defaultValue = "20") int tamanho) {
         Pageable pageable = PageRequest.of(Math.max(pagina, 0), Math.min(Math.max(tamanho, 1), 100),
                 Sort.by(Sort.Direction.DESC, "dataEntrada"));
-        return Pagina.de(visitanteService.consultarResumos(usuarioLogado(), condominioId, busca, unidadeId, pageable));
+        return Pagina.de(visitanteService.consultarResumos(usuarioLogado(), condominioId, busca, unidadeId, status,
+                pageable));
     }
 
     /** Chaves: {@code TOTAL}, {@code NO_LOCAL}, {@code DO_DIA} (entradas hoje) e {@code SAIDAS_DIA} (saídas hoje). */

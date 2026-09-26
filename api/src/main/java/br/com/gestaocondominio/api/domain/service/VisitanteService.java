@@ -292,11 +292,18 @@ public class VisitanteService {
 
     // --- Usados pela API /api/v1/visitantes ---
 
-    /** Listagem da API, com as mesmas regras de visibilidade da tela; sem CPF, RG e observações. */
+    /**
+     * Listagem da API, com as mesmas regras de visibilidade da tela; sem CPF, RG e observações. Com {@code status},
+     * só os visitantes nessa situação (os que estão no condomínio ou os que já saíram).
+     */
     @Transactional(readOnly = true)
     public Page<VisitanteResumo> consultarResumos(Pessoa usuarioLogado, Integer condominioId, String nome,
-                                                  Integer unidadeId, Pageable pageable) {
-        Page<Visitante> page = visitanteRepository.findAll(getSpec(usuarioLogado, condominioId, nome, unidadeId), pageable);
+                                                  Integer unidadeId, VisitanteStatus status, Pageable pageable) {
+        Specification<Visitante> spec = getSpec(usuarioLogado, condominioId, nome, unidadeId);
+        if (status != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
+        }
+        Page<Visitante> page = visitanteRepository.findAll(spec, pageable);
         boolean adminGeral = isAdminGeral(usuarioLogado);
         Set<Integer> gerenciados = condominiosQueGerencia(usuarioLogado);
         return page.map(v -> VisitanteResumo.de(v, adminGeral || gerenciados.contains(v.getCondominio().getConCod())));

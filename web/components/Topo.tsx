@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Building2, ChevronDown, LogOut, Menu } from 'lucide-react';
+import Link from 'next/link';
+import { Building2, ChevronDown, CircleUser, LogOut, Menu } from 'lucide-react';
 import { Marca } from '@/components/Marca';
 import { useSessao } from '@/context/SessaoContext';
 import { iniciais } from '@/services/utilitarios';
@@ -79,6 +80,14 @@ function MenuDaConta() {
             <span className="truncate text-[13px] text-apagado">{usuario.email}</span>
             {descricaoDoPapel && <span className="truncate text-[13px] text-apagado">{descricaoDoPapel}</span>}
           </div>
+          <Link
+            href="/perfil"
+            onClick={() => setAberto(false)}
+            className="flex h-11 w-full items-center gap-2.5 rounded-lg px-3 text-sm font-semibold text-tinta no-underline hover:bg-trilho hover:text-tinta"
+          >
+            <CircleUser size={17} aria-hidden />
+            Meu perfil
+          </Link>
           <button
             type="button"
             onClick={sair}

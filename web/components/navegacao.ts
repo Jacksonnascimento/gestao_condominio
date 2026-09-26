@@ -1,4 +1,5 @@
 import {
+  Building,
   Building2,
   CalendarDays,
   FileText,
@@ -37,15 +38,15 @@ export const MENU: GrupoDoMenu[] = [
   {
     titulo: 'Cadastros',
     itens: [
-      { rotulo: 'Unidades', href: '/unidades', icone: Building2, pronta: false },
-      { rotulo: 'Ocupantes', href: '/ocupantes', icone: Users, pronta: false },
-      { rotulo: 'Contratos', href: '/contratos', icone: FileText, pronta: false, visivel: (p) => p.gestao },
+      { rotulo: 'Unidades', href: '/unidades', icone: Building2, pronta: true },
+      { rotulo: 'Ocupantes', href: '/ocupantes', icone: Users, pronta: true },
+      { rotulo: 'Contratos', href: '/contratos', icone: FileText, pronta: true, visivel: (p) => p.gestao },
     ],
   },
   {
     titulo: 'Portaria',
     itens: [
-      { rotulo: 'Visitantes', href: '/visitantes', icone: IdCard, pronta: false },
+      { rotulo: 'Visitantes', href: '/visitantes', icone: IdCard, pronta: true },
       { rotulo: 'Encomendas', href: '/encomendas', icone: Package, pronta: true },
     ],
   },
@@ -54,15 +55,16 @@ export const MENU: GrupoDoMenu[] = [
     itens: [
       { rotulo: 'Áreas comuns', href: '/areas-comuns', icone: TreePine, pronta: false, visivel: (p) => p.gestao },
       { rotulo: 'Reservas', href: '/reservas', icone: CalendarDays, pronta: false },
-      { rotulo: 'Comunicados', href: '/comunicados', icone: Megaphone, pronta: false },
-      { rotulo: 'Ocorrências', href: '/ocorrencias', icone: TriangleAlert, pronta: false },
+      { rotulo: 'Comunicados', href: '/comunicados', icone: Megaphone, pronta: true },
+      { rotulo: 'Ocorrências', href: '/ocorrencias', icone: TriangleAlert, pronta: true },
     ],
   },
   {
     titulo: 'Administração',
     itens: [
-      { rotulo: 'Financeiro', href: '/financeiro', icone: Wallet, pronta: false },
-      { rotulo: 'Usuários', href: '/usuarios', icone: UserCog, pronta: false, visivel: (p) => p.administraUsuarios },
+      { rotulo: 'Financeiro', href: '/financeiro', icone: Wallet, pronta: true },
+      { rotulo: 'Usuários', href: '/usuarios', icone: UserCog, pronta: true, visivel: (p) => p.administraUsuarios },
+      { rotulo: 'Condomínios', href: '/condominios', icone: Building, pronta: true, visivel: (p) => p.administradorGeral },
     ],
   },
 ];

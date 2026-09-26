@@ -18,6 +18,8 @@ export interface Permissoes {
   portaria: boolean;
   /** Pode dar e tirar acesso de outras pessoas ao condomínio. */
   administraUsuarios: boolean;
+  /** Administrador geral da instalação: cadastra condomínios. */
+  administradorGeral: boolean;
 }
 
 interface Sessao {
@@ -30,6 +32,8 @@ interface Sessao {
   descricaoDoPapel: string;
   permissoes: Permissoes;
   carregando: boolean;
+  /** Lê de novo quem está logado e os condomínios: depois de mudar o próprio nome ou cadastrar um condomínio. */
+  recarregar: () => void;
   sair: () => void;
 }
 
@@ -42,6 +46,7 @@ export function SessaoProvider({ children }: { children: React.ReactNode }) {
   const [condominios, setCondominios] = useState<CondominioDaSessao[]>([]);
   const [condominioId, setCondominioId] = useState<number | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [versao, setVersao] = useState(0);
 
   useEffect(() => {
     let ativo = true;
@@ -63,7 +68,11 @@ export function SessaoProvider({ children }: { children: React.ReactNode }) {
         }
         setUsuario(eu);
         setCondominios(lista);
-        setCondominioId(lista.some((c) => c.id === guardado) ? guardado : (lista[0]?.id ?? null));
+        // Numa recarga, fica o condomínio que já estava escolhido, se ele continuar na lista
+        setCondominioId((atual) => {
+          if (lista.some((c) => c.id === atual)) return atual;
+          return lista.some((c) => c.id === guardado) ? guardado : (lista[0]?.id ?? null);
+        });
       } catch {
         // Sem /auth/eu não há como montar as telas; o 401 já leva ao login, os demais erros também
         if (ativo) encerrarSessao(true);
@@ -74,7 +83,9 @@ export function SessaoProvider({ children }: { children: React.ReactNode }) {
     return () => {
       ativo = false;
     };
-  }, []);
+  }, [versao]);
+
+  const recarregar = useCallback(() => setVersao((v) => v + 1), []);
 
   const trocarCondominio = useCallback((id: number) => {
     setCondominioId(id);
@@ -103,11 +114,13 @@ export function SessaoProvider({ children }: { children: React.ReactNode }) {
         gestao,
         portaria: gestao || tem('PORTEIRO'),
         administraUsuarios: admin || tem('SINDICO', 'ADMIN'),
+        administradorGeral: admin,
       },
       carregando,
+      recarregar,
       sair: () => encerrarSessao(false),
     };
-  }, [usuario, condominios, condominioId, trocarCondominio, carregando]);
+  }, [usuario, condominios, condominioId, trocarCondominio, carregando, recarregar]);
 
   return <SessaoContext.Provider value={valor}>{children}</SessaoContext.Provider>;
 }

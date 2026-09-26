@@ -31,7 +31,7 @@ function cidade(c: Condominio): string {
 }
 
 export default function PaginaDeCondominios() {
-  const { usuario, carregando: carregandoSessao } = useSessao();
+  const { usuario, carregando: carregandoSessao, recarregar } = useSessao();
   const administradorGeral = usuario?.administradorGeral === true;
   const [opcoes, setOpcoes] = useState<OpcoesCondominio | null>(null);
   const [condominios, setCondominios] = useState<Condominio[] | null>(null);
@@ -68,6 +68,8 @@ export default function PaginaDeCondominios() {
   const aposSalvar = () => {
     setJanela(null);
     setVersao((v) => v + 1);
+    // A escolha de condomínio do topo passa a mostrar o novo (ou o nome novo)
+    recarregar();
   };
 
   async function mudarSituacao(condominio: Condominio) {
@@ -90,6 +92,7 @@ export default function PaginaDeCondominios() {
         toast.success('Condomínio reativado.');
       }
       setVersao((v) => v + 1);
+      recarregar();
     } catch (e) {
       toast.error(mensagemErroApi(e, 'Não foi possível mudar a situação do condomínio.'));
     } finally {
@@ -250,10 +253,6 @@ export default function PaginaDeCondominios() {
           nome="condomínios"
         />
       </Cartao>
-
-      <p className="text-[13px] text-apagado">
-        Um condomínio novo aparece na escolha de condomínio do topo depois que a página é recarregada.
-      </p>
 
       {janela && opcoes && (
         <FormularioDoCondominio

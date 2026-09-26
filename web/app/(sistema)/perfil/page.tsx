@@ -6,6 +6,7 @@ import { FotoDoPerfil } from '@/components/perfil/FotoDoPerfil';
 import { TrocarSenha } from '@/components/perfil/TrocarSenha';
 import { formatarCpf } from '@/components/usuarios/cpf';
 import { Botao, CabecalhoDaPagina, Campo, Cartao, Selo, TituloDoCartao, Vazio } from '@/components/Interface';
+import { useSessao } from '@/context/SessaoContext';
 import type { UsuarioLogado } from '@/services/autenticacaoService';
 import { perfilService } from '@/services/perfilService';
 import { mensagemErroApi } from '@/services/utilitarios';
@@ -115,6 +116,7 @@ function Acessos({ perfil }: { perfil: UsuarioLogado }) {
 }
 
 export default function PaginaDoPerfil() {
+  const { recarregar } = useSessao();
   const [perfil, setPerfil] = useState<UsuarioLogado | null>(null);
   const [falhou, setFalhou] = useState(false);
 
@@ -146,7 +148,14 @@ export default function PaginaDoPerfil() {
       {perfil && (
         <div className="grid gap-5 xl:grid-cols-[1.6fr_1fr]">
           <div className="flex flex-col gap-5">
-            <DadosPessoais perfil={perfil} aoSalvar={setPerfil} />
+            <DadosPessoais
+              perfil={perfil}
+              aoSalvar={(novo) => {
+                setPerfil(novo);
+                // O nome no menu e no topo acompanha a mudança
+                recarregar();
+              }}
+            />
             <TrocarSenha />
           </div>
           <div className="flex flex-col gap-5 self-start">

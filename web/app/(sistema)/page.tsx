@@ -43,16 +43,17 @@ async function sePermitido<T>(chamada: Promise<T>, aoFalhar: (e: unknown) => voi
   }
 }
 
-function CartaoDeIndicador({ rotulo, valor, destaque }: { rotulo: string; valor: number; destaque?: boolean }) {
+function CartaoDeIndicador({ rotulo, valor, destaque, href }: { rotulo: string; valor: number; destaque?: boolean; href: string }) {
   return (
-    <div
-      className={`flex items-end justify-between gap-3 rounded-2xl px-[22px] py-[18px] ${
-        destaque ? 'bg-tinta text-fundo' : 'border border-borda bg-superficie'
+    <Link
+      href={href}
+      className={`flex items-end justify-between gap-3 rounded-2xl px-[22px] py-[18px] no-underline transition-colors ${
+        destaque ? 'bg-tinta text-fundo hover:bg-tinta-2 hover:text-fundo' : 'border border-borda bg-superficie text-tinta hover:border-contorno hover:text-tinta'
       }`}
     >
       <span className={`text-[13px] font-semibold ${destaque ? 'text-[#cfc5b6]' : 'text-apagado'}`}>{rotulo}</span>
       <span className={`font-titulo text-5xl leading-[0.9] ${destaque && valor > 0 ? 'text-ouro-claro' : ''}`}>{valor}</span>
-    </div>
+    </Link>
   );
 }
 
@@ -108,11 +109,11 @@ export default function PaginaDoPainel() {
   const primeiroNome = usuario?.nome.split(' ')[0] ?? '';
 
   const cartoes = [
-    { rotulo: 'Unidades ativas', valor: indicadores?.totalUnidades },
-    { rotulo: 'Ocupantes', valor: indicadores?.totalOcupantes },
-    { rotulo: 'Contratos ativos', valor: indicadores?.totalContratosAtivos },
-    { rotulo: 'Ocorrências pendentes', valor: indicadores?.totalOcorrenciasPendentes, destaque: true },
-  ].filter((c): c is { rotulo: string; valor: number; destaque?: boolean } => typeof c.valor === 'number');
+    { rotulo: 'Unidades ativas', valor: indicadores?.totalUnidades, href: '/unidades' },
+    { rotulo: 'Ocupantes', valor: indicadores?.totalOcupantes, href: '/ocupantes' },
+    { rotulo: 'Contratos ativos', valor: indicadores?.totalContratosAtivos, href: '/contratos' },
+    { rotulo: 'Ocorrências pendentes', valor: indicadores?.totalOcorrenciasPendentes, href: '/ocorrencias', destaque: true },
+  ].filter((c): c is { rotulo: string; valor: number; href: string; destaque?: boolean } => typeof c.valor === 'number');
 
   return (
     <div className="flex flex-col gap-[22px]">
@@ -134,7 +135,7 @@ export default function PaginaDoPainel() {
       {cartoes.length > 0 && (
         <section aria-label="Indicadores" className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           {cartoes.map((c) => (
-            <CartaoDeIndicador key={c.rotulo} rotulo={c.rotulo} valor={c.valor} destaque={c.destaque} />
+            <CartaoDeIndicador key={c.rotulo} rotulo={c.rotulo} valor={c.valor} destaque={c.destaque} href={c.href} />
           ))}
         </section>
       )}
@@ -192,7 +193,11 @@ export default function PaginaDoPainel() {
         <div className="flex flex-col gap-5">
           {ocorrencias && (
             <Cartao>
-              <TituloDoCartao titulo="Ocorrências abertas" />
+              <TituloDoCartao titulo="Ocorrências abertas">
+                <Link href="/ocorrencias" className="text-sm font-bold">
+                  Todas
+                </Link>
+              </TituloDoCartao>
               {ocorrencias.length === 0 ? (
                 <Vazio>Nenhuma ocorrência aberta.</Vazio>
               ) : (
@@ -215,7 +220,11 @@ export default function PaginaDoPainel() {
 
           {reservas && (
             <Cartao>
-              <TituloDoCartao titulo="Próximas reservas" />
+              <TituloDoCartao titulo="Próximas reservas">
+                <Link href="/reservas" className="text-sm font-bold">
+                  Agenda
+                </Link>
+              </TituloDoCartao>
               {reservas.length === 0 ? (
                 <Vazio>Nenhuma reserva marcada.</Vazio>
               ) : (

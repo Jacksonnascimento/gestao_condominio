@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/*
+ * Cores e fontes do sistema (modelo visual "D · Combinado"): fundo creme, tinta quase preta e o dourado do
+ * logo como destaque. As telas usam só estes nomes (bg-fundo, text-apagado, border-borda...), para que um
+ * ajuste de cor, ou um tema escuro no futuro, mude num lugar só.
+ */
+@theme {
+  --color-fundo: #f6f2ea;
+  --color-lateral: #fbf8f3;
+  --color-superficie: #ffffff;
+  --color-cabecalho: #f8f4ec;
+  --color-borda: #e6ddcd;
+  --color-borda-suave: #f1ebe0;
+  --color-contorno: #d9cdb8;
+  --color-trilho: #ece4d6;
+  --color-realce: #efe4d0;
+
+  --color-tinta: #1f1b16;
+  --color-tinta-2: #4a433a;
+  --color-apagado: #6e6458;
+
+  --color-ouro: #8a5a1f;
+  --color-ouro-escuro: #6b4412;
+  --color-ouro-claro: #e2b77a;
+
+  /* Selos de situação: diferem em claridade, não só em matiz */
+  --color-aviso-fundo: #f4e3c4;
+  --color-aviso: #6b4412;
+  --color-neutro-fundo: #ece8e2;
+  --color-neutro: #4a433a;
+  --color-info-fundo: #e3e7ec;
+  --color-info: #34404d;
+  --color-perigo-fundo: #f6ddd6;
+  --color-perigo: #8a2b17;
+}
+
+@theme inline {
+  --font-sans: var(--font-manrope), "Segoe UI", system-ui, sans-serif;
+  --font-titulo: var(--font-instrument), Georgia, serif;
+}
+
+/* Na camada base, para que as classes das telas (text-tinta-2 num link do menu, por exemplo) prevaleçam */
+@layer base {
+  html {
+    background: var(--color-fundo);
+  }
+
+  body {
+    background: var(--color-fundo);
+    color: var(--color-tinta);
+    font-family: var(--font-sans);
+  }
+
+  a {
+    color: var(--color-ouro);
+  }
+
+  a:hover {
+    color: var(--color-ouro-escuro);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ouro);
+    outline-offset: 2px;
+  }
+}

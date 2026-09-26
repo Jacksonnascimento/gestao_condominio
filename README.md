@@ -20,9 +20,20 @@ O projeto é construído com as seguintes tecnologias principais:
     * Spring Security
     * PostgreSQL
 * **Front-end:**
-    * Thymeleaf (Server-Side Rendering)
-    * Bootstrap 5
-    * JavaScript
+    * Next.js 16, React 19 e Tailwind CSS 4, na pasta `web/` (sistema novo, em migração)
+    * Thymeleaf e Bootstrap 5 (telas antigas, removidas ao fim da migração)
+
+---
+
+## ▶️ Como rodar no computador
+
+1. Copie `.env.example` para `.env` na raiz e preencha (banco, clientes, administrador inicial, segredo dos tokens).
+2. API (porta 8080): `cd api` e `.\mvnw.cmd spring-boot:run`. Os bancos dos clientes são criados na primeira subida.
+3. Sistema web (porta 3000): `cd web`, `npm install` e `npm run dev`.
+4. Abra pelo endereço do cliente, por exemplo `http://modelo.localhost:3000`. O subdomínio escolhe o cliente (e o banco);
+   `http://localhost:3000` também leva ao `modelo`, que tem `localhost` como domínio no `CLIENTES` do `.env`.
+
+Antes de subir mudanças no `web/`, rode `npm run conferir` (tipos e lint).
 
 ---
 

@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d C:\\git\\gestao_condominio\\api && .\\mvnw.cmd -q spring-boot:run"],
+      "port": 8080
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d C:\\git\\gestao_condominio\\web && npm run dev"],
+      "port": 3000,
+      "url": "http://modelo.localhost:3000"
+    }
+  ]
+}

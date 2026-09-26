@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.UUID;
 
@@ -21,12 +20,6 @@ public class PasswordResetService {
     @Autowired private EmailService emailService;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private UsuarioCondominioRepository usuarioCondominioRepository;
-
-    @Transactional
-    public void createPasswordResetToken(String email, int expiryHours) {
-        String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
-        createPasswordResetToken(email, expiryHours, baseUrl);
-    }
 
     /** Envia o link de redefinição apontando para {@code baseUrl}, que é o endereço do sistema web do cliente. */
     @Transactional

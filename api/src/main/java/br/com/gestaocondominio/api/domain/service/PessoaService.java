@@ -4,6 +4,7 @@ import br.com.gestaocondominio.api.controller.dto.PessoaUpdateRequest;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
 import br.com.gestaocondominio.api.util.ValidadorDocumento;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,7 +15,6 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.Base64;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -40,10 +40,10 @@ public class PessoaService {
 
         String documentoNumerico = pessoa.getPesCpfCnpj().replaceAll("[^0-9]", "");
         if (pessoa.getPesTipo() == 'F' && documentoNumerico.length() == 14) {
-            throw new IllegalArgumentException("CNPJ não pode ser cadastrado para Pessoa Física.");
+            throw new IllegalArgumentException("CNPJ não pode ser cadastrado para pessoa física.");
         }
         if (pessoa.getPesTipo() == 'J' && documentoNumerico.length() == 11) {
-            throw new IllegalArgumentException("CPF não pode ser cadastrado para Pessoa Jurídica.");
+            throw new IllegalArgumentException("CPF não pode ser cadastrado para pessoa jurídica.");
         }
 
         pessoaRepository.findByPesCpfCnpj(pessoa.getPesCpfCnpj()).ifPresent(p -> {
@@ -67,24 +67,10 @@ public class PessoaService {
         return pessoaRepository.save(pessoa);
     }
 
-    public List<Pessoa> listarPessoasAutorizadas() {
-        return pessoaRepository.findAll();
-    }
-
-    public Optional<Pessoa> buscarPessoaPorId(Integer id) {
-        return pessoaRepository.findById(id);
-    }
-
-    public byte[] buscarImagemPorId(Integer id) {
-        Pessoa pessoa = pessoaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + id));
-        return pessoa.getPesImagem();
-    }
-
     @Transactional
     public Pessoa atualizarPessoa(Integer id, PessoaUpdateRequest dadosParaAtualizar) {
         Pessoa pessoaNoBanco = pessoaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Pessoa não encontrada."));
 
         if (dadosParaAtualizar.pesNome() != null) {
             pessoaNoBanco.setPesNome(dadosParaAtualizar.pesNome());
@@ -106,7 +92,7 @@ public class PessoaService {
             }
             pessoaRepository.findByPesCpfCnpj(dadosParaAtualizar.pesCpfCnpj()).ifPresent(p -> {
                 if (!p.getPesCod().equals(id))
-                    throw new IllegalArgumentException("Novo CPF/CNPJ já cadastrado para outra pessoa.");
+                    throw new IllegalArgumentException("CPF/CNPJ já cadastrado para outra pessoa.");
             });
             pessoaNoBanco.setPesCpfCnpj(dadosParaAtualizar.pesCpfCnpj());
         }
@@ -118,17 +104,17 @@ public class PessoaService {
         String documentoNumerico = documentoFinal.replaceAll("[^0-9]", "");
 
         if (tipoPessoaFinal == 'F' && documentoNumerico.length() == 14) {
-            throw new IllegalArgumentException("CNPJ não pode ser cadastrado para Pessoa Física.");
+            throw new IllegalArgumentException("CNPJ não pode ser cadastrado para pessoa física.");
         }
         if (tipoPessoaFinal == 'J' && documentoNumerico.length() == 11) {
-            throw new IllegalArgumentException("CPF não pode ser cadastrado para Pessoa Jurídica.");
+            throw new IllegalArgumentException("CPF não pode ser cadastrado para pessoa jurídica.");
         }
 
         if (dadosParaAtualizar.pesEmail() != null
                 && !pessoaNoBanco.getPesEmail().equals(dadosParaAtualizar.pesEmail())) {
             pessoaRepository.findByPesEmail(dadosParaAtualizar.pesEmail()).ifPresent(p -> {
                 if (!p.getPesCod().equals(id))
-                    throw new IllegalArgumentException("Novo E-mail já cadastrado para outra pessoa.");
+                    throw new IllegalArgumentException("E-mail já cadastrado para outra pessoa.");
             });
             pessoaNoBanco.setPesEmail(dadosParaAtualizar.pesEmail());
         }
@@ -148,7 +134,7 @@ public class PessoaService {
     @Transactional
     public void atualizarSenha(Integer id, String senhaAtual, String novaSenha) {
         Pessoa pessoaNoBanco = pessoaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Pessoa não encontrada."));
 
         if (!passwordEncoder.matches(senhaAtual, pessoaNoBanco.getPesSenhaLogin())) {
             throw new BadCredentialsException("A senha atual informada está incorreta.");
@@ -161,22 +147,6 @@ public class PessoaService {
         pessoaNoBanco.setPesSenhaLogin(passwordEncoder.encode(novaSenha));
         pessoaNoBanco.setPesDtAtualizacao(LocalDateTime.now());
         pessoaRepository.save(pessoaNoBanco);
-    }
-
-    public Pessoa inativarPessoa(Integer id) {
-        Pessoa pessoa = pessoaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + id));
-        pessoa.setPesAtivo(false);
-        pessoa.setPesDtAtualizacao(LocalDateTime.now());
-        return pessoaRepository.save(pessoa);
-    }
-
-    public Pessoa ativarPessoa(Integer id) {
-        Pessoa pessoa = pessoaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Pessoa não encontrada com o ID: " + id));
-        pessoa.setPesAtivo(true);
-        pessoa.setPesDtAtualizacao(LocalDateTime.now());
-        return pessoaRepository.save(pessoa);
     }
 
     public Pessoa getLoggedInUser() {

@@ -131,15 +131,15 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
     @Transactional
     public Ocorrencia criarOcorrencia(OcorrenciaRequestDTO dto, Pessoa usuarioLogado) {
         Unidade unidade = unidadeRepository.findById(dto.getUnidadeId())
-                .orElseThrow(() -> new EntityNotFoundException("Unidade não encontrada com ID: " + dto.getUnidadeId()));
+                .orElseThrow(() -> new EntityNotFoundException("Unidade não encontrada."));
 
         Condominio condominio;
         if (Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin())) {
             if (dto.getCondominioId() == null) {
-                throw new IllegalArgumentException("Condomínio deve ser selecionado para Administrador Global.");
+                throw new IllegalArgumentException("Escolha o condomínio.");
             }
             condominio = condominioRepository.findById(dto.getCondominioId())
-                    .orElseThrow(() -> new EntityNotFoundException("Condomínio não encontrado com ID: " + dto.getCondominioId()));
+                    .orElseThrow(() -> new EntityNotFoundException("Condomínio não encontrado."));
 
             if (!unidade.getCondominio().getConCod().equals(condominio.getConCod())) {
                  throw new IllegalArgumentException("A unidade selecionada não pertence ao condomínio selecionado.");
@@ -194,7 +194,7 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
     @Transactional
     public OcorrenciaAnexoDTO adicionarAnexo(Integer ocorrenciaId, MultipartFile anexo, Pessoa usuarioLogado) {
         if (anexo == null || anexo.isEmpty()) {
-            throw new IllegalArgumentException("Arquivo inválido ou vazio.");
+            throw new IllegalArgumentException("Escolha um arquivo que não esteja vazio.");
         }
 
         Ocorrencia ocorrencia = buscarOcorrenciaPorIdEValidarAcesso(ocorrenciaId, usuarioLogado, true);
@@ -237,23 +237,17 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
         }
 
         OcorrenciaAnexo anexo = anexoRepository.findByOcorrenciaOcoCodAndOcaCod(ocorrenciaId, anexoId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Anexo não encontrado com ID: " + anexoId + " para a ocorrência ID: " + ocorrenciaId));
+                .orElseThrow(() -> new EntityNotFoundException("Anexo não encontrado."));
 
-        try {
-            String simpleFilename = Paths.get(anexo.getCaminhoArquivo()).getFileName().toString();
-            fileStorageService.delete(simpleFilename, OCORRENCIAS_DIR);
-            // A ocorrência carregada acima traz os anexos (cascade ALL): sem tirar o anexo da lista, o Hibernate
-            // desfaz a exclusão ao salvar, e o registro ficava no banco apontando para um arquivo já apagado.
-            if (ocorrencia.getAnexos() != null) {
-                ocorrencia.getAnexos().remove(anexo);
-            }
-            anexoRepository.delete(anexo);
-        } catch (StorageException e) {
-            throw new RuntimeException("Falha ao excluir o arquivo físico do anexo: " + e.getMessage(), e);
-        } catch (Exception e) {
-             throw new RuntimeException("Falha ao excluir o registro do anexo no banco de dados: " + e.getMessage(), e);
+        // Falha ao apagar o arquivo (StorageException) desfaz a exclusão e vira erro 500 com a mensagem genérica.
+        String simpleFilename = Paths.get(anexo.getCaminhoArquivo()).getFileName().toString();
+        fileStorageService.delete(simpleFilename, OCORRENCIAS_DIR);
+        // A ocorrência carregada acima traz os anexos (cascade ALL): sem tirar o anexo da lista, o Hibernate
+        // desfaz a exclusão ao salvar, e o registro ficava no banco apontando para um arquivo já apagado.
+        if (ocorrencia.getAnexos() != null) {
+            ocorrencia.getAnexos().remove(anexo);
         }
+        anexoRepository.delete(anexo);
     }
 
     @Override
@@ -262,19 +256,18 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
         buscarOcorrenciaPorIdEValidarAcesso(ocorrenciaId, usuarioLogado, false);
 
         OcorrenciaAnexo anexo = anexoRepository.findByOcorrenciaOcoCodAndOcaCod(ocorrenciaId, anexoId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, 
-                        "Anexo não encontrado com ID: " + anexoId + " para a ocorrência ID: " + ocorrenciaId));
+                .orElseThrow(() -> new EntityNotFoundException("Anexo não encontrado."));
 
         try {
             String simpleFilename = Paths.get(anexo.getCaminhoArquivo()).getFileName().toString();
             Resource resource = fileStorageService.loadAsResource(simpleFilename, OCORRENCIAS_DIR);
 
             if (!resource.exists() || !resource.isReadable()) {
-                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Arquivo não encontrado ou inacessível no armazenamento.");
+                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "O arquivo deste anexo não foi encontrado.");
             }
             return resource;
         } catch (StorageException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Arquivo não encontrado ou inacessível: " + e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "O arquivo deste anexo não foi encontrado.", e);
         }
     }
 
@@ -284,8 +277,7 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
         buscarOcorrenciaPorIdEValidarAcesso(ocorrenciaId, usuarioLogado, false);
 
         OcorrenciaAnexo anexo = anexoRepository.findByOcorrenciaOcoCodAndOcaCod(ocorrenciaId, anexoId)
-                .orElseThrow(() -> new EntityNotFoundException( 
-                        "Anexo não encontrado com ID: " + anexoId + " para a ocorrência ID: " + ocorrenciaId));
+                .orElseThrow(() -> new EntityNotFoundException("Anexo não encontrado."));
 
         return anexo.getNomeOriginal() != null ? anexo.getNomeOriginal() : "anexo_" + anexo.getOcaCod();
     }
@@ -326,14 +318,12 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
         return ocorrenciaRepository.save(ocorrencia);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Ocorrencia buscarOcorrenciaPorIdEValidarAcesso(Integer id, Pessoa usuarioLogado, boolean edicao) {
+    private Ocorrencia buscarOcorrenciaPorIdEValidarAcesso(Integer id, Pessoa usuarioLogado, boolean edicao) {
         Ocorrencia ocorrencia = ocorrenciaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Ocorrência não encontrada com ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Ocorrência não encontrada."));
 
         if (usuarioLogado == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso Negado.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado.");
         }
 
         if (Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin())) {
@@ -361,7 +351,7 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
             return ocorrencia;
         }
 
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso Negado. Você não tem permissão para "
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado. Você não tem permissão para "
                 + (edicao ? "modificar" : "visualizar") + " esta ocorrência.");
     }
 
@@ -398,7 +388,7 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
 
     private void validarAcessoCriacao(Unidade unidade, Pessoa usuarioLogado) {
         if (usuarioLogado == null || unidade == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso Negado.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado.");
         }
     
         Integer conCodUnidade = unidade.getCondominio() != null ? unidade.getCondominio().getConCod() : null;
@@ -417,7 +407,7 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
             return;
         }
     
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso Negado. Você não tem permissão para "
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado. Você não tem permissão para "
                 + "criar ocorrências para unidades deste condomínio.");
     }
 }

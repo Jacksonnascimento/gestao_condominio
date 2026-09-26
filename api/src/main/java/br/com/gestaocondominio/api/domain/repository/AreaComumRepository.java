@@ -16,9 +16,6 @@ public interface AreaComumRepository extends JpaRepository<AreaComum, Integer> {
     List<AreaComum> findByCondominioConCodOrderByNomeAsc(Integer conCod);
 
     @EntityGraph(attributePaths = {"condominio", "turnos"})
-    List<AreaComum> findByCondominioConCodAndAtivaTrueOrderByNomeAsc(Integer conCod);
-
-    @EntityGraph(attributePaths = {"condominio", "turnos"})
     Optional<AreaComum> findById(Integer areCod);
 
     /** Áreas de vários condomínios de uma vez (API v1: quem gerencia ou mora em mais de um condomínio). */

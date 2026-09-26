@@ -7,7 +7,7 @@ public enum UserRole {
  
     SINDICO("Síndico"),
     MORADOR("Morador"),
-    FUNCIONARIO_ADM("Funcionário Adm."),
+    FUNCIONARIO_ADM("Funcionário adm."),
     PORTEIRO("Porteiro"),
     ADMIN("Administrador"); 
 

@@ -1,9 +1,6 @@
 package br.com.gestaocondominio.api.security;
 
 import jakarta.servlet.DispatcherType;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,22 +15,16 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -48,7 +39,7 @@ public class SecurityConfig {
 
     /**
      * API usada pelo sistema web (Next.js) e pelo aplicativo: sem sessão nem CSRF, com login por token
-     * ({@link FiltroDoToken}). Vem antes da cadeia das telas antigas e só vale para os caminhos abaixo.
+     * ({@link FiltroDoToken}). Vem antes da cadeia dos demais caminhos e só vale para os caminhos abaixo.
      */
     @Bean
     @Order(1)
@@ -74,74 +65,30 @@ public class SecurityConfig {
             .build();
     }
 
-    /** Telas antigas em Thymeleaf, com login por formulário e sessão, até a migração para o Next.js terminar. */
+    /**
+     * Tudo o que não é da API: só o cadastro de interessados ({@code /public/**}), que recebe o formulário do site de
+     * divulgação, fica aberto. O resto é recusado com 401/403 em JSON, sem sessão, sem tela de login e sem
+     * redirecionamento.
+     */
     @Bean
     @Order(2)
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+    public SecurityFilterChain demaisCaminhosFilterChain(HttpSecurity http, RespostasDeSeguranca respostas)
+            throws Exception {
+        return http
             .cors(Customizer.withDefaults())
-            // Configuração para permitir POST externo no endpoint de leads (ignorando CSRF apenas para /public/)
-            .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/public/**")
-            )
+            // O site de divulgação envia o formulário de outra origem, sem token de CSRF
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/public/**"))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(excecoes -> excecoes
+                .authenticationEntryPoint(respostas)
+                .accessDeniedHandler(respostas))
             .authorizeHttpRequests(auth -> auth
                 // O repasse para /error (de qualquer caminho, inclusive da API) passa por esta cadeia; sem liberar,
-                // uma falha numa chamada da API com token virava redirecionamento para o login em vez do erro real
+                // uma falha numa chamada da API com token virava 401 em vez do erro real
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                .requestMatchers(
-                    "/login", "/css/**", "/js/**", "/images/**", "/webjars/**",
-                    "/esqueci-senha", "/definir-senha",
-                    "/public/**" // Permite acesso público ao endpoint de leads
-                ).permitAll()
-                .anyRequest().authenticated()
-            )
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-            .authenticationProvider(authenticationProvider())
-            .formLogin(form -> form
-                .loginPage("/login")
-                .loginProcessingUrl("/login")
-                .successHandler(authenticationSuccessHandler())
-                .failureUrl("/login?error=true")
-                .permitAll()
-            )
-            .logout(logout -> logout
-                .logoutUrl("/logout")
-                .logoutSuccessUrl("/login?logout=true")
-            )
-            .rememberMe(rememberMe -> rememberMe
-                .userDetailsService(userDetailsService)
-                .key("CONDIGTAL_REMEMBER_ME_KEY_SECRET")
-                .tokenValiditySeconds(604800) // 7 dias
-            );
-
-        return http.build();
-    }
-
-    @Bean
-    public AuthenticationSuccessHandler authenticationSuccessHandler() {
-        return new AuthenticationSuccessHandler() {
-            @Override
-            public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
-                                                Authentication authentication) throws IOException, ServletException {
-                Set<String> roles = authentication.getAuthorities().stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .collect(Collectors.toSet());
-
-                if (roles.contains("ROLE_GLOBAL_ADMIN") || 
-                    roles.contains("ROLE_SINDICO") || 
-                    roles.contains("ROLE_ADMIN") || 
-                    roles.contains("ROLE_FUNCIONARIO_ADM") ||
-                    roles.contains("ROLE_PORTEIRO")) {
-                    response.sendRedirect("/dashboard");
-                } 
-                else if (roles.contains("ROLE_MORADOR")) {
-                    response.sendRedirect("/unidades");
-                } 
-                else {
-                    response.sendRedirect("/dashboard");
-                }
-            }
-        };
+                .requestMatchers("/public/**").permitAll()
+                .anyRequest().denyAll())
+            .build();
     }
 
     @Bean

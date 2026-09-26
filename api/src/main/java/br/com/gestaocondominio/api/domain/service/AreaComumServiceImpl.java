@@ -36,59 +36,6 @@ public class AreaComumServiceImpl implements AreaComumService {
     private final ReservaRepository reservaRepository;
 
     @Override
-    @Transactional
-    public AreaComum salvar(AreaComumRequestDTO dto) {
-        AreaComum areaComum;
-
-        if (dto.getAreCod() != null) {
-            areaComum = buscarPorId(dto.getAreCod());
-            areaComum.getTurnos().clear();
-        } else {
-            areaComum = new AreaComum();
-            areaComum.setCondominio(condominioService.buscarCondominioPorId(dto.getConCod())
-                    .orElseThrow(() -> new RuntimeException("Condomínio não encontrado.")));
-            areaComum.setTurnos(new ArrayList<>());
-        }
-
-        preencherCampos(areaComum, dto);
-
-        if (dto.getTurnos() != null) {
-            for (AreaComumTurnoDTO turnoDTO : dto.getTurnos()) {
-                areaComum.getTurnos().add(novoTurno(areaComum, turnoDTO));
-            }
-        }
-
-        return areaComumRepository.save(areaComum);
-    }
-
-    @Override
-    public AreaComum buscarPorId(Integer areCod) {
-        return areaComumRepository.findById(areCod)
-                .orElseThrow(() -> new RuntimeException("Área comum não encontrada."));
-    }
-
-    @Override
-    public List<AreaComum> listarPorCondominio(Integer conCod) {
-        return areaComumRepository.findByCondominioConCodOrderByNomeAsc(conCod);
-    }
-
-    @Override
-    public List<AreaComum> listarAtivasPorCondominio(Integer conCod) {
-        return areaComumRepository.findByCondominioConCodAndAtivaTrueOrderByNomeAsc(conCod);
-    }
-
-    @Override
-    @Transactional
-    public void excluir(Integer areCod) {
-        AreaComum area = buscarPorId(areCod);
-        areaComumRepository.delete(area);
-    }
-
-    // ---------------------------------------------------------------------------------------------------------
-    // API v1
-    // ---------------------------------------------------------------------------------------------------------
-
-    @Override
     public Set<Integer> condominiosGerenciados(Pessoa usuario) {
         // Só vínculos ativos contam, como nas permissões do login (ROLE_<PAPEL>_<conCod>)
         return usuarioCondominioService.findByPessoa(usuario).stream()

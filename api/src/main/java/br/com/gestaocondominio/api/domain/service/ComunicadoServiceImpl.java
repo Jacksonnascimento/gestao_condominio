@@ -30,7 +30,6 @@ public class ComunicadoServiceImpl implements ComunicadoService {
 
     private final ComunicadoRepository comunicadoRepository;
     private final CondominioRepository condominioRepository;
-    private final PessoaService pessoaService;
     private final FileStorageService fileStorageService;
     private final UsuarioCondominioService usuarioCondominioService;
     private final ComunicadoLeituraRepository comunicadoLeituraRepository;
@@ -42,7 +41,6 @@ public class ComunicadoServiceImpl implements ComunicadoService {
 
     public ComunicadoServiceImpl(ComunicadoRepository comunicadoRepository,
                                  CondominioRepository condominioRepository,
-                                 PessoaService pessoaService,
                                  FileStorageService fileStorageService,
                                  UsuarioCondominioService usuarioCondominioService,
                                  ComunicadoLeituraRepository comunicadoLeituraRepository,
@@ -50,26 +48,11 @@ public class ComunicadoServiceImpl implements ComunicadoService {
                                  OcupanteRepository ocupanteRepository) {
         this.comunicadoRepository = comunicadoRepository;
         this.condominioRepository = condominioRepository;
-        this.pessoaService = pessoaService;
         this.fileStorageService = fileStorageService;
         this.usuarioCondominioService = usuarioCondominioService;
         this.comunicadoLeituraRepository = comunicadoLeituraRepository;
         this.usuarioCondominioRepository = usuarioCondominioRepository;
         this.ocupanteRepository = ocupanteRepository;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<Comunicado> consultar(
-            String titulo,
-            String mensagem,
-            String publicoDestinoFiltroTela,
-            Boolean isUrgente,
-            Pageable pageable) {
-
-        Pessoa pessoaLogada = pessoaService.getLoggedInUser();
-        return comunicadoRepository.findAll(
-                especificacaoVisivel(pessoaLogada, titulo, mensagem, publicoDestinoFiltroTela, isUrgente), pageable);
     }
 
     /**
@@ -137,63 +120,6 @@ public class ComunicadoServiceImpl implements ComunicadoService {
                 isUrgente
         );
     }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Comunicado getComunicadoById(Integer id) {
-        return comunicadoRepository.findById(id)
-                .map(comunicado -> {
-                    comunicado.getCondominios().size();
-                    return comunicado;
-                })
-                .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado. ID: " + id));
-    }
-
-    @Override
-    @Transactional
-    public Comunicado criar(ComunicadoRequestDTO dto, MultipartFile anexo) {
-        Pessoa criador = pessoaService.getLoggedInUser();
-        try {
-            return gravarNovo(dto, anexo, criador);
-        } catch (Exception e) {
-            throw new RuntimeException("Falha ao criar comunicado: " + e.getMessage(), e);
-        }
-    }
-
-    @Override
-    @Transactional
-    public Comunicado atualizar(Integer id, ComunicadoRequestDTO dto, MultipartFile anexo) {
-        Pessoa editor = pessoaService.getLoggedInUser();
-        Comunicado comunicado = comunicadoRepository.findById(id)
-                .map(c -> {
-                    c.getCondominios().size();
-                    return c;
-                })
-                .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado para atualização. ID: " + id));
-        try {
-            return gravarAlteracao(comunicado, dto, anexo, editor);
-        } catch (Exception e) {
-            throw new RuntimeException("Falha ao atualizar comunicado: " + e.getMessage(), e);
-        }
-    }
-
-    @Override
-    @Transactional
-    public void excluir(Integer id) {
-        Comunicado comunicado = comunicadoRepository.findById(id)
-                .map(c -> {
-                    c.getCondominios().size();
-                    return c;
-                })
-                .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado para exclusão. ID: " + id));
-        try {
-            apagar(comunicado);
-        } catch (Exception e) {
-            throw new RuntimeException("Falha ao excluir comunicado ID " + id + ": " + e.getMessage(), e);
-        }
-    }
-
-    // ---- Usados pela API /api/v1: recebem quem está logado e conferem a permissão ----
 
     @Override
     @Transactional(readOnly = true)
@@ -344,7 +270,7 @@ public class ComunicadoServiceImpl implements ComunicadoService {
         }
     }
 
-    // ---- Gravação comum às telas antigas e à API ----
+    // ---- Gravação ----
 
     private Comunicado gravarNovo(ComunicadoRequestDTO dto, MultipartFile anexo, Pessoa criador) {
         String caminhoAnexo = null;
@@ -439,21 +365,21 @@ public class ComunicadoServiceImpl implements ComunicadoService {
 
         if (Boolean.TRUE.equals(pessoa.getPesIsGlobalAdmin())) {
             if (condominioIds == null || condominioIds.isEmpty()) {
-                throw new IllegalArgumentException("Admin Global deve selecionar ao menos um condomínio.");
+                throw new IllegalArgumentException("Selecione ao menos um condomínio.");
             }
             condominiosAlvo.addAll(condominioRepository.findAllById(condominioIds));
         } else {
             Integer conCodAtivo = usuarioCondominioService.getCondominioIdDoUsuario(pessoa);
             if (conCodAtivo == null) {
-                throw new EntityNotFoundException("Usuário não possui um condomínio ativo na sessão.");
+                throw new IllegalArgumentException("Você não está vinculado a nenhum condomínio.");
             }
             Condominio condominioAtivo = condominioRepository.findById(conCodAtivo)
-                    .orElseThrow(() -> new EntityNotFoundException("Condomínio ativo não encontrado. ID: " + conCodAtivo));
+                    .orElseThrow(() -> new EntityNotFoundException("Condomínio não encontrado."));
             condominiosAlvo.add(condominioAtivo);
         }
 
         if (condominiosAlvo.isEmpty()) {
-            throw new EntityNotFoundException("Nenhum condomínio de destino foi definido ou encontrado.");
+            throw new IllegalArgumentException("Nenhum dos condomínios selecionados foi encontrado.");
         }
         return condominiosAlvo;
     }

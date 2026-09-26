@@ -24,8 +24,8 @@ public final class ContratoDTOs {
 
     /** Abas da tela de contratos. Cada uma mostra contratos de situações diferentes. */
     public enum AbaContrato {
-        ATIVOS("Contratos Ativos"),
-        A_VENCER("Próximos a Vencer"),
+        ATIVOS("Contratos ativos"),
+        A_VENCER("Próximos a vencer"),
         HISTORICO("Histórico");
 
         private final String descricao;

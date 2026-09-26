@@ -75,7 +75,7 @@ public class CondominioService {
             condominio.setConAtivo(true);
         }
         if (condominio.getConTipologia() == null) {
-            throw new IllegalArgumentException("Tipologia do condomínio deve ser informada.");
+            throw new IllegalArgumentException("Informe a tipologia do condomínio.");
         }
         return condominioRepository.save(condominio);
     }
@@ -115,7 +115,7 @@ public class CondominioService {
 
     public Condominio atualizarCondominio(Integer id, Condominio condominioAtualizado) {
         Condominio condominioExistente = condominioRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado com o ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Condomínio não encontrado."));
 
         checkPermissionToManageCondo(condominioExistente);
 
@@ -170,7 +170,7 @@ public class CondominioService {
 
     public Condominio inativarCondominio(Integer id) {
         Condominio condominio = condominioRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado com o ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Condomínio não encontrado."));
 
         checkPermissionToManageCondo(condominio);
 
@@ -179,7 +179,7 @@ public class CondominioService {
         }
 
         if (!usuarioCondominioRepository.findByCondominio(condominio).isEmpty()) {
-            throw new ConflitoException("Não é possível inativar o condomínio, pois existem usuários/papéis vinculados a ele.");
+            throw new ConflitoException("Não é possível inativar o condomínio, pois existem usuários vinculados a ele.");
         }
 
         condominio.setConAtivo(false);
@@ -189,7 +189,7 @@ public class CondominioService {
 
     public Condominio ativarCondominio(Integer id) {
         Condominio condominio = condominioRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado com o ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Condomínio não encontrado."));
         
         checkPermissionToManageCondo(condominio);
         

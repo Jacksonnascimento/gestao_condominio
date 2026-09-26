@@ -33,7 +33,7 @@ public final class VisitanteDTOs {
             Integer moradorId,
             String observacoes) {
 
-        /** Converte para o formato que o {@code VisitanteService} já recebe das telas antigas. */
+        /** Converte para o formato que o {@code VisitanteService} recebe. */
         public VisitanteRequestDTO paraRequisicao() {
             VisitanteRequestDTO dto = new VisitanteRequestDTO();
             dto.setNome(nome.trim());

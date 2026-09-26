@@ -13,7 +13,6 @@ public class ReservaRequestDTO {
     private Integer areCod;
     private Integer turCod;
     private Integer uniCod;
-    private Integer pesCodMorador;
     private LocalDate data;
     private Boolean termosAceitos;
     private List<ReservaConvidadoDTO> convidados;

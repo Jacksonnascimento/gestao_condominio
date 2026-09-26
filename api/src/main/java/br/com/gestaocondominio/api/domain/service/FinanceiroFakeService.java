@@ -11,7 +11,6 @@ import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.OcupanteRepository;
 import br.com.gestaocondominio.api.domain.repository.UnidadeRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,16 +29,14 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public class FinanceiroFakeService {
 
-    private static final String SESSION_KEY_BOLETOS = "BOLETOS_SESSION_FAKE";
-
     /** Papéis que veem as cobranças de todas as unidades do condomínio e geram boleto avulso. */
     public static final UserRole[] PAPEIS_DE_GESTAO = {UserRole.SINDICO, UserRole.ADMIN};
 
     private static final int LIMITE_AVULSOS_POR_UNIDADE = 50;
 
     /**
-     * Boletos avulsos gerados pela API v1, por cliente e unidade. A API não tem sessão (o sistema web e o aplicativo
-     * entram por token), então eles ficam na memória até a API reiniciar e aparecem para quem vê a unidade.
+     * Boletos avulsos gerados, por cliente e unidade. A API não tem sessão (o sistema web e o aplicativo entram por
+     * token), então eles ficam na memória até a API reiniciar e aparecem para quem vê a unidade.
      */
     private final Map<String, List<BoletoDTO>> boletosAvulsosPorUnidade = new ConcurrentHashMap<>();
 
@@ -56,22 +53,6 @@ public class FinanceiroFakeService {
         this.condominioRepository = condominioRepository;
         this.unidadeRepository = unidadeRepository;
         this.ocupanteRepository = ocupanteRepository;
-    }
-
-    public List<BoletoDTO> gerarBoletosAbertos(List<Unidade> unidades, HttpSession session) {
-        List<BoletoDTO> boletos = boletosMensaisAbertos(unidades);
-
-        List<BoletoDTO> boletosSession = recuperarBoletosSessao(session);
-        for (BoletoDTO manual : boletosSession) {
-             boolean pertenceUnidadeListada = unidades.stream()
-                     .anyMatch(u -> formatarNomeUnidade(u).equals(manual.getUnidadeNome()));
-
-             if (pertenceUnidadeListada) {
-                 boletos.add(manual);
-             }
-        }
-
-        return boletos;
     }
 
     public List<BoletoDTO> gerarBoletosVencidos(List<Unidade> unidades) {
@@ -116,12 +97,6 @@ public class FinanceiroFakeService {
             boletos.add(boleto);
         }
         return boletos;
-    }
-
-    public void salvarBoletoManual(HttpSession session, Unidade unidade, String nomeTaxa, BigDecimal valor, LocalDate dataVencimento) {
-        List<BoletoDTO> boletos = recuperarBoletosSessao(session);
-        boletos.add(novoBoletoAvulso(unidade, nomeTaxa, valor, dataVencimento));
-        session.setAttribute(SESSION_KEY_BOLETOS, boletos);
     }
 
     // ---------------------------------------------------------------------------------------------------------------
@@ -245,15 +220,6 @@ public class FinanceiroFakeService {
         novo.setLinhaDigitavel(gerarLinhaDigitavelFake());
         novo.setCodigoPix(UUID.randomUUID().toString());
         return novo;
-    }
-
-    @SuppressWarnings("unchecked")
-    private List<BoletoDTO> recuperarBoletosSessao(HttpSession session) {
-        List<BoletoDTO> boletos = (List<BoletoDTO>) session.getAttribute(SESSION_KEY_BOLETOS);
-        if (boletos == null) {
-            boletos = new ArrayList<>();
-        }
-        return boletos;
     }
 
     private String gerarLinhaDigitavelFake() {

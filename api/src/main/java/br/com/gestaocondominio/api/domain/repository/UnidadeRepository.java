@@ -14,14 +14,6 @@ import java.util.Optional;
 public interface UnidadeRepository extends JpaRepository<Unidade, Integer>, JpaSpecificationExecutor<Unidade> {
     Optional<Unidade> findByCondominioAndUniNumeroAndBlocoAndUnidadeTipo(Condominio condominio, String uniNumero, String bloco, UnidadeTipo unidadeTipo);
 
-    @Query("SELECT u FROM Unidade u JOIN FETCH u.condominio WHERE u.uniAtiva = :ativa")
-    List<Unidade> findByUniAtivaWithCondominio(@Param("ativa") boolean ativa);
-    
-    @Query("SELECT u FROM Unidade u JOIN FETCH u.condominio")
-    List<Unidade> findAllWithCondominio();
-    
-    @Query("SELECT u from Unidade u JOIN FETCH u.condominio WHERE u.condominio IN :condominios")
-    List<Unidade> findByCondominioInWithCondominio(@Param("condominios") List<Condominio> condominios);
 
     List<Unidade> findByCondominioConCod(Integer conCod);
 

@@ -41,37 +41,7 @@ public class ContratoService {
     @Autowired
     private UsuarioCondominioService usuarioCondominioService;
 
-    public Contrato criarContrato(Integer condominioId, ContratoRequestDTO dto) {
-        Condominio condominio = condominioRepository.findById(condominioId)
-                .orElseThrow(() -> new RuntimeException("Condomínio não encontrado"));
-
-        Contrato contrato = new Contrato();
-        contrato.setCondominio(condominio);
-        preencherDadosContrato(contrato, dto);
-        return contratoRepository.save(contrato);
-    }
-
-    public Contrato obterPorId(Long id) {
-        return contratoRepository.findById(id).orElseThrow(() -> new RuntimeException("Contrato não encontrado"));
-    }
-
-    public Contrato atualizarContrato(Long id, ContratoRequestDTO dto) {
-        Contrato contrato = obterPorId(id);
-        preencherDadosContrato(contrato, dto);
-        return contratoRepository.save(contrato);
-    }
-
-    public void deletarContrato(Long id) {
-        contratoRepository.deleteById(id);
-    }
-
-    public List<Contrato> listarContratos(Integer condominioId, String busca, StatusContrato status,
-            Boolean isProximoVencimento, Boolean isHistorico, LocalDate inicioApos, LocalDate fimAntes) {
-        return listarContratos(condominioId == null ? null : Set.of(condominioId), busca, status,
-                isProximoVencimento, isHistorico, inicioApos, fimAntes);
-    }
-
-    /** Como o de cima, para um conjunto de condomínios; {@code null} não filtra por condomínio. */
+    /** Contratos de um conjunto de condomínios; {@code null} não filtra por condomínio. */
     private List<Contrato> listarContratos(Collection<Integer> condominioIds, String busca, StatusContrato status,
             Boolean isProximoVencimento, Boolean isHistorico, LocalDate inicioApos, LocalDate fimAntes) {
         Specification<Contrato> spec = (root, query, cb) -> {
@@ -121,10 +91,6 @@ public class ContratoService {
         }
     }
 
-    public Map<StatusContrato, Long> contarContratosPorStatus(Integer condominioId) {
-        return contarContratosPorStatus(condominioId == null ? null : Set.of(condominioId));
-    }
-
     private Map<StatusContrato, Long> contarContratosPorStatus(Collection<Integer> condominioIds) {
         Specification<Contrato> spec = (root, query, cb) -> {
             if (condominioIds == null) {
@@ -141,7 +107,7 @@ public class ContratoService {
     }
 
     // ---------------------------------------------------------------------------------------------------------------
-    // API v1: as mesmas operações, conferindo quem está logado. Contratos são vistos e gerenciados pelo administrador
+    // Operações conferindo quem está logado. Contratos são vistos e gerenciados pelo administrador
     // geral, em todos os condomínios, e por síndico, administração e funcionário administrativo, só nos condomínios em
     // que têm esse papel.
     // ---------------------------------------------------------------------------------------------------------------
@@ -190,11 +156,13 @@ public class ContratoService {
     public Contrato criarContrato(ContratoRequestDTO dto, Pessoa usuario) {
         Integer condominioId = dto.getCondominioId() != null ? dto.getCondominioId() : unicoCondominio(usuario);
         conferirGestao(usuario, condominioId);
-        if (!condominioRepository.existsById(condominioId)) {
-            throw new EntityNotFoundException("Condomínio não encontrado.");
-        }
+        Condominio condominio = condominioRepository.findById(condominioId)
+                .orElseThrow(() -> new EntityNotFoundException("Condomínio não encontrado."));
         validarPeriodo(dto);
-        return criarContrato(condominioId, dto);
+        Contrato contrato = new Contrato();
+        contrato.setCondominio(condominio);
+        preencherDadosContrato(contrato, dto);
+        return contratoRepository.save(contrato);
     }
 
     /** Altera os dados do contrato. O condomínio dele não muda. */

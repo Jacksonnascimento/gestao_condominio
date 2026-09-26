@@ -2,7 +2,7 @@ package br.com.gestaocondominio.api.domain.enums;
 
 public enum TipoPeriodoOcupante {
     FIXO("Fixo"),
-    FLUANTE("Fluante"),
+    FLUANTE("Flutuante"),
     MISTO("Misto");
 
     private final String descricao;

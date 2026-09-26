@@ -10,19 +10,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Map;
 
 public interface ReservaService {
-    Reserva solicitarReserva(ReservaRequestDTO dto);
-    Reserva aprovarReserva(Integer resCod, Integer pesCodAprovador);
-    Reserva rejeitarReserva(Integer resCod, Integer pesCodAprovador, String motivo);
-    Reserva cancelarReserva(Integer resCod, Integer pesCodMorador);
-    Reserva buscarPorId(Integer resCod);
-    List<Reserva> listarPorCondominio(Integer conCod);
-    List<Reserva> listarPorMorador(Integer pesCod);
-
-    // ---- Usados pela API v1: recebem quem está logado e conferem se a pessoa pode ver ou agir na reserva. ----
+    // Recebem quem está logado e conferem se a pessoa pode ver ou agir na reserva.
 
     /**
      * Reservas visíveis para a pessoa (as que ela solicitou e as dos condomínios que ela gerencia; todas, para o

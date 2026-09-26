@@ -1,12 +1,9 @@
 package br.com.gestaocondominio.api.domain.enums;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-
-@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum OcupanteVinculo {
     PROPRIETARIO("Proprietário"),
     LOCATARIO("Locatário"),
-    PROMITENTE_COMPRADOR("Promitente Comprador"),
+    PROMITENTE_COMPRADOR("Promitente comprador"),
     CESSIONARIO("Cessionário"),
     MULTIPROPRIETARIO("Multiproprietário"),
     CONJUGE("Cônjuge"),

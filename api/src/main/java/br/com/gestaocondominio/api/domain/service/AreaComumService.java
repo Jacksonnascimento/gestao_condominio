@@ -8,13 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 public interface AreaComumService {
-    AreaComum salvar(AreaComumRequestDTO dto);
-    AreaComum buscarPorId(Integer areCod);
-    List<AreaComum> listarPorCondominio(Integer conCod);
-    List<AreaComum> listarAtivasPorCondominio(Integer conCod);
-    void excluir(Integer areCod);
-
-    // ---- Usados pela API v1: recebem quem está logado e conferem se a pessoa pode agir no condomínio da área. ----
+    // Recebem quem está logado e conferem se a pessoa pode agir no condomínio da área.
 
     /** Condomínios em que a pessoa gerencia áreas e reservas (síndico, administração ou funcionário adm. ativo). */
     Set<Integer> condominiosGerenciados(Pessoa usuario);

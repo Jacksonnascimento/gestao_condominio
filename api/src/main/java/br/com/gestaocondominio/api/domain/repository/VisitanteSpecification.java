@@ -7,6 +7,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class VisitanteSpecification {
@@ -43,6 +44,24 @@ public class VisitanteSpecification {
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    /**
+     * Restringe aos visitantes que a pessoa pode ver: os dos condomínios em que ela trabalha na administração ou
+     * na portaria, e os das unidades que ela ocupa. Sem nenhum dos dois, não vê nada.
+     */
+    public static Specification<Visitante> visiveisPara(Collection<Integer> condominiosGerenciados,
+                                                        Collection<Integer> unidadesOcupadas) {
+        return (root, query, cb) -> {
+            List<Predicate> alternativas = new ArrayList<>();
+            if (!condominiosGerenciados.isEmpty()) {
+                alternativas.add(root.get("condominio").get("conCod").in(condominiosGerenciados));
+            }
+            if (!unidadesOcupadas.isEmpty()) {
+                alternativas.add(root.get("unidade").get("uniCod").in(unidadesOcupadas));
+            }
+            return alternativas.isEmpty() ? cb.disjunction() : cb.or(alternativas.toArray(new Predicate[0]));
         };
     }
 }

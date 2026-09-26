@@ -103,7 +103,8 @@ export default function PaginaDeReservas() {
       visao === 'lista'
         ? reservaService.listar({ condominioId, status: situacao, areaId: area, busca, dataInicio: inicio, dataFim: fim, pagina, tamanho: TAMANHO })
         : Promise.resolve(null),
-      reservaService.totais(condominioId),
+      // A agenda mostra um mês inteiro: lá o período escolhido na lista não vale
+      reservaService.totais({ condominioId, areaId: area, busca, ...(visao === 'lista' ? { dataInicio: inicio, dataFim: fim } : {}) }),
     ])
       .then(([novaLista, novosTotais]) => {
         if (!ativa) return;
@@ -142,11 +143,11 @@ export default function PaginaDeReservas() {
 
   const abas: Aba<SituacaoReserva | ''>[] = [
     { valor: '', rotulo: 'Todas', contagem: totais?.TOTAL },
-    { valor: 'PENDENTE_APROVACAO', rotulo: 'Pendentes', contagem: totais?.PENDENTES, destaque: true },
-    { valor: 'APROVADA', rotulo: 'Aprovadas', contagem: totais?.APROVADAS },
-    { valor: 'REJEITADA', rotulo: 'Rejeitadas' },
-    { valor: 'CANCELADA_PELO_MORADOR', rotulo: 'Canceladas' },
-    { valor: 'CONCLUIDA', rotulo: 'Concluídas' },
+    { valor: 'PENDENTE_APROVACAO', rotulo: 'Pendentes', contagem: totais?.PENDENTE_APROVACAO, destaque: true },
+    { valor: 'APROVADA', rotulo: 'Aprovadas', contagem: totais?.APROVADA },
+    { valor: 'REJEITADA', rotulo: 'Rejeitadas', contagem: totais?.REJEITADA },
+    { valor: 'CANCELADA_PELO_MORADOR', rotulo: 'Canceladas', contagem: totais?.CANCELADA_PELO_MORADOR },
+    { valor: 'CONCLUIDA', rotulo: 'Concluídas', contagem: totais?.CONCLUIDA },
   ];
 
   const podeSolicitar = opcoes?.podeSolicitar === true && opcoes.unidades.length > 0;

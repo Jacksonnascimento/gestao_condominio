@@ -8,9 +8,14 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -34,9 +39,19 @@ public interface ReservaRepository extends JpaRepository<Reserva, Integer>, JpaS
     @EntityGraph(attributePaths = {"convidados"})
     List<Reserva> findByResCodIn(Collection<Integer> resCods);
 
-    List<Reserva> findByAreaComumAreCodAndDataAndStatusNot(Integer areCod, LocalDate data, ReservaStatus status);
+    /** Reservas da área no período com uma das situações, para conferir o que já está ocupado. */
+    @EntityGraph(attributePaths = {"turno"})
+    List<Reserva> findByAreaComumAreCodAndDataBetweenAndStatusIn(Integer areCod, LocalDate inicio, LocalDate fim,
+                                                                 Collection<ReservaStatus> status);
 
-    List<Reserva> findByAreaComumAreCodAndTurnoTurCodAndDataAndStatusNot(Integer areCod, Integer turCod, LocalDate data, ReservaStatus status);
+    /** Passa para concluídas as reservas aprovadas de antes do dia informado. Devolve quantas mudaram. */
+    @Transactional
+    @Modifying
+    @Query("update Reserva r set r.status = :concluida, r.dataAtualizacao = :agora "
+            + "where r.status = :aprovada and r.data < :dia")
+    int concluirAprovadasAntesDe(@Param("dia") LocalDate dia, @Param("agora") LocalDateTime agora,
+                                 @Param("aprovada") ReservaStatus aprovada,
+                                 @Param("concluida") ReservaStatus concluida);
 
     long countByUnidadeUniCodAndDataGreaterThanEqualAndStatusNot(Integer uniCod, LocalDate data, ReservaStatus status);
 

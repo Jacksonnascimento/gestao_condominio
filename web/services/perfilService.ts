@@ -23,4 +23,13 @@ export const perfilService = {
 
   /** Foto de quem está logado; 404 quando não há. */
   foto: () => api.get<Blob>('/perfil/foto', { responseType: 'blob' }).then((r) => r.data),
+
+  /** Troca a foto por uma imagem JPEG, PNG ou WebP de até 1 MB (a tela já a reduz antes). */
+  trocarFoto: (imagem: Blob) => {
+    const corpo = new FormData();
+    corpo.append('foto', imagem, 'foto.jpg');
+    return api.put<UsuarioLogado>('/perfil/foto', corpo).then((r) => r.data);
+  },
+
+  tirarFoto: () => api.delete<UsuarioLogado>('/perfil/foto').then((r) => r.data),
 };

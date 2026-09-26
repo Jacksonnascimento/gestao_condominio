@@ -1,6 +1,7 @@
 package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.controller.dto.ComunicadoRequestDTO;
+import br.com.gestaocondominio.api.controller.v1.dto.ComunicadoDTOs;
 import br.com.gestaocondominio.api.controller.v1.dto.ComunicadoDTOs.ComunicadoResposta;
 import br.com.gestaocondominio.api.domain.entity.*;
 import br.com.gestaocondominio.api.domain.enums.OcupanteVinculo;
@@ -12,7 +13,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.file.Paths;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -38,6 +40,7 @@ public class ComunicadoServiceImpl implements ComunicadoService {
 
     private static final String COMUNICADOS_DIR = "comunicados";
     private static final Set<PublicoDestino> TODOS_OS_PUBLICOS = Set.of(PublicoDestino.values());
+    private static final int TAMANHO_DO_NOME_DO_ANEXO = 255;
 
     public ComunicadoServiceImpl(ComunicadoRepository comunicadoRepository,
                                  CondominioRepository condominioRepository,
@@ -55,109 +58,122 @@ public class ComunicadoServiceImpl implements ComunicadoService {
         this.ocupanteRepository = ocupanteRepository;
     }
 
+    /** O que a pessoa vê num condomínio em que tem vínculo ativo: se publica nele e os públicos que enxerga. */
+    private record Alcance(Integer condominio, boolean gestor, Set<PublicoDestino> publicos) {
+    }
+
     /**
-     * Comunicados que a pessoa pode ver, com os filtros da tela. O administrador geral vê todos; os demais veem os do
-     * seu condomínio (o primeiro vínculo), e só o síndico e a administração veem todos os públicos: o morador vê os
-     * destinados a todos e ao seu tipo de vínculo com a unidade, e os funcionários, os destinados aos funcionários.
+     * Alcance da pessoa no condomínio, ou nulo se ela não tem vínculo ativo nele. Síndico e administração veem todos
+     * os públicos e publicam; o morador vê os destinados a todos e ao seu tipo de vínculo com a unidade, e os
+     * funcionários, os destinados aos funcionários.
      */
-    private Specification<Comunicado> especificacaoVisivel(Pessoa pessoaLogada, String titulo, String mensagem,
-                                                           String publicoDestinoFiltroTela, Boolean isUrgente) {
-        Integer conCodAtivo = null;
-        Set<PublicoDestino> publicosPermitidosParaVisualizar = new HashSet<>();
-        boolean isUsuarioAdminCondo = false;
-
-        if (Boolean.TRUE.equals(pessoaLogada.getPesIsGlobalAdmin())) {
-            conCodAtivo = null;
-            publicosPermitidosParaVisualizar.addAll(TODOS_OS_PUBLICOS);
-        } else {
-            conCodAtivo = usuarioCondominioService.getCondominioIdDoUsuario(pessoaLogada);
-            if (conCodAtivo == null) {
-                return (root, query, cb) -> cb.disjunction();
-            }
-
-            final Integer finalConCodAtivo = conCodAtivo;
-
-            Set<UserRole> roles = usuarioCondominioRepository.findByPesCod(pessoaLogada.getPesCod())
-                    .stream()
-                    .filter(uc -> uc.getConCod().equals(finalConCodAtivo))
-                    .map(UsuarioCondominio::getUscPapel)
-                    .collect(Collectors.toSet());
-
-            isUsuarioAdminCondo = roles.contains(UserRole.ADMIN) || roles.contains(UserRole.SINDICO);
-
-            if (isUsuarioAdminCondo) {
-                publicosPermitidosParaVisualizar.addAll(TODOS_OS_PUBLICOS);
-            } else {
-                publicosPermitidosParaVisualizar.add(PublicoDestino.TODOS);
-
-                if (roles.contains(UserRole.FUNCIONARIO_ADM) || roles.contains(UserRole.PORTEIRO)) {
-                    publicosPermitidosParaVisualizar.add(PublicoDestino.FUNCIONARIOS);
-                }
-
-                Set<OcupanteVinculo> vinculos = ocupanteRepository.findByPessoa(pessoaLogada)
-                        .stream()
-                        .filter(oc -> oc.getUnidade() != null && oc.getUnidade().getCondominio() != null && oc.getUnidade().getCondominio().getConCod().equals(finalConCodAtivo))
-                        .map(Ocupante::getOcuVinculo)
-                        .collect(Collectors.toSet());
-
-                if (vinculos.contains(OcupanteVinculo.PROPRIETARIO)) {
-                    publicosPermitidosParaVisualizar.add(PublicoDestino.PROPRIETARIOS);
-                }
-                if (vinculos.contains(OcupanteVinculo.LOCATARIO)) {
-                    publicosPermitidosParaVisualizar.add(PublicoDestino.INQUILINOS);
-                }
-            }
+    private Alcance alcanceNo(Pessoa pessoa, Integer conCod) {
+        if (conCod == null) {
+            return null;
         }
+        Set<UserRole> papeis = usuarioCondominioRepository.findByPesCod(pessoa.getPesCod()).stream()
+                .filter(uc -> uc.getConCod().equals(conCod) && Boolean.TRUE.equals(uc.getUscAtivoAssociacao()))
+                .map(UsuarioCondominio::getUscPapel)
+                .collect(Collectors.toSet());
+        if (papeis.isEmpty()) {
+            return null;
+        }
+        if (papeis.contains(UserRole.ADMIN) || papeis.contains(UserRole.SINDICO)) {
+            return new Alcance(conCod, true, TODOS_OS_PUBLICOS);
+        }
+        Set<PublicoDestino> publicos = EnumSet.of(PublicoDestino.TODOS);
+        if (papeis.contains(UserRole.FUNCIONARIO_ADM) || papeis.contains(UserRole.PORTEIRO)) {
+            publicos.add(PublicoDestino.FUNCIONARIOS);
+        }
+        Set<OcupanteVinculo> vinculos = ocupanteRepository.findByPessoa(pessoa).stream()
+                .filter(oc -> oc.getUnidade() != null && oc.getUnidade().getCondominio() != null
+                        && oc.getUnidade().getCondominio().getConCod().equals(conCod))
+                .map(Ocupante::getOcuVinculo)
+                .collect(Collectors.toSet());
+        if (vinculos.contains(OcupanteVinculo.PROPRIETARIO)) {
+            publicos.add(PublicoDestino.PROPRIETARIOS);
+        }
+        if (vinculos.contains(OcupanteVinculo.LOCATARIO)) {
+            publicos.add(PublicoDestino.INQUILINOS);
+        }
+        return new Alcance(conCod, false, publicos);
+    }
 
-        return ComunicadoSpecification.filtrar(
-                pessoaLogada,
-                conCodAtivo,
-                publicosPermitidosParaVisualizar,
-                isUsuarioAdminCondo,
-                titulo,
-                mensagem,
-                publicoDestinoFiltroTela,
-                isUrgente
-        );
+    /**
+     * Alcance da pessoa no condomínio escolhido na tela. Sem escolha, vale um dos condomínios dela, e nulo quando ela
+     * não tem nenhum; com escolha, o condomínio precisa ser dela.
+     */
+    private Alcance alcanceDaConsulta(Pessoa pessoa, Integer condominioId) {
+        if (condominioId == null) {
+            return alcanceNo(pessoa, usuarioCondominioService.getCondominioIdDoUsuario(pessoa));
+        }
+        Alcance alcance = alcanceNo(pessoa, condominioId);
+        if (alcance == null) {
+            throw new AccessDeniedException("Você não tem acesso a este condomínio.");
+        }
+        return alcance;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ComunicadoResposta> consultarVisiveis(Pessoa usuarioLogado, String titulo, String mensagem,
-                                                      PublicoDestino publicoDestino, Boolean urgente,
-                                                      Pageable pageable) {
-        Integer condominioGerenciado = condominioGerenciado(usuarioLogado);
-        boolean administradorGeral = Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin());
-        return comunicadoRepository.findAll(especificacaoVisivel(usuarioLogado, titulo, mensagem,
-                        publicoDestino == null ? null : publicoDestino.name(), urgente), pageable)
-                .map(comunicado -> ComunicadoResposta.de(comunicado, administradorGeral,
-                        podeGerenciar(usuarioLogado, condominioGerenciado, comunicado)));
+    public Page<ComunicadoResposta> consultarVisiveis(Pessoa usuarioLogado, Integer condominioId, String titulo,
+                                                      String mensagem, PublicoDestino publicoDestino,
+                                                      Boolean urgente, Pageable pageable) {
+        String publico = publicoDestino == null ? null : publicoDestino.name();
+        if (administradorGeral(usuarioLogado)) {
+            // O administrador geral vê todos; com um condomínio escolhido, só os destinados a ele
+            return comunicadoRepository.findAll(ComunicadoSpecification.filtrar(usuarioLogado, condominioId,
+                            TODOS_OS_PUBLICOS, true, titulo, mensagem, publico, urgente), pageable)
+                    .map(comunicado -> ComunicadoResposta.de(comunicado, true, true));
+        }
+        Alcance alcance = alcanceDaConsulta(usuarioLogado, condominioId);
+        if (alcance == null) {
+            return Page.empty(pageable);
+        }
+        Integer gerido = alcance.gestor() ? alcance.condominio() : null;
+        return comunicadoRepository.findAll(ComunicadoSpecification.filtrar(usuarioLogado, alcance.condominio(),
+                        alcance.publicos(), alcance.gestor(), titulo, mensagem, publico, urgente), pageable)
+                .map(comunicado -> ComunicadoResposta.de(comunicado, false, publicadoSoPara(comunicado, gerido)));
     }
 
     @Override
     @Transactional(readOnly = true)
     public ComunicadoResposta buscarVisivel(Integer id, Pessoa usuarioLogado) {
         Comunicado comunicado = buscarVisivelOuFalhar(id, usuarioLogado);
-        return ComunicadoResposta.de(comunicado, Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin()),
-                podeGerenciar(usuarioLogado, condominioGerenciado(usuarioLogado), comunicado));
+        return ComunicadoResposta.de(comunicado, administradorGeral(usuarioLogado),
+                podeGerenciar(usuarioLogado, comunicado));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public boolean podeGerenciar(Pessoa usuarioLogado) {
-        return Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin()) || condominioGerenciado(usuarioLogado) != null;
+    public boolean podeGerenciar(Pessoa usuarioLogado, Integer condominioId) {
+        if (administradorGeral(usuarioLogado)) {
+            return true;
+        }
+        Integer conCod = condominioId != null ? condominioId
+                : usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
+        Alcance alcance = alcanceNo(usuarioLogado, conCod);
+        return alcance != null && alcance.gestor();
     }
 
     @Override
     @Transactional
-    public ComunicadoResposta criar(ComunicadoRequestDTO dto, MultipartFile anexo, Pessoa usuarioLogado) {
-        if (!podeGerenciar(usuarioLogado)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Apenas o síndico ou a administração do condomínio podem publicar comunicados.");
+    public ComunicadoResposta criar(ComunicadoRequestDTO dto, MultipartFile anexo, Pessoa usuarioLogado,
+                                    Integer condominioId) {
+        Set<Condominio> destinos;
+        if (administradorGeral(usuarioLogado)) {
+            destinos = condominiosEscolhidos(dto.getCondominioIds());
+        } else {
+            Alcance alcance = alcanceDaConsulta(usuarioLogado, condominioId);
+            if (alcance == null || !alcance.gestor()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Apenas o síndico ou a administração do condomínio podem publicar comunicados.");
+            }
+            destinos = new HashSet<>(Set.of(condominioRepository.findById(alcance.condominio())
+                    .orElseThrow(() -> new EntityNotFoundException("Condomínio não encontrado."))));
         }
-        conferirCondominiosDeDestino(usuarioLogado, dto.getCondominioIds());
-        Comunicado comunicado = gravarNovo(dto, anexo, usuarioLogado);
-        return ComunicadoResposta.de(comunicado, Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin()), true);
+        Comunicado comunicado = gravarNovo(dto, anexo, usuarioLogado, destinos);
+        return ComunicadoResposta.de(comunicado, administradorGeral(usuarioLogado), true);
     }
 
     @Override
@@ -165,9 +181,12 @@ public class ComunicadoServiceImpl implements ComunicadoService {
     public ComunicadoResposta atualizar(Integer id, ComunicadoRequestDTO dto, MultipartFile anexo,
                                         Pessoa usuarioLogado) {
         Comunicado comunicado = buscarParaGerenciar(id, usuarioLogado);
-        conferirCondominiosDeDestino(usuarioLogado, dto.getCondominioIds());
-        Comunicado salvo = gravarAlteracao(comunicado, dto, anexo, usuarioLogado);
-        return ComunicadoResposta.de(salvo, Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin()), true);
+        // Síndico e administração não mudam o destino: o comunicado continua no condomínio deles
+        Set<Condominio> destinos = administradorGeral(usuarioLogado)
+                ? condominiosEscolhidos(dto.getCondominioIds())
+                : new HashSet<>(comunicado.getCondominios());
+        Comunicado salvo = gravarAlteracao(comunicado, dto, anexo, destinos);
+        return ComunicadoResposta.de(salvo, administradorGeral(usuarioLogado), true);
     }
 
     @Override
@@ -178,31 +197,35 @@ public class ComunicadoServiceImpl implements ComunicadoService {
 
     @Override
     @Transactional(readOnly = true)
-    public Resource carregarAnexo(Integer id, Pessoa usuarioLogado) {
+    public AnexoDoComunicado carregarAnexo(Integer id, Pessoa usuarioLogado) {
         Comunicado comunicado = buscarVisivelOuFalhar(id, usuarioLogado);
         if (comunicado.getCaminhoAnexo() == null || comunicado.getCaminhoAnexo().isBlank()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Este comunicado não possui anexo.");
         }
         String nomeDoArquivo = Paths.get(comunicado.getCaminhoAnexo()).getFileName().toString();
         try {
-            return fileStorageService.loadAsResource(nomeDoArquivo, COMUNICADOS_DIR);
+            return new AnexoDoComunicado(fileStorageService.loadAsResource(nomeDoArquivo, COMUNICADOS_DIR),
+                    ComunicadoDTOs.nomeDoAnexo(comunicado));
         } catch (StorageException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Arquivo não encontrado no servidor. Pode ter sido excluído ou movido.");
         }
     }
 
-    /** O comunicado, se quem está logado pode vê-lo pela mesma regra da listagem. */
+    /**
+     * O comunicado, se quem está logado o vê em algum dos condomínios de destino, pela mesma regra da listagem
+     * (vínculo ativo no condomínio e público que a pessoa enxerga).
+     */
     private Comunicado buscarVisivelOuFalhar(Integer id, Pessoa usuarioLogado) {
         Comunicado comunicado = comunicadoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado."));
-        if (Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin())) {
+        if (administradorGeral(usuarioLogado)) {
             return comunicado;
         }
-        // Contagem, e não exists(): a especificação só busca as associações junto quando a consulta não é de total.
-        Specification<Comunicado> visivel = especificacaoVisivel(usuarioLogado, null, null, null, null);
-        Specification<Comunicado> doId = (root, query, cb) -> cb.equal(root.get("comId"), id);
-        if (comunicadoRepository.count(visivel.and(doId)) == 0) {
+        boolean visivel = comunicado.getCondominios() != null && comunicado.getCondominios().stream()
+                .map(condominio -> alcanceNo(usuarioLogado, condominio.getConCod()))
+                .anyMatch(alcance -> alcance != null && alcance.publicos().contains(comunicado.getPublicoDestino()));
+        if (!visivel) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Acesso negado. Você não tem permissão para ver este comunicado.");
         }
@@ -217,62 +240,58 @@ public class ComunicadoServiceImpl implements ComunicadoService {
     private Comunicado buscarParaGerenciar(Integer id, Pessoa usuarioLogado) {
         Comunicado comunicado = comunicadoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado."));
-        if (!podeGerenciar(usuarioLogado, condominioGerenciado(usuarioLogado), comunicado)) {
+        if (!podeGerenciar(usuarioLogado, comunicado)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Acesso negado. Você não tem permissão para alterar este comunicado.");
         }
         return comunicado;
     }
 
-    private boolean podeGerenciar(Pessoa usuarioLogado, Integer condominioGerenciado, Comunicado comunicado) {
-        if (Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin())) {
+    private boolean podeGerenciar(Pessoa usuarioLogado, Comunicado comunicado) {
+        if (administradorGeral(usuarioLogado)) {
             return true;
         }
-        if (condominioGerenciado == null || comunicado.getCondominios() == null) {
-            return false;
-        }
-        Set<Integer> destinos = comunicado.getCondominios().stream()
-                .map(Condominio::getConCod)
-                .collect(Collectors.toSet());
-        return destinos.equals(Set.of(condominioGerenciado));
+        Alcance alcance = alcanceNo(usuarioLogado, destinoUnico(comunicado));
+        return alcance != null && alcance.gestor();
     }
 
-    /**
-     * Condomínio em que a pessoa publica comunicados: o mesmo que a listagem usa (o primeiro vínculo), desde que nele
-     * ela seja síndico ou administração, com o vínculo ativo. Nulo quando não publica em nenhum.
-     */
-    private Integer condominioGerenciado(Pessoa usuarioLogado) {
-        if (Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin())) {
-            return null;
-        }
-        Integer conCodAtivo = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
-        if (conCodAtivo == null) {
-            return null;
-        }
-        boolean gerencia = usuarioCondominioRepository.findByPesCod(usuarioLogado.getPesCod()).stream()
-                .anyMatch(uc -> uc.getConCod().equals(conCodAtivo)
-                        && Boolean.TRUE.equals(uc.getUscAtivoAssociacao())
-                        && (uc.getUscPapel() == UserRole.ADMIN || uc.getUscPapel() == UserRole.SINDICO));
-        return gerencia ? conCodAtivo : null;
+    /** Se o comunicado foi publicado só para o condomínio {@code conCod} (nulo nunca é). */
+    private static boolean publicadoSoPara(Comunicado comunicado, Integer conCod) {
+        return conCod != null && conCod.equals(destinoUnico(comunicado));
     }
 
-    /** O administrador geral escolhe os condomínios; todos precisam existir. Os demais publicam no próprio. */
-    private void conferirCondominiosDeDestino(Pessoa usuarioLogado, List<Integer> condominioIds) {
-        if (!Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin())) {
-            return;
+    /** O condomínio de destino, quando o comunicado foi publicado para um só. */
+    private static Integer destinoUnico(Comunicado comunicado) {
+        if (comunicado.getCondominios() == null || comunicado.getCondominios().size() != 1) {
+            return null;
         }
+        return comunicado.getCondominios().iterator().next().getConCod();
+    }
+
+    private static boolean administradorGeral(Pessoa pessoa) {
+        return Boolean.TRUE.equals(pessoa.getPesIsGlobalAdmin());
+    }
+
+    /** Condomínios que o administrador geral escolheu: ao menos um, e todos precisam existir. */
+    private Set<Condominio> condominiosEscolhidos(List<Integer> condominioIds) {
         if (condominioIds == null || condominioIds.isEmpty()) {
             throw new IllegalArgumentException("Selecione ao menos um condomínio.");
         }
         Set<Integer> pedidos = new HashSet<>(condominioIds);
-        if (pedidos.contains(null) || condominioRepository.findAllById(pedidos).size() != pedidos.size()) {
+        if (pedidos.contains(null)) {
             throw new IllegalArgumentException("Um dos condomínios selecionados não foi encontrado.");
         }
+        List<Condominio> encontrados = condominioRepository.findAllById(pedidos);
+        if (encontrados.size() != pedidos.size()) {
+            throw new IllegalArgumentException("Um dos condomínios selecionados não foi encontrado.");
+        }
+        return new HashSet<>(encontrados);
     }
 
     // ---- Gravação ----
 
-    private Comunicado gravarNovo(ComunicadoRequestDTO dto, MultipartFile anexo, Pessoa criador) {
+    private Comunicado gravarNovo(ComunicadoRequestDTO dto, MultipartFile anexo, Pessoa criador,
+                                  Set<Condominio> condominiosAlvo) {
         String caminhoAnexo = null;
         try {
             if (anexo != null) {
@@ -282,14 +301,13 @@ public class ComunicadoServiceImpl implements ComunicadoService {
                 caminhoAnexo = fileStorageService.store(anexo, COMUNICADOS_DIR);
             }
 
-            Set<Condominio> condominiosAlvo = getCondominiosAlvo(criador, dto.getCondominioIds());
-
             Comunicado comunicado = Comunicado.builder()
                     .titulo(dto.getTitulo())
                     .mensagem(dto.getMensagem())
                     .publicoDestino(dto.getPublicoDestino())
                     .isUrgente(dto.getIsUrgente())
                     .caminhoAnexo(caminhoAnexo)
+                    .nomeAnexo(caminhoAnexo == null ? null : nomeOriginal(anexo))
                     .criador(criador)
                     .condominios(condominiosAlvo)
                     .build();
@@ -307,7 +325,7 @@ public class ComunicadoServiceImpl implements ComunicadoService {
 
     /** Um anexo novo substitui o antigo, que é apagado depois de salvar. */
     private Comunicado gravarAlteracao(Comunicado comunicado, ComunicadoRequestDTO dto, MultipartFile anexo,
-                                       Pessoa editor) {
+                                       Set<Condominio> condominiosAlvo) {
         String novoCaminhoAnexo = null;
         String antigoCaminhoAnexo = comunicado.getCaminhoAnexo();
 
@@ -318,9 +336,8 @@ public class ComunicadoServiceImpl implements ComunicadoService {
                 }
                 novoCaminhoAnexo = fileStorageService.store(anexo, COMUNICADOS_DIR);
                 comunicado.setCaminhoAnexo(novoCaminhoAnexo);
+                comunicado.setNomeAnexo(nomeOriginal(anexo));
             }
-
-            Set<Condominio> condominiosAlvo = getCondominiosAlvo(editor, dto.getCondominioIds());
 
             comunicado.setTitulo(dto.getTitulo());
             comunicado.setMensagem(dto.getMensagem());
@@ -360,27 +377,26 @@ public class ComunicadoServiceImpl implements ComunicadoService {
         }
     }
 
-    private Set<Condominio> getCondominiosAlvo(Pessoa pessoa, List<Integer> condominioIds) {
-        Set<Condominio> condominiosAlvo = new HashSet<>();
-
-        if (Boolean.TRUE.equals(pessoa.getPesIsGlobalAdmin())) {
-            if (condominioIds == null || condominioIds.isEmpty()) {
-                throw new IllegalArgumentException("Selecione ao menos um condomínio.");
-            }
-            condominiosAlvo.addAll(condominioRepository.findAllById(condominioIds));
-        } else {
-            Integer conCodAtivo = usuarioCondominioService.getCondominioIdDoUsuario(pessoa);
-            if (conCodAtivo == null) {
-                throw new IllegalArgumentException("Você não está vinculado a nenhum condomínio.");
-            }
-            Condominio condominioAtivo = condominioRepository.findById(conCodAtivo)
-                    .orElseThrow(() -> new EntityNotFoundException("Condomínio não encontrado."));
-            condominiosAlvo.add(condominioAtivo);
+    /**
+     * Nome com que o arquivo foi enviado, sem as pastas que alguns navegadores mandam junto e com no máximo 255
+     * caracteres, preservando a extensão. Nulo se o navegador não mandou nome.
+     */
+    static String nomeOriginal(MultipartFile anexo) {
+        String nome = anexo.getOriginalFilename();
+        if (nome == null) {
+            return null;
         }
-
-        if (condominiosAlvo.isEmpty()) {
-            throw new IllegalArgumentException("Nenhum dos condomínios selecionados foi encontrado.");
+        nome = nome.substring(Math.max(nome.lastIndexOf('/'), nome.lastIndexOf('\\')) + 1)
+                .replaceAll("\\p{Cntrl}", "")
+                .trim();
+        if (nome.isEmpty()) {
+            return null;
         }
-        return condominiosAlvo;
+        if (nome.length() > TAMANHO_DO_NOME_DO_ANEXO) {
+            int ponto = nome.lastIndexOf('.');
+            String extensao = ponto > 0 && nome.length() - ponto <= 20 ? nome.substring(ponto) : "";
+            nome = nome.substring(0, TAMANHO_DO_NOME_DO_ANEXO - extensao.length()) + extensao;
+        }
+        return nome;
     }
 }

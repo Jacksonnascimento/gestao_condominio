@@ -33,10 +33,11 @@ export const painelService = {
   indicadores: (condominioId?: number | null) =>
     api.get<Indicadores>('/dashboard', { params: condominioId ? { condominioId } : {} }).then((r) => r.data),
 
+  /** Reservas a partir da data, das mais próximas para as mais distantes. */
   proximasReservas: (condominioId: number | null | undefined, aPartirDe: string) =>
     api
       .get<Pagina<ReservaResumo>>('/reservas', {
-        params: { ...(condominioId ? { condominioId } : {}), dataInicio: aPartirDe, tamanho: 20 },
+        params: { ...(condominioId ? { condominioId } : {}), dataInicio: aPartirDe, crescente: true, tamanho: 20 },
       })
       .then((r) => r.data),
 

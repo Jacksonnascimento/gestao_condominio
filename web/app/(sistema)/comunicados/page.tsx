@@ -54,17 +54,25 @@ export default function PaginaDeComunicados() {
   const [versao, setVersao] = useState(0);
   const [consultaCarregada, setConsultaCarregada] = useState('');
 
-  // Os comunicados vêm do condomínio de quem está logado; a troca de condomínio também relê a lista
+  // Os comunicados são os do condomínio escolhido no topo; a troca de condomínio relê a lista e as opções
   const condominioId = condominio?.id;
   const consulta = JSON.stringify({ condominioId, busca, destaque, publico, pagina, versao });
   const carregando = consulta !== consultaCarregada;
 
   useEffect(() => {
+    let ativa = true;
     comunicadoService
-      .opcoes()
-      .then(setOpcoes)
-      .catch((e) => toast.error(mensagemErroApi(e, 'Não foi possível carregar as opções de comunicado.')));
-  }, []);
+      .opcoes(condominioId)
+      .then((novas) => {
+        if (ativa) setOpcoes(novas);
+      })
+      .catch((e) => {
+        if (ativa) toast.error(mensagemErroApi(e, 'Não foi possível carregar as opções de comunicado.'));
+      });
+    return () => {
+      ativa = false;
+    };
+  }, [condominioId]);
 
   // A busca vai para a API só quando a pessoa para de digitar
   useEffect(() => {
@@ -79,6 +87,7 @@ export default function PaginaDeComunicados() {
     let ativa = true;
     comunicadoService
       .listar({
+        condominioId,
         titulo: busca,
         publicoDestino: publico,
         urgente: destaque === 'urgentes' ? true : null,
@@ -97,7 +106,7 @@ export default function PaginaDeComunicados() {
     return () => {
       ativa = false;
     };
-  }, [consulta, busca, destaque, publico, pagina]);
+  }, [consulta, condominioId, busca, destaque, publico, pagina]);
 
   const aposAlterar = () => {
     setJanela(null);

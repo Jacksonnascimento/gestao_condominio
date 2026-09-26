@@ -1,3 +1,5 @@
+import { CHAVE_TEMA } from '@/services/tema';
+
 /** Cookie que guarda o token de acesso, enviado em toda chamada à API. */
 export const COOKIE_SESSAO = 'condigtal_token';
 
@@ -82,7 +84,10 @@ let encerrando = false;
 export function encerrarSessao(expirada = false) {
   if (encerrando) return;
   encerrando = true;
+  // O tema é do aparelho, não da sessão
+  const tema = localStorage.getItem(CHAVE_TEMA);
   localStorage.clear();
+  if (tema) localStorage.setItem(CHAVE_TEMA, tema);
   sessionStorage.clear();
   document.cookie = `${COOKIE_SESSAO}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
   document.cookie = `${COOKIE_RENOVACAO}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;

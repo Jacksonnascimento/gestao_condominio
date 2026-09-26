@@ -65,7 +65,7 @@ export function Modal({
         type="button"
         aria-label="Fechar"
         tabIndex={-1}
-        className="absolute inset-0 cursor-default bg-tinta/45"
+        className="absolute inset-0 cursor-default bg-veu/45"
         onClick={() => !ocupado && aoFechar()}
       />
       <div

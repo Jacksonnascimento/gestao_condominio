@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -94,8 +95,12 @@ public class UsuarioCondominioService {
                 usuarioCondominio.getPesCod(),
                 usuarioCondominio.getConCod(),
                 usuarioCondominio.getUscPapel());
-        if (usuarioCondominioRepository.findById(idComposto).isPresent()) {
-            throw new ConflitoException("Esta pessoa já possui este papel neste condomínio.");
+        Optional<UsuarioCondominio> existente = usuarioCondominioRepository.findById(idComposto);
+        if (existente.isPresent()) {
+            throw new ConflitoException(Boolean.TRUE.equals(existente.get().getUscAtivoAssociacao())
+                    ? "Esta pessoa já possui este papel neste condomínio."
+                    : "Esta pessoa já tem este papel neste condomínio, mas o acesso está desativado. Reative-o na "
+                            + "lista de usuários.");
         }
 
         if (usuarioCondominio.getUscAtivoAssociacao() == null) {
@@ -107,28 +112,33 @@ public class UsuarioCondominioService {
         return usuarioCondominioRepository.save(usuarioCondominio);
     }
 
-    /** Troca o papel do vínculo: o papel faz parte da chave, então o vínculo antigo sai e entra um novo. */
+    /**
+     * Troca o papel do vínculo. O papel faz parte da chave, então o registro antigo sai e entra um novo, mas o acesso
+     * é o mesmo: a data em que ele foi dado e a situação (ativo ou desativado) continuam as de antes.
+     */
     private UsuarioCondominio atualizarPapelUsuario(Integer pessoaId, Integer condominioId, UserRole oldPapel, UserRole newPapel) {
         if (oldPapel == newPapel) {
              throw new IllegalArgumentException("O novo papel deve ser diferente do papel atual.");
         }
 
-        UsuarioCondominioId oldId = new UsuarioCondominioId(pessoaId, condominioId, oldPapel);
-        UsuarioCondominio oldVinculo = usuarioCondominioRepository.findById(oldId)
-             .orElseThrow(() -> new EntityNotFoundException("Vínculo de usuário não encontrado."));
-
-        Pessoa pessoa = oldVinculo.getPessoa();
-        Condominio condominio = oldVinculo.getCondominio();
+        UsuarioCondominio oldVinculo = vinculoExistente(pessoaId, condominioId, oldPapel);
+        if (usuarioCondominioRepository.existsById(new UsuarioCondominioId(pessoaId, condominioId, newPapel))) {
+            throw new ConflitoException("Esta pessoa já tem o papel " + newPapel.getDescricao()
+                    + " neste condomínio.");
+        }
 
         UsuarioCondominio novoVinculo = new UsuarioCondominio();
-        novoVinculo.setPessoa(pessoa);
-        novoVinculo.setCondominio(condominio);
+        novoVinculo.setPesCod(pessoaId);
+        novoVinculo.setConCod(condominioId);
+        novoVinculo.setPessoa(oldVinculo.getPessoa());
+        novoVinculo.setCondominio(oldVinculo.getCondominio());
         novoVinculo.setUscPapel(newPapel);
-        novoVinculo.setUscAtivoAssociacao(true);
+        novoVinculo.setUscDtAssociacao(oldVinculo.getUscDtAssociacao());
+        novoVinculo.setUscAtivoAssociacao(oldVinculo.getUscAtivoAssociacao());
+        novoVinculo.setUscDtAtualizacao(LocalDateTime.now());
 
         usuarioCondominioRepository.delete(oldVinculo);
-        
-        return cadastrarUsuarioCondominio(novoVinculo);
+        return usuarioCondominioRepository.save(novoVinculo);
     }
     
     public List<UsuarioCondominio> findByPessoa(Pessoa pessoa) {
@@ -226,11 +236,36 @@ public class UsuarioCondominioService {
     }
 
     /**
-     * Vínculos ativos dos condomínios que o usuário administra, por condomínio, nome e papel. Com
-     * {@code condominioId}, só os daquele condomínio.
+     * Vínculos dos condomínios que o usuário administra, por condomínio, nome e papel. Com {@code condominioId}, só os
+     * daquele condomínio; com {@code ativo}, só os ativos ({@code true}) ou só os desativados ({@code false}).
      */
     @Transactional(readOnly = true)
-    public Page<UsuarioCondominioDTO> consultarVinculos(Pessoa usuario, Integer condominioId, Pageable pageable) {
+    public Page<UsuarioCondominioDTO> consultarVinculos(Pessoa usuario, Integer condominioId, Boolean ativo,
+                                                        Pageable pageable) {
+        List<UsuarioCondominioDTO> vinculos = vinculosAlcancados(usuario, condominioId).stream()
+                .filter(vinculo -> ativo == null || ativo.equals(vinculo.getUscAtivoAssociacao()))
+                .sorted(Comparator
+                        .comparing((UsuarioCondominio v) -> v.getCondominio().getConNome(), String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(v -> v.getPessoa().getPesNome(), String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(UsuarioCondominio::getUscPapel))
+                .map(UsuarioCondominioDTO::new)
+                .toList();
+
+        int inicio = (int) Math.min(pageable.getOffset(), vinculos.size());
+        int fim = Math.min(inicio + pageable.getPageSize(), vinculos.size());
+        return new PageImpl<>(vinculos.subList(inicio, fim), pageable, vinculos.size());
+    }
+
+    /** Quantidade de vínculos ativos ({@code ATIVOS}), desativados ({@code DESATIVADOS}) e no total ({@code TOTAL}). */
+    @Transactional(readOnly = true)
+    public Map<String, Long> contarVinculos(Pessoa usuario, Integer condominioId) {
+        List<UsuarioCondominio> vinculos = vinculosAlcancados(usuario, condominioId);
+        long ativos = vinculos.stream().filter(v -> Boolean.TRUE.equals(v.getUscAtivoAssociacao())).count();
+        return Map.of("TOTAL", (long) vinculos.size(), "ATIVOS", ativos, "DESATIVADOS", vinculos.size() - ativos);
+    }
+
+    /** Vínculos, ativos e desativados, dos condomínios que o usuário administra (ou só do {@code condominioId}). */
+    private List<UsuarioCondominio> vinculosAlcancados(Pessoa usuario, Integer condominioId) {
         Set<Integer> alcance;
         if (condominioId != null) {
             conferirGestaoDeUsuarios(usuario, condominioId);
@@ -244,19 +279,13 @@ public class UsuarioCondominioService {
             }
         }
 
-        List<UsuarioCondominioDTO> vinculos = usuarioCondominioRepository.findByUscAtivoAssociacao(true).stream()
+        List<UsuarioCondominio> vinculos = alcance != null && alcance.size() == 1
+                ? usuarioCondominioRepository.findByConCod(alcance.iterator().next())
+                : usuarioCondominioRepository.findAll();
+        return vinculos.stream()
                 .filter(vinculo -> alcance == null || alcance.contains(vinculo.getConCod()))
                 .filter(vinculo -> vinculo.getPessoa() != null && vinculo.getCondominio() != null)
-                .sorted(Comparator
-                        .comparing((UsuarioCondominio v) -> v.getCondominio().getConNome(), String.CASE_INSENSITIVE_ORDER)
-                        .thenComparing(v -> v.getPessoa().getPesNome(), String.CASE_INSENSITIVE_ORDER)
-                        .thenComparing(UsuarioCondominio::getUscPapel))
-                .map(UsuarioCondominioDTO::new)
                 .toList();
-
-        int inicio = (int) Math.min(pageable.getOffset(), vinculos.size());
-        int fim = Math.min(inicio + pageable.getPageSize(), vinculos.size());
-        return new PageImpl<>(vinculos.subList(inicio, fim), pageable, vinculos.size());
     }
 
     @Transactional(readOnly = true)
@@ -379,21 +408,55 @@ public class UsuarioCondominioService {
      */
     @Transactional
     public String enviarLinkDeSenha(Pessoa usuario, Integer pessoaId, String enderecoWeb) {
-        if (!isAdministradorGeral(usuario)) {
-            Set<Integer> administrados = condominiosComPapel(usuario, PAPEIS_QUE_GERENCIAM_USUARIOS);
-            boolean alcanca = usuarioCondominioRepository.findByPesCod(pessoaId).stream()
-                    .anyMatch(vinculo -> administrados.contains(vinculo.getConCod()));
-            if (!alcanca) {
-                throw new AccessDeniedException("Esta pessoa não tem acesso a um condomínio que você administra.");
-            }
-        }
-        Pessoa pessoa = pessoaRepository.findById(pessoaId)
-                .orElseThrow(() -> new EntityNotFoundException("Pessoa não encontrada."));
+        Pessoa pessoa = pessoaAoAlcance(usuario, pessoaId);
         if (isAdministradorGeral(pessoa) && !isAdministradorGeral(usuario)) {
             throw new AccessDeniedException("Só a administração geral redefine a senha de um administrador geral.");
         }
         passwordResetService.createPasswordResetToken(pessoa.getPesEmail(), VALIDADE_LINK_SENHA_HORAS, enderecoWeb);
         return pessoa.getPesEmail();
+    }
+
+    /**
+     * Define a senha da pessoa na hora, sem link. Vale a mesma regra de alterar o e-mail, que é o login: quem não é
+     * administrador geral só define a senha de quem tem acesso apenas a condomínios que ele administra. A própria
+     * senha se troca no perfil, conferindo a atual. As sessões abertas da pessoa deixam de valer.
+     */
+    @Transactional
+    public void definirSenha(Pessoa usuario, Integer pessoaId, String novaSenha) {
+        if (Objects.equals(pessoaId, usuario.getPesCod())) {
+            throw new IllegalArgumentException("Para trocar a sua própria senha, use \"Meu perfil\".");
+        }
+        Pessoa pessoa = pessoaAoAlcance(usuario, pessoaId);
+        if (!isAdministradorGeral(usuario)) {
+            if (isAdministradorGeral(pessoa)) {
+                throw new AccessDeniedException("Só a administração geral define a senha de um administrador geral.");
+            }
+            if (temAcessoForaDoAlcance(usuario, pessoa)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta pessoa também tem acesso a condomínio "
+                        + "que você não administra; envie o link para ela mesma definir a senha.");
+            }
+        }
+        pessoaService.definirSenha(pessoaId, novaSenha);
+    }
+
+    /**
+     * Desativa ou reativa o acesso, mantendo o registro e a data em que foi dado. Desativado, o acesso deixa de
+     * contar para entrar no sistema e para o que a pessoa vê no condomínio. Ninguém desativa o próprio acesso.
+     */
+    @Transactional
+    public UsuarioCondominioDTO mudarSituacaoDoVinculo(Pessoa usuario, Integer pessoaId, Integer condominioId,
+                                                       UserRole papel, boolean ativo) {
+        conferirGestaoDeUsuarios(usuario, condominioId);
+        if (!ativo && Objects.equals(pessoaId, usuario.getPesCod())) {
+            throw new IllegalArgumentException("Não é possível desativar o próprio acesso.");
+        }
+        UsuarioCondominio vinculo = vinculoExistente(pessoaId, condominioId, papel);
+        if (Boolean.valueOf(ativo).equals(vinculo.getUscAtivoAssociacao())) {
+            throw new IllegalArgumentException(ativo ? "Este acesso já está ativo." : "Este acesso já está desativado.");
+        }
+        vinculo.setUscAtivoAssociacao(ativo);
+        vinculo.setUscDtAtualizacao(LocalDateTime.now());
+        return new UsuarioCondominioDTO(usuarioCondominioRepository.save(vinculo));
     }
 
     /** Remove o acesso da pessoa ao condomínio com aquele papel. Ninguém remove o próprio acesso. */
@@ -472,13 +535,31 @@ public class UsuarioCondominioService {
         if (isAdministradorGeral(pessoa)) {
             throw new AccessDeniedException("Só a administração geral altera os dados de um administrador geral.");
         }
-        Set<Integer> administrados = condominiosComPapel(usuario, PAPEIS_QUE_GERENCIAM_USUARIOS);
-        boolean temAcessoForaDoAlcance = usuarioCondominioRepository.findByPesCod(pessoa.getPesCod()).stream()
-                .anyMatch(vinculo -> !administrados.contains(vinculo.getConCod()));
-        if (temAcessoForaDoAlcance) {
+        if (temAcessoForaDoAlcance(usuario, pessoa)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta pessoa também tem acesso a condomínio que "
                     + "você não administra; o nome e o e-mail dela só podem ser alterados pela administração geral.");
         }
+    }
+
+    /** Se a pessoa tem acesso a algum condomínio que o usuário não administra. */
+    private boolean temAcessoForaDoAlcance(Pessoa usuario, Pessoa pessoa) {
+        Set<Integer> administrados = condominiosComPapel(usuario, PAPEIS_QUE_GERENCIAM_USUARIOS);
+        return usuarioCondominioRepository.findByPesCod(pessoa.getPesCod()).stream()
+                .anyMatch(vinculo -> !administrados.contains(vinculo.getConCod()));
+    }
+
+    /** A pessoa, desde que tenha acesso a algum condomínio que o usuário administra. */
+    private Pessoa pessoaAoAlcance(Pessoa usuario, Integer pessoaId) {
+        if (!isAdministradorGeral(usuario)) {
+            Set<Integer> administrados = condominiosComPapel(usuario, PAPEIS_QUE_GERENCIAM_USUARIOS);
+            boolean alcanca = usuarioCondominioRepository.findByPesCod(pessoaId).stream()
+                    .anyMatch(vinculo -> administrados.contains(vinculo.getConCod()));
+            if (!alcanca) {
+                throw new AccessDeniedException("Esta pessoa não tem acesso a um condomínio que você administra.");
+            }
+        }
+        return pessoaRepository.findById(pessoaId)
+                .orElseThrow(() -> new EntityNotFoundException("Pessoa não encontrada."));
     }
 
     private Optional<Pessoa> pessoaPorDocumento(String cpfCnpj) {

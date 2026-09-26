@@ -3,7 +3,7 @@
 /*
  * Cores e fontes do sistema (modelo visual "D · Combinado"): fundo creme, tinta quase preta e o dourado do
  * logo como destaque. As telas usam só estes nomes (bg-fundo, text-apagado, border-borda...), para que um
- * ajuste de cor, ou um tema escuro no futuro, mude num lugar só.
+ * ajuste de cor, ou o tema escuro logo abaixo, mude num lugar só.
  */
 @theme {
   --color-fundo: #f6f2ea;
@@ -22,7 +22,12 @@
 
   --color-ouro: #8a5a1f;
   --color-ouro-escuro: #6b4412;
+  /* Dourado sobre as superfícies em bg-tinta (botão principal, avatar, número em destaque) */
   --color-ouro-claro: #e2b77a;
+  /* Texto secundário sobre bg-tinta */
+  --color-apagado-inverso: #cfc5b6;
+  /* Véu atrás das janelas e do menu no celular */
+  --color-veu: #1f1b16;
 
   /* Selos de situação: diferem em claridade, não só em matiz */
   --color-aviso-fundo: #f4e3c4;
@@ -33,6 +38,43 @@
   --color-info: #34404d;
   --color-perigo-fundo: #f6ddd6;
   --color-perigo: #8a2b17;
+}
+
+/*
+ * Tema escuro: os mesmos nomes com outros valores. O data-tema é posto em services/tema.ts. A tinta fica clara e o
+ * fundo escuro, então o que usa bg-tinta (botão principal, avatar) continua invertido, agora claro sobre o escuro.
+ */
+:root[data-tema='escuro'] {
+  color-scheme: dark;
+
+  --color-fundo: #15120e;
+  --color-lateral: #1b1813;
+  --color-superficie: #211d18;
+  --color-cabecalho: #1e1a15;
+  --color-borda: #3a342b;
+  --color-borda-suave: #2c2721;
+  --color-contorno: #4a4237;
+  --color-trilho: #2e2922;
+  --color-realce: #3a2f20;
+
+  --color-tinta: #f1ebe1;
+  --color-tinta-2: #cdc4b6;
+  --color-apagado: #a39888;
+
+  --color-ouro: #d9a863;
+  --color-ouro-escuro: #e8c28b;
+  --color-ouro-claro: #8a5a1f;
+  --color-apagado-inverso: #5f564a;
+  --color-veu: #000000;
+
+  --color-aviso-fundo: #3d2f19;
+  --color-aviso: #eac48a;
+  --color-neutro-fundo: #2e2a25;
+  --color-neutro: #d6cec2;
+  --color-info-fundo: #232b34;
+  --color-info: #bccad8;
+  --color-perigo-fundo: #3f1f18;
+  --color-perigo: #f0a08c;
 }
 
 @theme inline {
@@ -54,6 +96,17 @@
 
   a {
     color: var(--color-ouro);
+  }
+
+  /*
+   * A lista aberta de um <select> é desenhada pelo navegador. Quando o select é transparente (como o seletor de
+   * condomínio do topo), o Chrome no Windows usa fundo branco e herda a cor do texto, que no tema escuro é clara:
+   * as opções ficam ilegíveis. Com as cores do tema nas opções, a lista acompanha o claro e o escuro.
+   */
+  option,
+  optgroup {
+    background-color: var(--color-superficie);
+    color: var(--color-tinta);
   }
 
   a:hover {

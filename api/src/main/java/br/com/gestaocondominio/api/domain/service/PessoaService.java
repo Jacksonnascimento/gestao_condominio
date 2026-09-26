@@ -149,6 +149,34 @@ public class PessoaService {
         pessoaRepository.save(pessoaNoBanco);
     }
 
+    /**
+     * Define a senha sem conferir a atual, para a administração de usuários. Como a senha muda, os tokens já emitidos
+     * para a pessoa deixam de valer.
+     */
+    @Transactional
+    public void definirSenha(Integer id, String novaSenha) {
+        Pessoa pessoaNoBanco = pessoaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Pessoa não encontrada."));
+
+        if (!StringUtils.hasText(novaSenha)) {
+            throw new IllegalArgumentException("A nova senha não pode estar em branco.");
+        }
+
+        pessoaNoBanco.setPesSenhaLogin(passwordEncoder.encode(novaSenha));
+        pessoaNoBanco.setPesDtAtualizacao(LocalDateTime.now());
+        pessoaRepository.save(pessoaNoBanco);
+    }
+
+    /** Troca a foto da pessoa pela imagem já conferida; {@code null} tira a foto. */
+    @Transactional
+    public Pessoa atualizarFoto(Integer id, byte[] imagem) {
+        Pessoa pessoa = pessoaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Pessoa não encontrada."));
+        pessoa.setPesImagem(imagem);
+        pessoa.setPesDtAtualizacao(LocalDateTime.now());
+        return pessoaRepository.save(pessoa);
+    }
+
     public Pessoa getLoggedInUser() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username;

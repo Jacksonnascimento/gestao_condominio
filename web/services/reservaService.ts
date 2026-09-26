@@ -52,10 +52,25 @@ export interface FiltroReservas {
   tamanho?: number;
 }
 
-export interface TotaisReservas {
-  TOTAL: number;
-  PENDENTES: number;
-  APROVADAS: number;
+/** Quantidade por situação e no total, com os filtros da lista menos o de situação. */
+export type TotaisReservas = Record<SituacaoReserva | 'TOTAL', number>;
+
+export interface TurnoNoDia {
+  codigo: number;
+  nome: string;
+  horaInicio: string | null;
+  horaFim: string | null;
+  livre: boolean;
+}
+
+/** Ocupação da área num dia. Não diz quem reservou. */
+export interface DisponibilidadeDoDia {
+  /** "2026-10-10" */
+  data: string;
+  /** Livre só se não houver nenhuma reserva na data. */
+  diaInteiroLivre: boolean;
+  /** Turnos ativos da área; livre se não houver reserva no turno nem do dia inteiro. */
+  turnos: TurnoNoDia[];
 }
 
 export interface UnidadeParaReserva {
@@ -94,9 +109,14 @@ export const reservaService = {
   listar: (filtro: FiltroReservas) =>
     api.get<Pagina<Reserva>>('/reservas', { params: limparParametros({ ...filtro }) }).then((r) => r.data),
 
-  /** Total, pendentes e aprovadas do condomínio (a API não aplica os outros filtros). */
-  totais: (condominioId?: number | null) =>
-    api.get<TotaisReservas>('/reservas/totais', { params: limparParametros({ condominioId }) }).then((r) => r.data),
+  totais: (filtro: Omit<FiltroReservas, 'status' | 'pagina' | 'tamanho'>) =>
+    api.get<TotaisReservas>('/reservas/totais', { params: limparParametros({ ...filtro }) }).then((r) => r.data),
+
+  /** Ocupação da área dia a dia (até 62 dias; sem `dataFim`, só `dataInicio`). */
+  disponibilidade: (areaId: number, dataInicio: string, dataFim?: string) =>
+    api
+      .get<DisponibilidadeDoDia[]>('/reservas/disponibilidade', { params: limparParametros({ areaId, dataInicio, dataFim }) })
+      .then((r) => r.data),
 
   opcoes: (condominioId?: number | null) =>
     api.get<OpcoesReserva>('/reservas/opcoes', { params: limparParametros({ condominioId }) }).then((r) => r.data),

@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { Botao, CaixaDeErro, CaixaDeMarcar, Campo, CampoDeSelecao } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
 import { regrasDaArea } from '@/services/areaComumService';
-import { reservaService, type OpcoesReserva } from '@/services/reservaService';
+import { reservaService, type DisponibilidadeDoDia, type OpcoesReserva } from '@/services/reservaService';
 import { faixaDeHorario, mensagemErroApi, rotuloUnidade } from '@/services/utilitarios';
 
 /** Valor do turno "dia inteiro" na escolha; na API, é a reserva sem turno. */
@@ -25,9 +25,16 @@ function dataDoCampo(diasAFrente: number): string {
   return format(addDays(new Date(), diasAFrente), 'yyyy-MM-dd');
 }
 
+/** Ocupação lida da API para uma área e uma data (a chave), ou nula se a consulta falhou. */
+interface OcupacaoLida {
+  chave: string;
+  dia: DisponibilidadeDoDia | null;
+}
+
 /**
  * Pedido de reserva do morador: unidade, área, data, turno (ou o dia inteiro), convidados se a área aceitar, e o
- * aceite dos termos de uso. A reserva fica aguardando a aprovação da gestão.
+ * aceite dos termos de uso. Escolhidas a área e a data, os turnos já reservados aparecem como ocupados. A reserva fica
+ * aguardando a aprovação da gestão.
  */
 export function PedirReserva({
   opcoes,
@@ -47,6 +54,7 @@ export function PedirReserva({
   const [termosAceitos, setTermosAceitos] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
+  const [ocupacao, setOcupacao] = useState<OcupacaoLida>({ chave: '', dia: null });
   const caixaDoErro = useRef<HTMLParagraphElement>(null);
 
   // O formulário é longo: o erro aparece no topo, então a janela rola até ele
@@ -62,6 +70,38 @@ export function PedirReserva({
   const dataMaxima = area?.diasAntecedenciaMax != null ? dataDoCampo(area.diasAntecedenciaMax) : undefined;
   const limite = area?.permiteConvidados ? area.limiteConvidados : 0;
   const noLimite = limite != null && convidados.length >= limite;
+
+  // O que já está reservado na data escolhida; sem resposta da API, nada aparece como ocupado e ela confere no envio
+  const chaveDaOcupacao = area && data ? `${area.codigo}|${data}` : '';
+  const areaDaOcupacao = area?.codigo;
+  useEffect(() => {
+    if (areaDaOcupacao == null || !data) return;
+    let ativa = true;
+    const chave = `${areaDaOcupacao}|${data}`;
+    reservaService
+      .disponibilidade(areaDaOcupacao, data)
+      .then((dias) => {
+        if (ativa) setOcupacao({ chave, dia: dias[0] ?? null });
+      })
+      .catch(() => {
+        if (ativa) setOcupacao({ chave, dia: null });
+      });
+    return () => {
+      ativa = false;
+    };
+  }, [areaDaOcupacao, data]);
+  const verificando = chaveDaOcupacao !== '' && ocupacao.chave !== chaveDaOcupacao;
+  const dia = !verificando && chaveDaOcupacao ? ocupacao.dia : null;
+  const ocupado = (valor: string) => {
+    if (!dia) return false;
+    if (valor === DIA_INTEIRO) return !dia.diaInteiroLivre;
+    return dia.turnos.find((t) => String(t.codigo) === valor)?.livre === false;
+  };
+  const opcoesDeTurno = [
+    ...turnos.map((t) => ({ valor: String(t.codigo), titulo: t.nome, detalhe: faixaDeHorario(t.horaInicio, t.horaFim) })),
+    { valor: DIA_INTEIRO, titulo: 'Dia inteiro', detalhe: 'Ocupa todos os turnos da data' },
+  ];
+  const dataLotada = dia != null && opcoesDeTurno.every((o) => ocupado(o.valor));
 
   function escolherUnidade(valor: string) {
     setUnidadeId(valor);
@@ -98,6 +138,10 @@ export function PedirReserva({
       setErro('Escolha o turno ou o dia inteiro.');
       return;
     }
+    if (ocupado(turno)) {
+      setErro(dataLotada ? 'Esta data já está toda reservada. Escolha outra data.' : 'Este horário já está reservado nesta data. Escolha outro turno.');
+      return;
+    }
     setErro('');
     setSalvando(true);
     try {
@@ -131,7 +175,7 @@ export function PedirReserva({
           <Botao variante="texto" onClick={aoFechar} disabled={salvando}>
             Cancelar
           </Botao>
-          <Botao type="submit" form="pedir-reserva" variante="primario" carregando={salvando} disabled={!area}>
+          <Botao type="submit" form="pedir-reserva" variante="primario" carregando={salvando} disabled={!area || dataLotada}>
             Enviar pedido
           </Botao>
         </>
@@ -188,6 +232,12 @@ export function PedirReserva({
               max={dataMaxima}
               className="sm:max-w-[240px]"
             />
+            {verificando && <p className="-mt-3 text-[13px] text-apagado">Conferindo os horários livres…</p>}
+            {dataLotada && (
+              <p className="-mt-3 text-[13px] font-semibold text-perigo" role="status">
+                Esta data já está toda reservada para {area.nome}. Escolha outra data.
+              </p>
+            )}
 
             <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
               <legend className="mb-1.5 p-0 text-[13px] font-semibold text-tinta-2">
@@ -197,30 +247,36 @@ export function PedirReserva({
                 <p className="text-sm text-tinta-2">Esta área é reservada pelo dia inteiro.</p>
               ) : (
                 <div className="grid gap-2 sm:grid-cols-2">
-                  {[
-                    ...turnos.map((t) => ({ valor: String(t.codigo), titulo: t.nome, detalhe: faixaDeHorario(t.horaInicio, t.horaFim) })),
-                    { valor: DIA_INTEIRO, titulo: 'Dia inteiro', detalhe: 'Ocupa todos os turnos da data' },
-                  ].map((opcao) => (
-                    <label
-                      key={opcao.valor}
-                      className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-2.5 text-sm ${
-                        turno === opcao.valor ? 'border-ouro bg-realce' : 'border-borda bg-superficie hover:bg-lateral'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="turno"
-                        value={opcao.valor}
-                        checked={turno === opcao.valor}
-                        onChange={() => setTurno(opcao.valor)}
-                        className="size-4 shrink-0 accent-ouro"
-                      />
-                      <span className="flex flex-col">
-                        <span className="font-bold">{opcao.titulo}</span>
-                        <span className="text-xs text-apagado">{opcao.detalhe}</span>
-                      </span>
-                    </label>
-                  ))}
+                  {opcoesDeTurno.map((opcao) => {
+                    const indisponivel = ocupado(opcao.valor);
+                    const escolhido = turno === opcao.valor && !indisponivel;
+                    return (
+                      <label
+                        key={opcao.valor}
+                        className={`flex min-h-11 items-center gap-3 rounded-xl border px-3.5 py-2.5 text-sm ${
+                          indisponivel
+                            ? 'cursor-not-allowed border-borda-suave bg-cabecalho text-apagado'
+                            : escolhido
+                              ? 'cursor-pointer border-ouro bg-realce'
+                              : 'cursor-pointer border-borda bg-superficie hover:bg-lateral'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="turno"
+                          value={opcao.valor}
+                          checked={escolhido}
+                          disabled={indisponivel}
+                          onChange={() => setTurno(opcao.valor)}
+                          className="size-4 shrink-0 accent-ouro"
+                        />
+                        <span className="flex flex-col">
+                          <span className={`font-bold ${indisponivel ? 'line-through decoration-1' : ''}`}>{opcao.titulo}</span>
+                          <span className="text-xs text-apagado">{indisponivel ? 'Já reservado nesta data' : opcao.detalhe}</span>
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
               )}
             </fieldset>

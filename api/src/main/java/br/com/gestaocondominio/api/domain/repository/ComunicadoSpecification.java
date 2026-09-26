@@ -5,6 +5,8 @@ import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.enums.PublicoDestino;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
@@ -39,14 +41,17 @@ public class ComunicadoSpecification {
             }
 
            
-            // Quem não é administrador geral (inclusive com a marcação vazia) só vê os do seu condomínio.
-            if (!Boolean.TRUE.equals(pessoa.getPesIsGlobalAdmin())) {
-                if (conCodAtivo != null) {
-                    
-                    predicates.add(cb.equal(root.join("condominios").get("conCod"), conCodAtivo));
-                } else {
-                    return cb.disjunction();
-                }
+            // Com um condomínio, só os destinados a ele. Sem, só o administrador geral vê algum (vê todos).
+            if (conCodAtivo != null) {
+                // Subconsulta, e não junção: a busca junto dos condomínios (para o administrador geral) já usa a
+                // associação, e a junção repetiria o comunicado por condomínio
+                Subquery<Integer> doCondominio = query.subquery(Integer.class);
+                Root<Comunicado> outro = doCondominio.from(Comunicado.class);
+                doCondominio.select(outro.get("comId"))
+                        .where(cb.equal(outro.join("condominios").get("conCod"), conCodAtivo));
+                predicates.add(root.get("comId").in(doCondominio));
+            } else if (!Boolean.TRUE.equals(pessoa.getPesIsGlobalAdmin())) {
+                return cb.disjunction();
             }
 
            

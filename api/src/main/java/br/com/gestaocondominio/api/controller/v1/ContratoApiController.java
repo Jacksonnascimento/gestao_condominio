@@ -75,9 +75,11 @@ public class ContratoApiController {
     }
 
     @GetMapping("/totais")
-    @Operation(summary = "Quantidade de contratos por situação, para os cartões do topo da tela")
-    public TotaisContrato totais(@RequestParam(required = false) Integer condominioId) {
-        return TotaisContrato.de(contratoService.contarContratosPorStatus(usuarioLogado(), condominioId));
+    @Operation(summary = "Quantidade de contratos por situação, com a mesma busca da listagem, para as contagens das "
+            + "abas")
+    public TotaisContrato totais(@RequestParam(required = false) Integer condominioId,
+                                 @RequestParam(required = false) String busca) {
+        return TotaisContrato.de(contratoService.contarContratosPorStatus(usuarioLogado(), condominioId, busca));
     }
 
     @GetMapping("/opcoes")

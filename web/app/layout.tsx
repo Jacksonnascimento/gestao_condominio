@@ -1,7 +1,8 @@
-import type { Metadata, Viewport } from 'next';
+import type { Metadata } from 'next';
 import { Instrument_Serif, Manrope } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import { ConfirmacaoDoSistema } from '@/components/ConfirmacaoDoSistema';
+import { SCRIPT_DO_TEMA } from '@/services/tema';
 import './globals.css';
 
 const manrope = Manrope({
@@ -21,20 +22,26 @@ export const metadata: Metadata = {
   description: 'Gestão de condomínio: portaria, encomendas, reservas, comunicados e ocorrências.',
 };
 
-export const viewport: Viewport = {
-  themeColor: '#f6f2ea',
-};
-
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR">
+    // O script do tema muda o data-tema do <html> antes de o React assumir a página
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_DO_TEMA }} />
+      </head>
       <body className={`${manrope.variable} ${instrument.variable} antialiased`} suppressHydrationWarning>
         {children}
         <Toaster
           position="top-right"
           toastOptions={{
             duration: 6000,
-            style: { fontSize: '14px', maxWidth: '420px', color: '#1f1b16', border: '1px solid #e6ddcd' },
+            style: {
+              fontSize: '14px',
+              maxWidth: '420px',
+              color: 'var(--color-tinta)',
+              background: 'var(--color-superficie)',
+              border: '1px solid var(--color-borda)',
+            },
           }}
         />
         <ConfirmacaoDoSistema />

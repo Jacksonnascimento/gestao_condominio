@@ -96,7 +96,7 @@ export function DetalhesDoComunicado({
           <div className="flex flex-wrap items-center gap-3 rounded-xl border border-borda bg-cabecalho px-4 py-3">
             <Paperclip size={18} className="shrink-0 text-ouro" aria-hidden />
             <span className="flex min-w-0 grow flex-col">
-              <span className="text-sm font-bold">Anexo do comunicado</span>
+              <span className="text-sm font-bold break-all">{comunicado.nomeAnexo || 'Anexo do comunicado'}</span>
               {extensao && <span className="text-xs text-apagado">Arquivo {extensao}</span>}
             </span>
             <Botao pequeno onClick={baixar} carregando={baixando} className="max-sm:h-11">

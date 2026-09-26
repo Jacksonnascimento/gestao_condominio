@@ -80,8 +80,9 @@ export const areaComumService = {
     api.get<Pagina<AreaComum>>('/areas-comuns', { params: limparParametros({ ...filtro }) }).then((r) => r.data),
 
   /** Quantidade de áreas ativas e inativas do condomínio (sem a busca). */
-  totais: (condominioId?: number | null) =>
-    api.get<TotaisAreasComuns>('/areas-comuns/totais', { params: limparParametros({ condominioId }) }).then((r) => r.data),
+  /** Todas, disponíveis e inativas, com a mesma busca da lista. */
+  totais: (condominioId?: number | null, busca?: string) =>
+    api.get<TotaisAreasComuns>('/areas-comuns/totais', { params: limparParametros({ condominioId, busca }) }).then((r) => r.data),
 
   opcoes: () => api.get<OpcoesAreaComum>('/areas-comuns/opcoes').then((r) => r.data),
 

@@ -9,7 +9,9 @@ import br.com.gestaocondominio.api.domain.enums.UserRole;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.ContratoRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -52,9 +54,7 @@ public class ContratoService {
             }
 
             if (StringUtils.hasText(busca)) {
-                predicates.add(cb.or(
-                        cb.like(cb.lower(root.get("empresa")), "%" + busca.toLowerCase() + "%"),
-                        cb.like(cb.lower(root.get("servico")), "%" + busca.toLowerCase() + "%")));
+                predicates.add(buscaNaEmpresaOuServico(root, cb, busca));
             }
 
             if (inicioApos != null) {
@@ -91,12 +91,16 @@ public class ContratoService {
         }
     }
 
-    private Map<StatusContrato, Long> contarContratosPorStatus(Collection<Integer> condominioIds) {
+    private Map<StatusContrato, Long> contarContratosPorStatus(Collection<Integer> condominioIds, String busca) {
         Specification<Contrato> spec = (root, query, cb) -> {
-            if (condominioIds == null) {
-                return cb.conjunction();
+            List<Predicate> predicates = new ArrayList<>();
+            if (condominioIds != null) {
+                predicates.add(root.get("condominio").get("conCod").in(condominioIds));
             }
-            return root.get("condominio").get("conCod").in(condominioIds);
+            if (StringUtils.hasText(busca)) {
+                predicates.add(buscaNaEmpresaOuServico(root, cb, busca));
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
 
         List<Contrato> todosContratos = contratoRepository.findAll(spec);
@@ -104,6 +108,11 @@ public class ContratoService {
 
         return todosContratos.stream()
                 .collect(Collectors.groupingBy(Contrato::getStatus, Collectors.counting()));
+    }
+
+    private static Predicate buscaNaEmpresaOuServico(Root<Contrato> root, CriteriaBuilder cb, String busca) {
+        String termo = "%" + busca.trim().toLowerCase() + "%";
+        return cb.or(cb.like(cb.lower(root.get("empresa")), termo), cb.like(cb.lower(root.get("servico")), termo));
     }
 
     // ---------------------------------------------------------------------------------------------------------------
@@ -136,8 +145,9 @@ public class ContratoService {
         return new PageImpl<>(contratos.subList(inicio, fim), pageable, contratos.size());
     }
 
-    public Map<StatusContrato, Long> contarContratosPorStatus(Pessoa usuario, Integer condominioId) {
-        return contarContratosPorStatus(alcance(usuario, condominioId));
+    /** Contratos por situação calculada, com a mesma busca da listagem (empresa ou serviço). */
+    public Map<StatusContrato, Long> contarContratosPorStatus(Pessoa usuario, Integer condominioId, String busca) {
+        return contarContratosPorStatus(alcance(usuario, condominioId), busca);
     }
 
     /** Um contrato, com a situação calculada pela data de fim, se a pessoa gerencia o condomínio dele. */

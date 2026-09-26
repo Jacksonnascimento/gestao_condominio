@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
-import { Building2, ChevronDown, CircleUser, LogOut, Menu } from 'lucide-react';
+import { Building2, ChevronDown, CircleUser, LogOut, Menu, Monitor, Moon, Sun } from 'lucide-react';
 import { Marca } from '@/components/Marca';
 import { useSessao } from '@/context/SessaoContext';
+import { acompanharTema, escolherTema, lerTema, type Tema } from '@/services/tema';
 import { iniciais } from '@/services/utilitarios';
 
 /** Escolha do condomínio. Com um só, mostra o nome sem lista. */
@@ -40,10 +41,46 @@ function SeletorDeCondominio() {
   );
 }
 
+const TEMAS: { valor: Tema; rotulo: string; Icone: typeof Sun }[] = [
+  { valor: 'claro', rotulo: 'Claro', Icone: Sun },
+  { valor: 'escuro', rotulo: 'Escuro', Icone: Moon },
+  { valor: 'sistema', rotulo: 'Do aparelho', Icone: Monitor },
+];
+
+function SeletorDeTema({ tema }: { tema: Tema }) {
+  return (
+    <div className="flex flex-col gap-1.5 px-3 py-2">
+      <span className="text-xs font-bold tracking-[0.04em] text-apagado uppercase">Tema</span>
+      <div role="radiogroup" aria-label="Tema" className="grid grid-cols-3 gap-1 rounded-[10px] bg-trilho p-1">
+        {TEMAS.map(({ valor, rotulo, Icone }) => {
+          const ativo = tema === valor;
+          return (
+            <button
+              key={valor}
+              type="button"
+              role="radio"
+              aria-checked={ativo}
+              onClick={() => escolherTema(valor)}
+              className={`flex h-11 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg text-[11px] leading-none lg:h-12 ${
+                ativo ? 'bg-superficie font-bold text-tinta shadow-sm' : 'font-semibold text-tinta-2 hover:text-tinta'
+              }`}
+            >
+              <Icone size={15} aria-hidden />
+              {rotulo}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function MenuDaConta() {
   const { usuario, descricaoDoPapel, sair } = useSessao();
   const [aberto, setAberto] = useState(false);
   const caixa = useRef<HTMLDivElement>(null);
+  // Fica aqui, e não no seletor, para seguir o aparelho mesmo com o menu fechado
+  const tema = useSyncExternalStore(acompanharTema, lerTema, () => 'claro' as Tema);
 
   useEffect(() => {
     if (!aberto) return;
@@ -80,6 +117,8 @@ function MenuDaConta() {
             <span className="truncate text-[13px] text-apagado">{usuario.email}</span>
             {descricaoDoPapel && <span className="truncate text-[13px] text-apagado">{descricaoDoPapel}</span>}
           </div>
+          <SeletorDeTema tema={tema} />
+          <div className="mx-3 my-1 border-t border-borda-suave" />
           <Link
             href="/perfil"
             onClick={() => setAberto(false)}

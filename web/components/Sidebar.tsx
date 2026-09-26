@@ -99,7 +99,7 @@ export function Sidebar({ aberto, aoFechar }: { aberto: boolean; aoFechar: () =>
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-borda bg-lateral lg:block">{conteudo}</aside>
       {aberto && (
         <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
-          <button type="button" aria-label="Fechar menu" onClick={aoFechar} className="absolute inset-0 bg-tinta/40" />
+          <button type="button" aria-label="Fechar menu" onClick={aoFechar} className="absolute inset-0 bg-veu/40" />
           <aside className="relative h-full w-[288px] max-w-[85vw] border-r border-borda bg-lateral shadow-xl">{conteudo}</aside>
         </div>
       )}

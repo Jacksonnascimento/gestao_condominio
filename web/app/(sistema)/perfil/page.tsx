@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FotoDoPerfil } from '@/components/perfil/FotoDoPerfil';
+import { EditorDaFoto } from '@/components/perfil/FotoDoPerfil';
 import { TrocarSenha } from '@/components/perfil/TrocarSenha';
 import { Botao, CabecalhoDaPagina, CaixaDeErro, Campo, Cartao, Selo, TituloDoCartao, Vazio } from '@/components/Interface';
 import { useSessao } from '@/context/SessaoContext';
@@ -45,7 +45,7 @@ function DadosPessoais({ perfil, aoSalvar }: { perfil: UsuarioLogado; aoSalvar: 
       <TituloDoCartao titulo="Dados pessoais" />
       <form onSubmit={salvar} className="flex flex-col gap-5 border-t border-borda-suave px-5 py-5">
         <div className="flex items-center gap-4">
-          <FotoDoPerfil nome={perfil.nome} possuiFoto={perfil.possuiFoto} />
+          <EditorDaFoto perfil={perfil} aoMudar={aoSalvar} />
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className="truncate text-lg font-extrabold">{perfil.nome}</span>
             <span className="truncate text-sm text-apagado">{perfil.email}</span>

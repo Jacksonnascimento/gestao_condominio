@@ -78,7 +78,7 @@ export default function PaginaDeContratos() {
     let ativa = true;
     Promise.all([
       contratoService.listar({ aba, condominioId, busca, status, pagina, tamanho: TAMANHO }),
-      contratoService.totais(condominioId),
+      contratoService.totais(condominioId, busca),
     ])
       .then(([novaLista, novosTotais]) => {
         if (!ativa) return;
@@ -144,7 +144,7 @@ export default function PaginaDeContratos() {
     { valor: 'HISTORICO', rotulo: 'Histórico', contagem: totais ? totais.finalizados + totais.rescindidos : null },
   ];
   const abasDoHistorico: Aba<SituacaoDoHistorico>[] = [
-    { valor: '', rotulo: 'Todos' },
+    { valor: '', rotulo: 'Todos', contagem: totais ? totais.finalizados + totais.rescindidos : null },
     { valor: 'FINALIZADO', rotulo: 'Vencidos', contagem: totais?.finalizados },
     { valor: 'RESCINDIDO', rotulo: 'Rescindidos', contagem: totais?.rescindidos },
   ];

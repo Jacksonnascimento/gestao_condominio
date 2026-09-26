@@ -40,11 +40,11 @@ function Resumo({ rotulo, valor, quantidade, destaque }: { rotulo: string; valor
         destaque ? 'bg-tinta text-fundo' : 'border border-borda bg-superficie'
       }`}
     >
-      <span className={`text-[13px] font-semibold ${destaque ? 'text-[#cfc5b6]' : 'text-apagado'}`}>{rotulo}</span>
+      <span className={`text-[13px] font-semibold ${destaque ? 'text-apagado-inverso' : 'text-apagado'}`}>{rotulo}</span>
       <span className={`font-titulo text-[30px] leading-none tabular-nums ${destaque && valor > 0 ? 'text-ouro-claro' : ''}`}>
         {formatarMoeda(valor)}
       </span>
-      <span className={`text-[13px] ${destaque ? 'text-[#cfc5b6]' : 'text-apagado'}`}>
+      <span className={`text-[13px] ${destaque ? 'text-apagado-inverso' : 'text-apagado'}`}>
         {quantidade === 1 ? '1 boleto' : `${quantidade} boletos`}
       </span>
     </div>

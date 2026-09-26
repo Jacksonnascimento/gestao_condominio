@@ -38,6 +38,10 @@ public class Comunicado {
     @Column(name = "COM_CAMINHO_ANEXO")
     private String caminhoAnexo;
 
+    /** Nome com que o anexo foi enviado; nulo nos comunicados anteriores a ele ser guardado. */
+    @Column(name = "COM_NOME_ANEXO")
+    private String nomeAnexo;
+
     @CreationTimestamp
     @Column(name = "COM_DT_CADASTRO", nullable = false, updatable = false)
     private LocalDateTime dataCadastro;

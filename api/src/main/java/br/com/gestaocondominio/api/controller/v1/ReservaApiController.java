@@ -1,6 +1,7 @@
 package br.com.gestaocondominio.api.controller.v1;
 
 import br.com.gestaocondominio.api.controller.v1.dto.Pagina;
+import br.com.gestaocondominio.api.controller.v1.dto.ReservaDTOs.DisponibilidadeDoDia;
 import br.com.gestaocondominio.api.controller.v1.dto.ReservaDTOs.OpcoesReserva;
 import br.com.gestaocondominio.api.controller.v1.dto.ReservaDTOs.RejeitarReservaPedido;
 import br.com.gestaocondominio.api.controller.v1.dto.ReservaDTOs.ReservaResposta;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -50,7 +52,8 @@ public class ReservaApiController {
 
     @GetMapping
     @Operation(summary = "Lista as reservas visíveis para quem está logado (as que solicitou e as dos condomínios "
-            + "que gerencia), em ordem decrescente de data, como na tela")
+            + "que gerencia), em ordem decrescente de data, como na tela; com crescente=true, das mais próximas "
+            + "para as mais distantes (as próximas reservas do painel)")
     public Pagina<ReservaResposta> listar(@RequestParam(required = false) Integer condominioId,
                                           @RequestParam(required = false) ReservaStatus status,
                                           @RequestParam(required = false) String busca,
@@ -59,19 +62,40 @@ public class ReservaApiController {
                                           @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
                                           @RequestParam(required = false)
                                           @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
+                                          @RequestParam(defaultValue = "false") boolean crescente,
                                           @RequestParam(defaultValue = "0") int pagina,
                                           @RequestParam(defaultValue = "20") int tamanho) {
+        Sort.Direction direcao = crescente ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(Math.max(pagina, 0), Math.min(Math.max(tamanho, 1), 100),
-                Sort.by(Sort.Direction.DESC, "data").and(Sort.by(Sort.Direction.DESC, "resCod")));
+                Sort.by(direcao, "data").and(Sort.by(direcao, "resCod")));
         return Pagina.de(reservaService.consultarReservas(usuarioLogado(), condominioId, status, busca, areaId,
                 dataInicio, dataFim, pageable));
     }
 
     @GetMapping("/totais")
-    @Operation(summary = "Quantidade de reservas: total, pendentes e aprovadas (só com o filtro de condomínio, "
-            + "como no painel da tela)")
-    public Map<String, Long> totais(@RequestParam(required = false) Integer condominioId) {
-        return reservaService.contarReservas(usuarioLogado(), condominioId);
+    @Operation(summary = "Quantidade de reservas por situação (chaves com o nome da situação) e no total (TOTAL), "
+            + "com os mesmos filtros da listagem, menos o de situação, para as contagens das abas")
+    public Map<String, Long> totais(@RequestParam(required = false) Integer condominioId,
+                                    @RequestParam(required = false) String busca,
+                                    @RequestParam(required = false) Integer areaId,
+                                    @RequestParam(required = false)
+                                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+                                    @RequestParam(required = false)
+                                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim) {
+        return reservaService.contarReservas(usuarioLogado(), condominioId, busca, areaId, dataInicio, dataFim);
+    }
+
+    @GetMapping("/disponibilidade")
+    @Operation(summary = "Ocupação da área comum, dia a dia, entre dataInicio e dataFim (até 62 dias; sem dataFim, "
+            + "só dataInicio): se o dia inteiro está livre e quais turnos estão livres. Não diz quem reservou")
+    public List<DisponibilidadeDoDia> disponibilidade(@RequestParam Integer areaId,
+                                                      @RequestParam
+                                                      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                                      LocalDate dataInicio,
+                                                      @RequestParam(required = false)
+                                                      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                                      LocalDate dataFim) {
+        return reservaService.disponibilidade(usuarioLogado(), areaId, dataInicio, dataFim);
     }
 
     @GetMapping("/opcoes")

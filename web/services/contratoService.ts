@@ -80,8 +80,9 @@ export const contratoService = {
     api.get<Pagina<Contrato>>('/contratos', { params: limparParametros({ ...filtro }) }).then((r) => r.data),
 
   /** Quantidades por situação no condomínio (sem os demais filtros). */
-  totais: (condominioId?: number | null) =>
-    api.get<TotaisContratos>('/contratos/totais', { params: limparParametros({ condominioId }) }).then((r) => r.data),
+  /** Contratos por situação, com a mesma busca da lista. */
+  totais: (condominioId?: number | null, busca?: string) =>
+    api.get<TotaisContratos>('/contratos/totais', { params: limparParametros({ condominioId, busca }) }).then((r) => r.data),
 
   opcoes: () => api.get<OpcoesContrato>('/contratos/opcoes').then((r) => r.data),
 

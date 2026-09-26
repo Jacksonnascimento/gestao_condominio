@@ -9,6 +9,7 @@ import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.enums.PublicoDestino;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.service.ComunicadoService;
+import br.com.gestaocondominio.api.domain.service.ComunicadoService.AnexoDoComunicado;
 import br.com.gestaocondominio.api.domain.service.PessoaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -60,8 +61,11 @@ public class ComunicadoApiController {
     }
 
     @GetMapping
-    @Operation(summary = "Lista os comunicados visíveis para quem está logado, dos mais recentes para os mais antigos")
-    public Pagina<ComunicadoResposta> listar(@RequestParam(required = false) String titulo,
+    @Operation(summary = "Lista os comunicados que quem está logado vê no condomínio, dos mais recentes para os mais "
+            + "antigos", description = "Sem condominioId, vale um dos condomínios de quem está logado; para o "
+            + "administrador geral, os de todos os condomínios.")
+    public Pagina<ComunicadoResposta> listar(@RequestParam(required = false) Integer condominioId,
+                                             @RequestParam(required = false) String titulo,
                                              @RequestParam(required = false) String mensagem,
                                              @RequestParam(required = false) PublicoDestino publicoDestino,
                                              @RequestParam(required = false) Boolean urgente,
@@ -69,14 +73,14 @@ public class ComunicadoApiController {
                                              @RequestParam(defaultValue = "10") int tamanho) {
         // A ordem (mais recentes primeiro) vem da consulta do serviço.
         Pageable pageable = PageRequest.of(Math.max(pagina, 0), Math.min(Math.max(tamanho, 1), 100));
-        return Pagina.de(comunicadoService.consultarVisiveis(usuarioLogado(), titulo, mensagem, publicoDestino,
-                urgente, pageable));
+        return Pagina.de(comunicadoService.consultarVisiveis(usuarioLogado(), condominioId, titulo, mensagem,
+                publicoDestino, urgente, pageable));
     }
 
     @GetMapping("/opcoes")
-    @Operation(summary = "Públicos para os formulários, se quem está logado pode publicar e, para o administrador "
-            + "geral, os condomínios de destino")
-    public OpcoesComunicado opcoes() {
+    @Operation(summary = "Públicos para os formulários, se quem está logado pode publicar no condomínio e, para o "
+            + "administrador geral, os condomínios de destino")
+    public OpcoesComunicado opcoes(@RequestParam(required = false) Integer condominioId) {
         Pessoa usuario = usuarioLogado();
         List<CondominioResumo> condominios = Boolean.TRUE.equals(usuario.getPesIsGlobalAdmin())
                 ? condominioRepository.findAll().stream()
@@ -86,7 +90,7 @@ public class ComunicadoApiController {
                         .toList()
                 : List.of();
         return new OpcoesComunicado(Opcao.de(PublicoDestino.class, PublicoDestino::getDescricao),
-                comunicadoService.podeGerenciar(usuario), condominios);
+                comunicadoService.podeGerenciar(usuario, condominioId), condominios);
     }
 
     @GetMapping("/{id}")
@@ -99,10 +103,12 @@ public class ComunicadoApiController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Publica um comunicado",
             description = "Formulário multipart: a parte `comunicado` em JSON (Content-Type application/json) e, "
-                    + "opcionalmente, o arquivo na parte `anexo`.")
-    public ComunicadoResposta criar(@Valid @RequestPart("comunicado") ComunicadoRequest pedido,
+                    + "opcionalmente, o arquivo na parte `anexo`. Síndico e administração publicam no condomínio "
+                    + "do parâmetro condominioId; o administrador geral, nos condominioIds do pedido.")
+    public ComunicadoResposta criar(@RequestParam(required = false) Integer condominioId,
+                                    @Valid @RequestPart("comunicado") ComunicadoRequest pedido,
                                     @RequestPart(value = "anexo", required = false) MultipartFile anexo) {
-        return comunicadoService.criar(pedido.paraDTO(), anexo, usuarioLogado());
+        return comunicadoService.criar(pedido.paraDTO(), anexo, usuarioLogado(), condominioId);
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -122,12 +128,16 @@ public class ComunicadoApiController {
         comunicadoService.excluir(id, usuarioLogado());
     }
 
-    /** O arquivo sai sempre como download, para o navegador não abrir como página um HTML enviado como anexo. */
+    /**
+     * O arquivo sai sempre como download, com o nome com que foi enviado, para o navegador não abrir como página um
+     * HTML enviado como anexo.
+     */
     @GetMapping("/{id}/anexo")
     @Operation(summary = "Baixa o anexo do comunicado")
     public ResponseEntity<Resource> baixarAnexo(@PathVariable Integer id) {
-        Resource arquivo = comunicadoService.carregarAnexo(id, usuarioLogado());
-        String nome = arquivo.getFilename() == null ? "anexo" : arquivo.getFilename();
+        AnexoDoComunicado anexo = comunicadoService.carregarAnexo(id, usuarioLogado());
+        Resource arquivo = anexo.arquivo();
+        String nome = anexo.nome() == null || anexo.nome().isBlank() ? "anexo" : anexo.nome();
         return ResponseEntity.ok()
                 .contentType(MediaTypeFactory.getMediaType(nome).orElse(MediaType.APPLICATION_OCTET_STREAM))
                 .header(HttpHeaders.CONTENT_DISPOSITION, comoDownload(nome))

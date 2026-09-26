@@ -14,7 +14,7 @@ const CLASSES_DO_BOTAO: Record<VarianteDoBotao, string> = {
   primario: 'bg-tinta text-fundo hover:bg-tinta-2 border border-tinta',
   secundario: 'bg-superficie text-tinta border border-contorno hover:bg-lateral',
   texto: 'bg-transparent text-tinta-2 border border-transparent hover:bg-trilho',
-  perigo: 'bg-perigo text-white border border-perigo hover:opacity-90',
+  perigo: 'bg-perigo text-fundo border border-perigo hover:opacity-90',
 };
 
 interface PropsDoBotao extends React.ButtonHTMLAttributes<HTMLButtonElement> {

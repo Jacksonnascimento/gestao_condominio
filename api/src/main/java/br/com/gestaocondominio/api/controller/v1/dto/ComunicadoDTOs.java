@@ -58,7 +58,7 @@ public final class ComunicadoDTOs {
                     comunicado.getPublicoDestino(), comunicado.getPublicoDestino().getDescricao(),
                     Boolean.TRUE.equals(comunicado.getIsUrgente()), comunicado.getDataCadastro(),
                     comunicado.getCriador() == null ? null : comunicado.getCriador().getPesNome(),
-                    possuiAnexo, possuiAnexo ? Paths.get(anexo).getFileName().toString() : null,
+                    possuiAnexo, possuiAnexo ? nomeDoAnexo(comunicado) : null,
                     mostrarCondominios && comunicado.getCondominios() != null
                             ? comunicado.getCondominios().stream()
                                     .map(CondominioResumo::de)
@@ -68,6 +68,20 @@ public final class ComunicadoDTOs {
                             : List.of(),
                     podeGerenciar);
         }
+    }
+
+    /**
+     * Nome com que o anexo foi enviado. Nos comunicados antigos, que não o guardaram, "anexo" com a extensão do
+     * arquivo, em vez do nome gerado com que ele foi guardado.
+     */
+    public static String nomeDoAnexo(Comunicado comunicado) {
+        String nome = comunicado.getNomeAnexo();
+        if (nome != null && !nome.isBlank()) {
+            return nome;
+        }
+        String guardado = Paths.get(comunicado.getCaminhoAnexo()).getFileName().toString();
+        int ponto = guardado.lastIndexOf('.');
+        return ponto > 0 ? "anexo" + guardado.substring(ponto) : "anexo";
     }
 
     public record CondominioResumo(Integer codigo, String nome) {

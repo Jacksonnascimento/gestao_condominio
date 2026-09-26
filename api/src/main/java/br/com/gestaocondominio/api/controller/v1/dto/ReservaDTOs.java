@@ -131,6 +131,18 @@ public final class ReservaDTOs {
     }
 
     /**
+     * Ocupação de uma área comum num dia, para escolher a data e o turno antes de pedir a reserva. Não diz quem
+     * reservou. O dia inteiro só está livre sem nenhuma reserva na data; um turno, sem reserva no mesmo turno nem do
+     * dia inteiro. Contam as reservas pendentes, aprovadas e concluídas.
+     */
+    public record DisponibilidadeDoDia(LocalDate data, boolean diaInteiroLivre, List<TurnoDoDia> turnos) {
+    }
+
+    /** Turno ativo da área, e se ele está livre no dia. */
+    public record TurnoDoDia(Integer codigo, String nome, LocalTime horaInicio, LocalTime horaFim, boolean livre) {
+    }
+
+    /**
      * Listas de escolha da tela de reservas. {@code areasParaSolicitar} traz as áreas ativas dos condomínios das
      * unidades de quem está logado, com termos de uso, taxa, regras de convidados e turnos ativos, que é o que o
      * formulário de solicitação mostra.

@@ -65,7 +65,7 @@ export default function PaginaDeAreasComuns() {
     let ativa = true;
     Promise.all([
       areaComumService.listar({ condominioId, busca, pagina: 0, tamanho: LIMITE_DA_API }),
-      areaComumService.totais(condominioId),
+      areaComumService.totais(condominioId, busca),
     ])
       .then(([lista, novosTotais]) => {
         if (!ativa) return;

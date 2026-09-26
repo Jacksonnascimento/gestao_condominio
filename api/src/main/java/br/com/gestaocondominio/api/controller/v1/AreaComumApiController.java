@@ -59,15 +59,7 @@ public class AreaComumApiController {
                                             @RequestParam(required = false) String busca,
                                             @RequestParam(defaultValue = "0") int pagina,
                                             @RequestParam(defaultValue = "20") int tamanho) {
-        List<AreaComum> areas = areaComumService.listarParaGestao(usuarioLogado(), condominioId);
-        // Como na tela: busca no nome e na descrição
-        if (StringUtils.hasText(busca)) {
-            String termo = busca.trim().toLowerCase();
-            areas = areas.stream()
-                    .filter(a -> a.getNome().toLowerCase().contains(termo)
-                            || (a.getDescricao() != null && a.getDescricao().toLowerCase().contains(termo)))
-                    .toList();
-        }
+        List<AreaComum> areas = buscadas(condominioId, busca);
         // Cada condomínio tem poucas áreas: a página é montada em memória, sobre a lista já filtrada
         Pageable pageable = PageRequest.of(Math.max(pagina, 0), Math.min(Math.max(tamanho, 1), 100));
         int inicio = (int) Math.min(pageable.getOffset(), areas.size());
@@ -76,9 +68,10 @@ public class AreaComumApiController {
     }
 
     @GetMapping("/totais")
-    @Operation(summary = "Quantidade de áreas comuns, ativas e inativas (sem o filtro de busca, como na tela)")
-    public Map<String, Long> totais(@RequestParam(required = false) Integer condominioId) {
-        List<AreaComum> areas = areaComumService.listarParaGestao(usuarioLogado(), condominioId);
+    @Operation(summary = "Quantidade de áreas comuns, ativas e inativas, com a mesma busca da listagem")
+    public Map<String, Long> totais(@RequestParam(required = false) Integer condominioId,
+                                    @RequestParam(required = false) String busca) {
+        List<AreaComum> areas = buscadas(condominioId, busca);
         long ativas = areas.stream().filter(a -> Boolean.TRUE.equals(a.getAtiva())).count();
         return Map.of("TOTAL", (long) areas.size(), "ATIVAS", ativas, "INATIVAS", areas.size() - ativas);
     }
@@ -124,6 +117,19 @@ public class AreaComumApiController {
     @Operation(summary = "Exclui a área comum. Área que já foi reservada não pode ser excluída, só inativada")
     public void excluir(@PathVariable Integer id) {
         areaComumService.excluir(id, usuarioLogado());
+    }
+
+    /** Áreas que quem está logado gerencia, com a busca da tela: no nome e na descrição. */
+    private List<AreaComum> buscadas(Integer condominioId, String busca) {
+        List<AreaComum> areas = areaComumService.listarParaGestao(usuarioLogado(), condominioId);
+        if (!StringUtils.hasText(busca)) {
+            return areas;
+        }
+        String termo = busca.trim().toLowerCase();
+        return areas.stream()
+                .filter(a -> a.getNome().toLowerCase().contains(termo)
+                        || (a.getDescricao() != null && a.getDescricao().toLowerCase().contains(termo)))
+                .toList();
     }
 
     private Pessoa usuarioLogado() {

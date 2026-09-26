@@ -51,7 +51,7 @@ function CartaoDeIndicador({ rotulo, valor, destaque, href }: { rotulo: string; 
         destaque ? 'bg-tinta text-fundo hover:bg-tinta-2 hover:text-fundo' : 'border border-borda bg-superficie text-tinta hover:border-contorno hover:text-tinta'
       }`}
     >
-      <span className={`text-[13px] font-semibold ${destaque ? 'text-[#cfc5b6]' : 'text-apagado'}`}>{rotulo}</span>
+      <span className={`text-[13px] font-semibold ${destaque ? 'text-apagado-inverso' : 'text-apagado'}`}>{rotulo}</span>
       <span className={`font-titulo text-5xl leading-[0.9] ${destaque && valor > 0 ? 'text-ouro-claro' : ''}`}>{valor}</span>
     </Link>
   );

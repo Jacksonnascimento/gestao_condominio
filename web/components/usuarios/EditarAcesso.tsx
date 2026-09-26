@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { KeyRound } from 'lucide-react';
+import Link from 'next/link';
+import { KeyRound, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Botao, CaixaDeErro, Campo, CampoDeSelecao } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
@@ -12,8 +13,9 @@ import { usuarioService, type AcessoDeUsuario } from '@/services/usuarioService'
 import { formatarData, mensagemErroApi, valorDoEnum } from '@/services/utilitarios';
 
 /**
- * Nome, e-mail (que é o login) e papel de quem tem acesso, e o envio do link para definir uma nova senha. Nome e
- * e-mail valem em todos os condomínios da pessoa; a API recusa a mudança quando ela está fora do alcance de quem edita.
+ * Nome, e-mail (que é o login) e papel de quem tem acesso, e a senha: definida ali mesmo ou por um link mandado por
+ * e-mail. Nome, e-mail e senha valem em todos os condomínios da pessoa; a API recusa a mudança quando ela está fora do
+ * alcance de quem edita.
  */
 export function EditarAcesso({
   acesso,
@@ -36,6 +38,11 @@ export function EditarAcesso({
   const [salvando, setSalvando] = useState(false);
   const [enviandoLink, setEnviandoLink] = useState(false);
   const [erro, setErro] = useState('');
+  const [definindoSenha, setDefinindoSenha] = useState(false);
+  const [novaSenha, setNovaSenha] = useState('');
+  const [confirmacao, setConfirmacao] = useState('');
+  const [salvandoSenha, setSalvandoSenha] = useState(false);
+  const [erroSenha, setErroSenha] = useState('');
 
   async function salvar(evento: React.FormEvent) {
     evento.preventDefault();
@@ -69,7 +76,33 @@ export function EditarAcesso({
     }
   }
 
-  const ocupado = salvando || enviandoLink;
+  function fecharSenha() {
+    setDefinindoSenha(false);
+    setNovaSenha('');
+    setConfirmacao('');
+    setErroSenha('');
+  }
+
+  async function salvarSenha(evento: React.FormEvent) {
+    evento.preventDefault();
+    if (novaSenha !== confirmacao) {
+      setErroSenha('A confirmação não é igual à nova senha.');
+      return;
+    }
+    setErroSenha('');
+    setSalvandoSenha(true);
+    try {
+      await usuarioService.definirSenha(acesso.pessoaId, novaSenha);
+      toast.success(`Senha alterada. ${acesso.pessoaNome} já entra com a senha nova.`);
+      fecharSenha();
+    } catch (e) {
+      setErroSenha(mensagemErroApi(e, 'Não foi possível alterar a senha.'));
+    } finally {
+      setSalvandoSenha(false);
+    }
+  }
+
+  const ocupado = salvando || enviandoLink || salvandoSenha;
 
   return (
     <Modal
@@ -84,7 +117,7 @@ export function EditarAcesso({
           <Botao variante="texto" onClick={aoFechar} disabled={ocupado}>
             Cancelar
           </Botao>
-          <Botao type="submit" form="editar-acesso" variante="primario" carregando={salvando} disabled={enviandoLink}>
+          <Botao type="submit" form="editar-acesso" variante="primario" carregando={salvando} disabled={enviandoLink || salvandoSenha}>
             Salvar
           </Botao>
         </>
@@ -121,15 +154,74 @@ export function EditarAcesso({
           </CampoDeSelecao>
         </form>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-cabecalho p-4">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-sm font-bold">Senha</span>
-            <span className="text-[13px] text-apagado">Esqueceu a senha? Envie um link para a pessoa definir outra.</span>
+        <div className="flex flex-col gap-4 rounded-xl bg-cabecalho p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <span className="text-sm font-bold">Senha</span>
+              <span className="text-[13px] text-apagado">
+                {eMeuAcesso ? (
+                  <>
+                    A sua senha você troca em <Link href="/perfil">Meu perfil</Link>.
+                  </>
+                ) : (
+                  'Defina uma senha nova agora ou envie um link para a pessoa escolher.'
+                )}
+              </span>
+            </div>
+            {!definindoSenha && (
+              <div className="flex flex-wrap gap-2 max-sm:w-full">
+                {!eMeuAcesso && (
+                  <Botao pequeno onClick={() => setDefinindoSenha(true)} disabled={ocupado} className="max-sm:h-11 max-sm:flex-1">
+                    <KeyRound size={15} aria-hidden />
+                    Definir senha
+                  </Botao>
+                )}
+                <Botao pequeno onClick={enviarLink} carregando={enviandoLink} disabled={salvando} className="max-sm:h-11 max-sm:flex-1">
+                  <Mail size={15} aria-hidden />
+                  Enviar link
+                </Botao>
+              </div>
+            )}
           </div>
-          <Botao pequeno onClick={enviarLink} carregando={enviandoLink} disabled={salvando} className="max-sm:h-11 max-sm:w-full">
-            <KeyRound size={15} aria-hidden />
-            Enviar link de senha
-          </Botao>
+
+          {definindoSenha && (
+            <form onSubmit={salvarSenha} className="grid gap-4 border-t border-borda pt-4 sm:grid-cols-2">
+              {erroSenha && <CaixaDeErro className="sm:col-span-2">{erroSenha}</CaixaDeErro>}
+              <Campo
+                rotulo="Nova senha"
+                type="password"
+                autoComplete="new-password"
+                value={novaSenha}
+                onChange={(e) => setNovaSenha(e.target.value)}
+                obrigatorio
+                minLength={6}
+                ajuda="Pelo menos 6 caracteres."
+                autoFocus
+              />
+              <Campo
+                rotulo="Confirme a nova senha"
+                type="password"
+                autoComplete="new-password"
+                value={confirmacao}
+                onChange={(e) => setConfirmacao(e.target.value)}
+                obrigatorio
+                minLength={6}
+              />
+              <div className="flex flex-wrap items-center justify-between gap-3 sm:col-span-2">
+                <span className="text-[13px] text-apagado">
+                  Passe a senha para a pessoa. Quem estiver com o sistema aberto com a senha antiga precisa entrar de novo.
+                </span>
+                <div className="flex gap-2 max-sm:w-full">
+                  <Botao pequeno variante="texto" onClick={fecharSenha} disabled={salvandoSenha} className="max-sm:h-11 max-sm:flex-1">
+                    Cancelar
+                  </Botao>
+                  <Botao pequeno type="submit" variante="primario" carregando={salvandoSenha} disabled={salvando || enviandoLink} className="max-sm:h-11 max-sm:flex-1">
+                    Salvar senha
+                  </Botao>
+                </div>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </Modal>

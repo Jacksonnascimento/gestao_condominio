@@ -12,8 +12,16 @@ export interface AcessoDeUsuario {
   condominioNome: string;
   papel: Enumerado;
   papelDescricao: string | null;
+  /** Quando o acesso foi dado; não muda com a troca de papel nem ao desativar e reativar. */
   dataAssociacao: string | null;
+  /** Desativado, o acesso fica guardado mas não vale para entrar no sistema. */
   ativo: boolean | null;
+}
+
+export interface TotaisAcessos {
+  TOTAL: number;
+  ATIVOS: number;
+  DESATIVADOS: number;
 }
 
 /** ENVIAR_LINK: a pessoa recebe o link por e-mail. CRIAR_SENHA: a senha é definida agora (só para pessoa nova). */
@@ -68,8 +76,12 @@ const rotaDoVinculo = (a: Pick<AcessoDeUsuario, 'pessoaId' | 'condominioId'>, pa
   `/usuarios/${a.pessoaId}/vinculos/${a.condominioId}/${encodeURIComponent(papel)}`;
 
 export const usuarioService = {
-  listar: (filtro: { condominioId?: number | null; pagina?: number; tamanho?: number }) =>
+  /** Sem `ativo`, traz os ativos e os desativados. */
+  listar: (filtro: { condominioId?: number | null; ativo?: boolean | null; pagina?: number; tamanho?: number }) =>
     api.get<Pagina<AcessoDeUsuario>>('/usuarios', { params: limparParametros({ ...filtro }) }).then((r) => r.data),
+
+  totais: (condominioId?: number | null) =>
+    api.get<TotaisAcessos>('/usuarios/totais', { params: limparParametros({ condominioId }) }).then((r) => r.data),
 
   opcoes: () => api.get<OpcoesUsuario>('/usuarios/opcoes').then((r) => r.data),
 
@@ -88,6 +100,17 @@ export const usuarioService = {
   enviarLinkDeSenha: (pessoaId: number) =>
     api.post<{ mensagem: string }>(`/usuarios/${pessoaId}/link-de-senha`).then((r) => r.data),
 
-  /** Remove o acesso; a pessoa continua cadastrada. */
+  /** Define a senha na hora, sem link; as sessões abertas da pessoa deixam de valer. */
+  definirSenha: (pessoaId: number, novaSenha: string) =>
+    api.put<{ mensagem: string }>(`/usuarios/${pessoaId}/senha`, { novaSenha }).then((r) => r.data),
+
+  /** A pessoa deixa de entrar com esse papel; o acesso fica guardado, com a data de início, e pode ser reativado. */
+  desativar: (acesso: AcessoDeUsuario, papel: string) =>
+    api.post<AcessoDeUsuario>(`${rotaDoVinculo(acesso, papel)}/desativar`).then((r) => r.data),
+
+  reativar: (acesso: AcessoDeUsuario, papel: string) =>
+    api.post<AcessoDeUsuario>(`${rotaDoVinculo(acesso, papel)}/reativar`).then((r) => r.data),
+
+  /** Remove o acesso de vez; a pessoa continua cadastrada. */
   remover: (acesso: AcessoDeUsuario, papel: string) => api.delete<void>(rotaDoVinculo(acesso, papel)),
 };

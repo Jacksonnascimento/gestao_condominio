@@ -7,6 +7,7 @@ import br.com.gestaocondominio.api.controller.v1.dto.Opcao;
 import br.com.gestaocondominio.api.controller.v1.dto.Pagina;
 import br.com.gestaocondominio.api.controller.v1.dto.UsuarioDTOs.AcaoSenha;
 import br.com.gestaocondominio.api.controller.v1.dto.UsuarioDTOs.CondominioDisponivel;
+import br.com.gestaocondominio.api.controller.v1.dto.UsuarioDTOs.DefinirSenhaRequest;
 import br.com.gestaocondominio.api.controller.v1.dto.UsuarioDTOs.EditarUsuarioRequest;
 import br.com.gestaocondominio.api.controller.v1.dto.UsuarioDTOs.NovoUsuarioRequest;
 import br.com.gestaocondominio.api.controller.v1.dto.UsuarioDTOs.OcupanteSemLogin;
@@ -36,6 +37,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Administração de usuários: quem acessa cada condomínio e com que papel. Um usuário é uma pessoa com um ou mais
@@ -69,13 +71,21 @@ public class UsuarioApiController {
     }
 
     @GetMapping
-    @Operation(summary = "Lista os acessos ativos dos condomínios que quem está logado administra",
-            description = "Sem condominioId, traz os de todos os condomínios administrados, por condomínio e nome.")
+    @Operation(summary = "Lista os acessos dos condomínios que quem está logado administra",
+            description = "Sem condominioId, traz os de todos os condomínios administrados, por condomínio e nome. "
+                    + "Com ativo=true, só os ativos; com ativo=false, só os desativados; sem ele, todos.")
     public Pagina<UsuarioCondominioDTO> listar(@RequestParam(required = false) Integer condominioId,
+                                               @RequestParam(required = false) Boolean ativo,
                                                @RequestParam(defaultValue = "0") int pagina,
                                                @RequestParam(defaultValue = "20") int tamanho) {
         Pageable pageable = PageRequest.of(Math.max(pagina, 0), Math.min(Math.max(tamanho, 1), 100));
-        return Pagina.de(usuarioCondominioService.consultarVinculos(usuarioLogado(), condominioId, pageable));
+        return Pagina.de(usuarioCondominioService.consultarVinculos(usuarioLogado(), condominioId, ativo, pageable));
+    }
+
+    @GetMapping("/totais")
+    @Operation(summary = "Quantidade de acessos ativos (ATIVOS), desativados (DESATIVADOS) e no total (TOTAL)")
+    public Map<String, Long> totais(@RequestParam(required = false) Integer condominioId) {
+        return usuarioCondominioService.contarVinculos(usuarioLogado(), condominioId);
     }
 
     @GetMapping("/opcoes")
@@ -130,7 +140,8 @@ public class UsuarioApiController {
 
     @PutMapping("/{pessoaId}/vinculos/{condominioId}/{papel}")
     @Operation(summary = "Altera nome, e-mail e papel de um acesso",
-            description = "Responde com o acesso já com o papel novo, que passa a ser o que identifica o vínculo.")
+            description = "Responde com o acesso já com o papel novo, que passa a ser o que identifica o vínculo. "
+                    + "A data em que o acesso foi dado e a situação (ativo ou desativado) não mudam.")
     public UsuarioCondominioDTO editar(@PathVariable Integer pessoaId, @PathVariable Integer condominioId,
                                        @PathVariable UserRole papel,
                                        @Valid @RequestBody EditarUsuarioRequest pedido) {
@@ -144,6 +155,31 @@ public class UsuarioApiController {
         String email = usuarioCondominioService.enviarLinkDeSenha(usuarioLogado(), pessoaId,
                 enderecoDoSistemaWeb.atual());
         return new Mensagem("Link de redefinição enviado para " + email + ".");
+    }
+
+    @PutMapping("/{pessoaId}/senha")
+    @Operation(summary = "Define na hora uma nova senha para a pessoa, sem link",
+            description = "Só para quem tem acesso apenas a condomínios que quem está logado administra (o "
+                    + "administrador geral define a de qualquer um). A própria senha se troca em /perfil/senha. "
+                    + "As sessões abertas da pessoa deixam de valer.")
+    public Mensagem definirSenha(@PathVariable Integer pessoaId, @Valid @RequestBody DefinirSenhaRequest pedido) {
+        usuarioCondominioService.definirSenha(usuarioLogado(), pessoaId, pedido.novaSenha());
+        return new Mensagem("Senha alterada.");
+    }
+
+    @PostMapping("/{pessoaId}/vinculos/{condominioId}/{papel}/desativar")
+    @Operation(summary = "Desativa um acesso: a pessoa deixa de entrar com esse papel, mas o acesso fica guardado "
+            + "e pode ser reativado")
+    public UsuarioCondominioDTO desativar(@PathVariable Integer pessoaId, @PathVariable Integer condominioId,
+                                          @PathVariable UserRole papel) {
+        return usuarioCondominioService.mudarSituacaoDoVinculo(usuarioLogado(), pessoaId, condominioId, papel, false);
+    }
+
+    @PostMapping("/{pessoaId}/vinculos/{condominioId}/{papel}/reativar")
+    @Operation(summary = "Reativa um acesso desativado, com a mesma data de início")
+    public UsuarioCondominioDTO reativar(@PathVariable Integer pessoaId, @PathVariable Integer condominioId,
+                                         @PathVariable UserRole papel) {
+        return usuarioCondominioService.mudarSituacaoDoVinculo(usuarioLogado(), pessoaId, condominioId, papel, true);
     }
 
     @DeleteMapping("/{pessoaId}/vinculos/{condominioId}/{papel}")

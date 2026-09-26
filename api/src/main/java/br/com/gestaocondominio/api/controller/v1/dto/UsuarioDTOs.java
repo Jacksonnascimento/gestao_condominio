@@ -76,6 +76,12 @@ public final class UsuarioDTOs {
             @NotNull(message = "Informe o papel do usuário.") UserRole papel) {
     }
 
+    /** Senha nova definida pela administração, sem link. */
+    public record DefinirSenhaRequest(
+            @NotBlank(message = "Informe a nova senha.")
+            @Size(min = 6, message = "A senha precisa ter pelo menos 6 caracteres.") String novaSenha) {
+    }
+
     /** Ocupante de unidade que ainda não tem acesso de morador ao condomínio. */
     public record OcupanteSemLogin(Integer pessoaCodigo, String nome, String email, String unidadeNumero,
                                    String unidadeBloco) {

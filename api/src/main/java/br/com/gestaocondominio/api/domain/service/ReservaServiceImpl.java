@@ -7,8 +7,10 @@ import br.com.gestaocondominio.api.controller.v1.dto.AreaComumDTOs.CondominioOpc
 import br.com.gestaocondominio.api.controller.v1.dto.Opcao;
 import br.com.gestaocondominio.api.controller.v1.dto.ReservaDTOs;
 import br.com.gestaocondominio.api.controller.v1.dto.ReservaDTOs.AreaOpcao;
+import br.com.gestaocondominio.api.controller.v1.dto.ReservaDTOs.DisponibilidadeDoDia;
 import br.com.gestaocondominio.api.controller.v1.dto.ReservaDTOs.OpcoesReserva;
 import br.com.gestaocondominio.api.controller.v1.dto.ReservaDTOs.ReservaResposta;
+import br.com.gestaocondominio.api.controller.v1.dto.ReservaDTOs.TurnoDoDia;
 import br.com.gestaocondominio.api.controller.v1.dto.ReservaDTOs.UnidadeOpcao;
 import br.com.gestaocondominio.api.domain.entity.*;
 import br.com.gestaocondominio.api.domain.enums.ReservaStatus;
@@ -30,10 +32,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -43,6 +48,13 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ReservaServiceImpl implements ReservaService {
+
+    /** Situações em que a reserva ocupa a área: as canceladas e as rejeitadas liberam a data. */
+    private static final List<ReservaStatus> SITUACOES_QUE_OCUPAM =
+            List.of(ReservaStatus.PENDENTE_APROVACAO, ReservaStatus.APROVADA, ReservaStatus.CONCLUIDA);
+
+    /** Período máximo de uma consulta de disponibilidade, que cobre a agenda de um mês com folga. */
+    private static final int DIAS_DA_DISPONIBILIDADE = 62;
 
     private final ReservaRepository reservaRepository;
     private final AreaComumService areaComumService;
@@ -69,15 +81,65 @@ public class ReservaServiceImpl implements ReservaService {
 
     @Override
     @Transactional(readOnly = true)
-    public Map<String, Long> contarReservas(Pessoa usuario, Integer conCod) {
+    public Map<String, Long> contarReservas(Pessoa usuario, Integer conCod, String busca, Integer areCod,
+                                            LocalDate dataInicio, LocalDate dataFim) {
         Specification<Reserva> spec = visiveisPara(usuario)
-                .and(ReservaSpecification.filtrar(conCod, null, null, null, null, null));
-        return Map.of(
-                "TOTAL", reservaRepository.count(spec),
-                "PENDENTES", reservaRepository.count(spec.and(ReservaSpecification.filtrar(
-                        null, ReservaStatus.PENDENTE_APROVACAO, null, null, null, null))),
-                "APROVADAS", reservaRepository.count(spec.and(ReservaSpecification.filtrar(
-                        null, ReservaStatus.APROVADA, null, null, null, null))));
+                .and(ReservaSpecification.filtrar(conCod, null, busca, areCod, dataInicio, dataFim));
+        Map<String, Long> totais = new LinkedHashMap<>();
+        totais.put("TOTAL", reservaRepository.count(spec));
+        for (ReservaStatus status : ReservaStatus.values()) {
+            totais.put(status.name(), reservaRepository.count(spec.and(ReservaSpecification.filtrar(
+                    null, status, null, null, null, null))));
+        }
+        return totais;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DisponibilidadeDoDia> disponibilidade(Pessoa usuario, Integer areCod, LocalDate dataInicio,
+                                                      LocalDate dataFim) {
+        LocalDate fim = dataFim == null ? dataInicio : dataFim;
+        if (fim.isBefore(dataInicio)) {
+            throw new IllegalArgumentException("A data final não pode ser anterior à inicial.");
+        }
+        if (ChronoUnit.DAYS.between(dataInicio, fim) >= DIAS_DA_DISPONIBILIDADE) {
+            throw new IllegalArgumentException("Consulte no máximo " + DIAS_DA_DISPONIBILIDADE + " dias por vez.");
+        }
+        AreaComum area = areaComumRepository.findById(areCod)
+                .orElseThrow(() -> new EntityNotFoundException("Área comum não encontrada."));
+        Integer condominio = area.getCondominio().getConCod();
+        boolean moraNoCondominio = unidadesDe(usuario).stream()
+                .anyMatch(u -> u.getCondominio().getConCod().equals(condominio));
+        if (!moraNoCondominio && !areaComumService.podeGerenciar(usuario, condominio)) {
+            throw new AccessDeniedException("Você não pode consultar as reservas desta área comum.");
+        }
+
+        List<AreaComumTurno> turnos = area.getTurnos().stream()
+                .filter(t -> !Boolean.FALSE.equals(t.getAtivo()))
+                .sorted(Comparator.comparing(AreaComumTurno::getHoraInicio,
+                        Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+        Map<LocalDate, List<Reserva>> porDia = reservaRepository
+                .findByAreaComumAreCodAndDataBetweenAndStatusIn(areCod, dataInicio, fim, SITUACOES_QUE_OCUPAM)
+                .stream()
+                .collect(Collectors.groupingBy(Reserva::getData));
+
+        List<DisponibilidadeDoDia> dias = new ArrayList<>();
+        for (LocalDate dia = dataInicio; !dia.isAfter(fim); dia = dia.plusDays(1)) {
+            List<Reserva> doDia = porDia.getOrDefault(dia, List.of());
+            dias.add(new DisponibilidadeDoDia(dia, livre(doDia, null), turnos.stream()
+                    .map(t -> new TurnoDoDia(t.getTurCod(), t.getNome(), t.getHoraInicio(), t.getHoraFim(),
+                            livre(doDia, t.getTurCod())))
+                    .toList()));
+        }
+        return dias;
+    }
+
+    @Override
+    @Transactional
+    public int concluirReservasPassadas() {
+        return reservaRepository.concluirAprovadasAntesDe(LocalDate.now(), LocalDateTime.now(),
+                ReservaStatus.APROVADA, ReservaStatus.CONCLUIDA);
     }
 
     @Override
@@ -321,16 +383,21 @@ public class ReservaServiceImpl implements ReservaService {
      * inteiro (antes a do dia inteiro não bloqueava os turnos).
      */
     private void validarDisponibilidade(AreaComum area, Integer turCod, LocalDate data) {
-        List<Reserva> conflitantes = new ArrayList<>(reservaRepository.findByAreaComumAreCodAndDataAndStatusNot(
-                area.getAreCod(), data, ReservaStatus.CANCELADA_PELO_MORADOR));
-
-        conflitantes.removeIf(r -> r.getStatus() == ReservaStatus.REJEITADA);
-        if (turCod != null) {
-            conflitantes.removeIf(r -> r.getTurno() != null && !turCod.equals(r.getTurno().getTurCod()));
+        List<Reserva> doDia = reservaRepository.findByAreaComumAreCodAndDataBetweenAndStatusIn(
+                area.getAreCod(), data, data, SITUACOES_QUE_OCUPAM);
+        if (!livre(doDia, turCod)) {
+            throw new ConflitoException(turCod == null
+                    ? "Esta área já tem reserva nesta data; o dia inteiro não está livre."
+                    : "Já existe uma reserva para esta área e turno nesta data.");
         }
+    }
 
-        if (!conflitantes.isEmpty()) {
-            throw new ConflitoException("Já existe uma reserva para esta área e turno nesta data.");
+    /** Se o turno (ou o dia inteiro, com {@code turCod} nulo) está livre diante das reservas do mesmo dia. */
+    private static boolean livre(List<Reserva> reservasDoDia, Integer turCod) {
+        if (turCod == null) {
+            return reservasDoDia.isEmpty();
         }
+        return reservasDoDia.stream()
+                .noneMatch(r -> r.getTurno() == null || turCod.equals(r.getTurno().getTurCod()));
     }
 }

@@ -67,7 +67,7 @@ export function FormularioDeComunicado({
         await comunicadoService.editar(comunicado.id, dados, anexo);
         toast.success('Comunicado atualizado.');
       } else {
-        await comunicadoService.publicar(dados, anexo);
+        await comunicadoService.publicar(dados, anexo, condominio?.id);
         toast.success('Comunicado publicado.');
       }
       aoSalvar();

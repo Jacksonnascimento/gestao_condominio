@@ -1,6 +1,7 @@
 package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.controller.dto.ReservaRequestDTO;
+import br.com.gestaocondominio.api.controller.v1.dto.ReservaDTOs.DisponibilidadeDoDia;
 import br.com.gestaocondominio.api.controller.v1.dto.ReservaDTOs.OpcoesReserva;
 import br.com.gestaocondominio.api.controller.v1.dto.ReservaDTOs.ReservaResposta;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 public interface ReservaService {
@@ -23,8 +25,21 @@ public interface ReservaService {
                                             Integer areCod, LocalDate dataInicio, LocalDate dataFim,
                                             Pageable pageable);
 
-    /** Totais do painel da tela (total, pendentes e aprovadas), antes dos filtros de situação, área, busca e data. */
-    Map<String, Long> contarReservas(Pessoa usuario, Integer conCod);
+    /**
+     * Quantidade de reservas visíveis por situação (chaves com o nome da situação) e no total ({@code TOTAL}), com os
+     * mesmos filtros da listagem, menos o de situação.
+     */
+    Map<String, Long> contarReservas(Pessoa usuario, Integer conCod, String busca, Integer areCod,
+                                     LocalDate dataInicio, LocalDate dataFim);
+
+    /**
+     * Ocupação da área, dia a dia, entre as duas datas (até 62 dias). Vê quem mora numa unidade do condomínio da área
+     * e quem gerencia esse condomínio.
+     */
+    List<DisponibilidadeDoDia> disponibilidade(Pessoa usuario, Integer areCod, LocalDate dataInicio, LocalDate dataFim);
+
+    /** Passa para concluídas as reservas aprovadas cuja data já passou. Devolve quantas mudaram. */
+    int concluirReservasPassadas();
 
     /** Uma reserva, se a pessoa a solicitou ou gerencia o condomínio dela. */
     ReservaResposta buscarPorIdDTO(Integer resCod, Pessoa usuario);

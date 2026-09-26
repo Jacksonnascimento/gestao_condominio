@@ -26,18 +26,16 @@ export function statusDoErro(erro: unknown): number | undefined {
 }
 
 /**
- * Parte da API manda as situações como texto ("PENDENTE") e parte como objeto ({ nome, descricao }). Até que
- * isso seja padronizado, as telas leem pelos dois helpers abaixo.
+ * A API manda as situações como código ("PENDENTE") e, ao lado, a descrição num campo próprio
+ * (statusDescricao...). As telas leem pelos dois helpers abaixo.
  */
-export type Enumerado = string | { nome: string; descricao?: string } | null | undefined;
+export type Enumerado = string | null | undefined;
 
 export function valorDoEnum(valor: Enumerado): string {
-  if (!valor) return '';
-  return typeof valor === 'string' ? valor : valor.nome;
+  return valor ?? '';
 }
 
 export function descricaoDoEnum(valor: Enumerado, reserva?: string | null): string {
-  if (valor && typeof valor === 'object' && valor.descricao) return valor.descricao;
   return reserva || textoLegivelDeCodigo(valorDoEnum(valor));
 }
 

@@ -3,13 +3,19 @@ package br.com.gestaocondominio.api.domain.service;
 import br.com.gestaocondominio.api.controller.dto.UnidadeRequestDTO;
 import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.entity.Ocupante;
+import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.entity.Unidade;
 import br.com.gestaocondominio.api.domain.enums.UnidadeStatusOcupacao;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.OcupanteRepository;
 import br.com.gestaocondominio.api.domain.repository.UnidadeRepository;
+import br.com.gestaocondominio.api.domain.repository.UnidadeSpecification;
+import br.com.gestaocondominio.api.exception.UnidadeInativaException;
 import br.com.gestaocondominio.api.security.UserDetailsImpl;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -20,7 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -85,7 +93,7 @@ public class UnidadeServiceImpl implements UnidadeService {
             Unidade u = unidadeExistente.get();
             if (Boolean.FALSE.equals(u.getUniAtiva())) {
                 // Lança exceção específica que será capturada pelo Controller para oferecer reativação
-                throw new IllegalStateException("UNIDADE_INATIVA:" + u.getUniCod());
+                throw new UnidadeInativaException(u.getUniCod());
             } else {
                 throw new IllegalArgumentException("Já existe uma unidade ativa com este número, bloco e tipo neste condomínio.");
             }
@@ -121,8 +129,9 @@ public class UnidadeServiceImpl implements UnidadeService {
             unidadesAutorizadas = incluirInativas ? unidadeRepository.findAllWithCondominio()
                     : unidadeRepository.findByUniAtivaWithCondominio(true);
         } else {
+            // Com "_" no fim: sem ele, a authority genérica ROLE_FUNCIONARIO_ADM também casava e quebrava a conversão
             Set<Integer> condoIdsComAcessoAdmin = getCondoIdsFromRoles(authentication, "ROLE_SINDICO_", "ROLE_ADMIN_",
-                    "ROLE_FUNCIONARIO_ADM");
+                    "ROLE_FUNCIONARIO_ADM_");
             if (!condoIdsComAcessoAdmin.isEmpty()) {
                 List<Condominio> condominiosGerenciados = condominioRepository.findAllById(condoIdsComAcessoAdmin);
                 unidadesAutorizadas = unidadeRepository.findByCondominioInWithCondominio(condominiosGerenciados);
@@ -286,5 +295,57 @@ public class UnidadeServiceImpl implements UnidadeService {
     @Transactional(readOnly = true)
     public List<Unidade> findAtivasByCondominioId(Integer condominioId) {
         return unidadeRepository.findAtivasByCondominioConCodWithCondominio(condominioId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Unidade> consultarUnidades(Pessoa usuario, Integer condominioId, String busca,
+                                           UnidadeStatusOcupacao status, boolean incluirInativas, Pageable pageable) {
+        return unidadeRepository.findAll(
+                especificacaoVisivel(usuario, condominioId, busca, status, incluirInativas), pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Long> contarUnidadesPorStatus(Pessoa usuario, Integer condominioId, String busca,
+                                                     UnidadeStatusOcupacao status, boolean incluirInativas) {
+        List<Unidade> unidades = unidadeRepository.findAll(
+                especificacaoVisivel(usuario, condominioId, busca, status, incluirInativas));
+        Map<String, Long> totais = new LinkedHashMap<>();
+        totais.put("TOTAL", (long) unidades.size());
+        for (UnidadeStatusOcupacao situacao : UnidadeStatusOcupacao.values()) {
+            totais.put(situacao.name(), unidades.stream().filter(u -> u.getUniStatusOcupacao() == situacao).count());
+        }
+        return totais;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Unidade buscarUnidadeVisivel(Integer id, Pessoa usuario) {
+        Unidade unidade = unidadeRepository.findByIdWithCondominio(id)
+                .orElseThrow(() -> new EntityNotFoundException("Unidade não encontrada."));
+        if (AcessoPorCondominio.temPapelNoCondominio(unidade.getCondominio().getConCod(), AcessoPorCondominio.GESTAO)
+                || ocupanteRepository.findByPessoaAndUnidade(usuario, unidade).isPresent()) {
+            return unidade;
+        }
+        throw new AccessDeniedException("Acesso negado. Você não tem permissão para visualizar esta unidade.");
+    }
+
+    @Override
+    public boolean podeGerenciarUnidades() {
+        return AcessoPorCondominio.temPapelEmAlgumCondominio(AcessoPorCondominio.SINDICO_OU_ADMINISTRADORA);
+    }
+
+    private Specification<Unidade> especificacaoVisivel(Pessoa usuario, Integer condominioId, String busca,
+                                                        UnidadeStatusOcupacao status, boolean incluirInativas) {
+        Specification<Unidade> filtros = UnidadeSpecification.comFiltros(condominioId, busca, status, incluirInativas);
+        if (AcessoPorCondominio.administradorGeral()) {
+            return filtros;
+        }
+        Set<Integer> unidadesOcupadas = ocupanteRepository.findByPessoa(usuario).stream()
+                .map(o -> o.getUnidade().getUniCod())
+                .collect(Collectors.toSet());
+        return filtros.and(UnidadeSpecification.visiveis(
+                AcessoPorCondominio.condominiosComPapel(AcessoPorCondominio.GESTAO), unidadesOcupadas));
     }
 }

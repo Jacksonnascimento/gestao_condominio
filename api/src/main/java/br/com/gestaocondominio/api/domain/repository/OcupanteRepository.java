@@ -18,6 +18,9 @@ public interface OcupanteRepository extends JpaRepository<Ocupante, Integer>, Jp
     @Query("SELECT o FROM Ocupante o JOIN FETCH o.pessoa JOIN FETCH o.unidade u JOIN FETCH u.condominio")
     List<Ocupante> findAllWithDetails();
 
+    @Query("SELECT o FROM Ocupante o JOIN FETCH o.pessoa JOIN FETCH o.unidade u JOIN FETCH u.condominio WHERE o.ocuCod = :id")
+    Optional<Ocupante> findByIdWithDetails(@Param("id") Integer id);
+
     List<Ocupante> findByPessoa(Pessoa pessoa);
 
     List<Ocupante> findByUnidade(Unidade unidade);

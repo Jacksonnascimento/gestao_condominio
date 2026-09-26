@@ -53,8 +53,8 @@ export const MENU: GrupoDoMenu[] = [
   {
     titulo: 'Convivência',
     itens: [
-      { rotulo: 'Áreas comuns', href: '/areas-comuns', icone: TreePine, pronta: false, visivel: (p) => p.gestao },
-      { rotulo: 'Reservas', href: '/reservas', icone: CalendarDays, pronta: false },
+      { rotulo: 'Áreas comuns', href: '/areas-comuns', icone: TreePine, pronta: true, visivel: (p) => p.gestao },
+      { rotulo: 'Reservas', href: '/reservas', icone: CalendarDays, pronta: true },
       { rotulo: 'Comunicados', href: '/comunicados', icone: Megaphone, pronta: true },
       { rotulo: 'Ocorrências', href: '/ocorrencias', icone: TriangleAlert, pronta: true },
     ],

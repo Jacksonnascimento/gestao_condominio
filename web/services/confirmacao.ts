@@ -2,6 +2,8 @@ export interface PedidoDeConfirmacao {
   titulo: string;
   mensagem: string;
   textoConfirmar?: string;
+  /** Texto do botão de desistir; "Cancelar" confunde quando a ação é cancelar algo. */
+  textoDesistir?: string;
   /** Ação que apaga ou desfaz algo: o botão de confirmar fica em destaque de perigo. */
   perigo?: boolean;
 }

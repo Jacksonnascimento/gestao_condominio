@@ -34,6 +34,7 @@ export async function cancelarReserva(reserva: Reserva): Promise<boolean> {
     titulo: 'Cancelar reserva',
     mensagem: `Cancelar ${resumoDaReserva(reserva)}? A data fica livre para outras unidades, e não dá para desfazer.`,
     textoConfirmar: 'Cancelar reserva',
+    textoDesistir: 'Voltar',
     perigo: true,
   });
   if (!certeza) return false;

@@ -28,7 +28,7 @@ export function ConfirmacaoDoSistema() {
       rodape={
         <>
           <Botao variante="texto" onClick={() => responder(false)}>
-            Cancelar
+            {pedido.dados.textoDesistir ?? 'Cancelar'}
           </Botao>
           <Botao variante={pedido.dados.perigo ? 'perigo' : 'primario'} onClick={() => responder(true)}>
             {pedido.dados.textoConfirmar ?? 'Confirmar'}

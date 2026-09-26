@@ -2,8 +2,8 @@
 
 import { descricaoDoTipoDePeriodo } from '@/components/ocupantes/SeloDoVinculo';
 import { Campo, CampoDeSelecao } from '@/components/Interface';
-import { emFrase } from '@/components/unidades/PecasDeCadastro';
 import type { OpcoesOcupante } from '@/services/ocupanteService';
+import { emFrase } from '@/services/utilitarios';
 
 export interface DadosDoVinculo {
   vinculo: string;

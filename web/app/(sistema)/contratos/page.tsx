@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { EllipsisVertical, Plus, Search } from 'lucide-react';
+import { EllipsisVertical, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { DetalhesDoContrato } from '@/components/contratos/DetalhesDoContrato';
 import { FormularioDoContrato } from '@/components/contratos/FormularioDoContrato';
-import { SeloDoContrato, formatarValor, textoDaVigencia, textoDoVencimento } from '@/components/contratos/SeloDoContrato';
-import { Abas, Botao, CabecalhoDaPagina, Cartao, Paginacao, Vazio, type Aba } from '@/components/Interface';
+import { SeloDoContrato, textoDaVigencia, textoDoVencimento } from '@/components/contratos/SeloDoContrato';
+import { Abas, Botao, CabecalhoDaPagina, CampoDeBusca, Cartao, Paginacao, Vazio, type Aba } from '@/components/Interface';
 import { useSessao } from '@/context/SessaoContext';
 import { confirmar } from '@/services/confirmacao';
 import {
@@ -18,7 +18,7 @@ import {
   type TotaisContratos,
 } from '@/services/contratoService';
 import type { Pagina } from '@/services/tipos';
-import { mensagemErroApi } from '@/services/utilitarios';
+import { formatarMoeda, mensagemErroApi } from '@/services/utilitarios';
 
 const TAMANHO = 10;
 const COLUNAS = 'lg:grid-cols-[1.2fr_1.4fr_120px_1.3fr_112px_128px]';
@@ -101,9 +101,8 @@ export default function PaginaDeContratos() {
     setVersao((v) => v + 1);
   };
 
+  // A confirmação abre por cima da janela de detalhes; confirmada, a janela fecha
   async function rescindir(contrato: Contrato) {
-    // A janela de detalhes fecha antes da pergunta, para as duas não ficarem abertas uma sobre a outra
-    setJanela(null);
     const confirmado = await confirmar({
       titulo: 'Rescindir contrato',
       mensagem: `O contrato com ${contrato.empresa} (${contrato.servico}) passa a constar como rescindido e vai para o histórico. Se precisar, dá para voltar atrás editando o contrato.`,
@@ -111,6 +110,7 @@ export default function PaginaDeContratos() {
       perigo: true,
     });
     if (!confirmado) return;
+    setJanela(null);
     try {
       await contratoService.atualizar(contrato.id, pedidoDoContrato(contrato, 'RESCINDIDO'));
       toast.success('Contrato rescindido.');
@@ -121,7 +121,6 @@ export default function PaginaDeContratos() {
   }
 
   async function excluir(contrato: Contrato) {
-    setJanela(null);
     const confirmado = await confirmar({
       titulo: 'Excluir contrato',
       mensagem: `O contrato com ${contrato.empresa} (${contrato.servico}) será apagado do sistema. Essa ação não pode ser desfeita.`,
@@ -129,6 +128,7 @@ export default function PaginaDeContratos() {
       perigo: true,
     });
     if (!confirmado) return;
+    setJanela(null);
     try {
       await contratoService.excluir(contrato.id);
       toast.success('Contrato excluído.');
@@ -203,17 +203,7 @@ export default function PaginaDeContratos() {
             />
           )}
         </div>
-        <label className="flex h-11 w-full items-center gap-2 rounded-[10px] border border-borda bg-superficie px-3 text-apagado sm:h-10 sm:w-72">
-          <Search size={16} aria-hidden />
-          <span className="sr-only">Buscar contratos</span>
-          <input
-            type="search"
-            value={buscaDigitada}
-            onChange={(e) => setBuscaDigitada(e.target.value)}
-            placeholder="Empresa ou serviço"
-            className="min-w-0 grow border-0 bg-transparent text-sm text-tinta outline-none placeholder:text-apagado"
-          />
-        </label>
+        <CampoDeBusca valor={buscaDigitada} aoMudar={setBuscaDigitada} rotulo="Buscar contratos" dica="Empresa ou serviço" />
       </div>
 
       <Cartao aria-label="Lista de contratos" aria-busy={carregando}>
@@ -248,10 +238,10 @@ export default function PaginaDeContratos() {
                   <SeloDoContrato contrato={contrato} />
                 </span>
                 <span className="col-span-2 break-words text-tinta-2 lg:col-span-1">{contrato.servico}</span>
-                <span className="hidden text-right font-semibold lg:block">{formatarValor(contrato.valor)}</span>
+                <span className="hidden text-right font-semibold lg:block">{formatarMoeda(contrato.valor)}</span>
                 <span className="flex flex-col text-apagado lg:text-tinta-2">
                   <span>
-                    <span className="font-semibold text-tinta lg:hidden">{formatarValor(contrato.valor)} · </span>
+                    <span className="font-semibold text-tinta lg:hidden">{formatarMoeda(contrato.valor)} · </span>
                     {textoDaVigencia(contrato)}
                   </span>
                   {vencimento && <span className="text-[13px] font-semibold text-aviso">{vencimento}</span>}

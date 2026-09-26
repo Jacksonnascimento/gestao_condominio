@@ -6,9 +6,18 @@ import toast from 'react-hot-toast';
 import { CadastrarOcupante } from '@/components/ocupantes/CadastrarOcupante';
 import { DetalhesDaUnidade } from '@/components/unidades/DetalhesDaUnidade';
 import { FormularioDaUnidade } from '@/components/unidades/FormularioDaUnidade';
-import { CaixaDeMarcar, CampoDeBusca, emFrase, formatarNumero } from '@/components/unidades/PecasDeCadastro';
 import { SeloDaUnidade, resumoDaUnidade } from '@/components/unidades/SeloDaUnidade';
-import { Abas, Botao, CabecalhoDaPagina, Cartao, Paginacao, Vazio, type Aba } from '@/components/Interface';
+import {
+  Abas,
+  Botao,
+  CabecalhoDaPagina,
+  CaixaDeMarcar,
+  CampoDeBusca,
+  Cartao,
+  Paginacao,
+  Vazio,
+  type Aba,
+} from '@/components/Interface';
 import { useSessao } from '@/context/SessaoContext';
 import { confirmar } from '@/services/confirmacao';
 import type { OpcoesOcupante } from '@/services/ocupanteService';
@@ -20,7 +29,7 @@ import {
   type TotaisUnidades,
   type Unidade,
 } from '@/services/unidadeService';
-import { descricaoDoEnum, mensagemErroApi, rotuloUnidade } from '@/services/utilitarios';
+import { descricaoDoEnum, emFrase, formatarNumero, mensagemErroApi, rotuloUnidade } from '@/services/utilitarios';
 
 const TAMANHO = 10;
 const COLUNAS = 'lg:grid-cols-[1.2fr_1fr_0.6fr_0.8fr_0.8fr_130px_150px]';
@@ -94,18 +103,16 @@ export default function PaginaDeUnidades() {
     setVersao((v) => v + 1);
   };
 
+  // A confirmação abre por cima da janela de detalhes; confirmada, a janela fecha
   async function inativar(unidade: Unidade) {
-    setJanela(null);
     const confirmado = await confirmar({
       titulo: 'Inativar unidade',
       mensagem: `A unidade ${rotuloUnidade(unidade.numero, unidade.bloco)} sai das listas e dos formulários do condomínio. Só é possível inativar uma unidade sem ocupantes. Ela pode ser reativada depois.`,
       textoConfirmar: 'Inativar',
       perigo: true,
     });
-    if (!confirmado) {
-      setJanela({ tipo: 'detalhes', unidade });
-      return;
-    }
+    if (!confirmado) return;
+    setJanela(null);
     try {
       await unidadeService.inativar(unidade.id);
       toast.success('Unidade inativada.');
@@ -163,9 +170,9 @@ export default function PaginaDeUnidades() {
           {permissoes.gestao && (
             <CaixaDeMarcar
               rotulo="Mostrar inativas"
-              marcada={incluirInativas}
-              aoMudar={(marcada) => {
-                setIncluirInativas(marcada);
+              checked={incluirInativas}
+              onChange={(e) => {
+                setIncluirInativas(e.target.checked);
                 setPagina(0);
               }}
             />

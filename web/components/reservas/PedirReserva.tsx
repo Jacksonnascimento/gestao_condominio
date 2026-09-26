@@ -4,12 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import { addDays, format } from 'date-fns';
 import { Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { CaixaDeMarcar } from '@/components/areas-comuns/CaixaDeMarcar';
-import { Botao, Campo, CampoDeSelecao } from '@/components/Interface';
+import { Botao, CaixaDeErro, CaixaDeMarcar, Campo, CampoDeSelecao } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
-import { faixaDeHorario, regrasDaArea } from '@/services/areaComumService';
+import { regrasDaArea } from '@/services/areaComumService';
 import { reservaService, type OpcoesReserva } from '@/services/reservaService';
-import { mensagemErroApi, rotuloUnidade } from '@/services/utilitarios';
+import { faixaDeHorario, mensagemErroApi, rotuloUnidade } from '@/services/utilitarios';
 
 /** Valor do turno "dia inteiro" na escolha; na API, é a reserva sem turno. */
 const DIA_INTEIRO = 'dia-inteiro';
@@ -139,11 +138,7 @@ export function PedirReserva({
       }
     >
       <form id="pedir-reserva" onSubmit={salvar} className="flex flex-col gap-5">
-        {erro && (
-          <p ref={caixaDoErro} className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo" role="alert">
-            {erro}
-          </p>
-        )}
+        {erro && <CaixaDeErro ref={caixaDoErro}>{erro}</CaixaDeErro>}
 
         <div className="grid gap-4 sm:grid-cols-2">
           {unidades.length > 1 ? (

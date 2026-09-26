@@ -1,16 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { FormularioDoCondominio } from '@/components/condominios/FormularioDoCondominio';
-import { Abas, Botao, CabecalhoDaPagina, Cartao, Paginacao, Selo, Vazio, type Aba } from '@/components/Interface';
+import { Abas, Botao, CabecalhoDaPagina, CampoDeBusca, Cartao, Paginacao, Selo, Vazio, type Aba } from '@/components/Interface';
 import { useSessao } from '@/context/SessaoContext';
-import {
-  cadastroDeCondominiosService,
-  type Condominio,
-  type OpcoesCondominio,
-} from '@/services/cadastroDeCondominiosService';
+import { condominioService, type Condominio, type OpcoesCondominio } from '@/services/condominioService';
 import { confirmar } from '@/services/confirmacao';
 import { mensagemErroApi, textoLegivelDeCodigo } from '@/services/utilitarios';
 
@@ -48,7 +44,7 @@ export default function PaginaDeCondominios() {
   useEffect(() => {
     if (!administradorGeral) return;
     let ativa = true;
-    Promise.all([cadastroDeCondominiosService.listar(true), cadastroDeCondominiosService.opcoes()])
+    Promise.all([condominioService.listar(true), condominioService.opcoes()])
       .then(([lista, novasOpcoes]) => {
         if (!ativa) return;
         setCondominios(lista);
@@ -85,10 +81,10 @@ export default function PaginaDeCondominios() {
     setAlterando(condominio.id);
     try {
       if (condominio.ativo) {
-        await cadastroDeCondominiosService.inativar(condominio.id);
+        await condominioService.inativar(condominio.id);
         toast.success('Condomínio inativado.');
       } else {
-        await cadastroDeCondominiosService.ativar(condominio.id);
+        await condominioService.ativar(condominio.id);
         toast.success('Condomínio reativado.');
       }
       setVersao((v) => v + 1);
@@ -153,20 +149,15 @@ export default function PaginaDeCondominios() {
             setPagina(0);
           }}
         />
-        <label className="flex h-10 w-full items-center gap-2 rounded-[10px] border border-borda bg-superficie px-3 text-apagado sm:w-72">
-          <Search size={16} aria-hidden />
-          <span className="sr-only">Buscar condomínios</span>
-          <input
-            type="search"
-            value={busca}
-            onChange={(e) => {
-              setBusca(e.target.value);
-              setPagina(0);
-            }}
-            placeholder="Nome, cidade ou bairro"
-            className="min-w-0 grow border-0 bg-transparent text-sm text-tinta outline-none placeholder:text-apagado"
-          />
-        </label>
+        <CampoDeBusca
+          valor={busca}
+          aoMudar={(valor) => {
+            setBusca(valor);
+            setPagina(0);
+          }}
+          rotulo="Buscar condomínios"
+          dica="Nome, cidade ou bairro"
+        />
       </div>
 
       <Cartao aria-label="Lista de condomínios" aria-busy={carregando}>

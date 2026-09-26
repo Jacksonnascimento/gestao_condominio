@@ -3,10 +3,9 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { CamposDoVinculo, type DadosDoVinculo } from '@/components/ocupantes/CamposDoVinculo';
-import { formatarDocumento } from '@/components/ocupantes/documento';
-import { Botao, Campo } from '@/components/Interface';
+import { Botao, CaixaDeErro, Campo } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
-import { ErroDoFormulario } from '@/components/unidades/PecasDeCadastro';
+import { formatarDocumento } from '@/services/documentos';
 import { ocupanteService, type OpcoesOcupante, type Ocupante } from '@/services/ocupanteService';
 import { mensagemErroApi, rotuloUnidade } from '@/services/utilitarios';
 
@@ -105,7 +104,7 @@ export function EditarOcupante({
       }
     >
       <form id="editar-ocupante" onSubmit={salvar} className="flex flex-col gap-6">
-        {erro && <ErroDoFormulario>{erro}</ErroDoFormulario>}
+        {erro && <CaixaDeErro>{erro}</CaixaDeErro>}
 
         <fieldset className="m-0 border-0 p-0">
           <legend className="mb-3 text-xs font-bold tracking-[0.04em] text-apagado uppercase">Pessoa</legend>

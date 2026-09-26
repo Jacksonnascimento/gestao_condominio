@@ -1,26 +1,10 @@
 'use client';
 
-import {
-  SeloDoContrato,
-  formatarValor,
-  situacaoDoContrato,
-  textoDaVigencia,
-  textoDoVencimento,
-} from '@/components/contratos/SeloDoContrato';
-import { Botao } from '@/components/Interface';
+import { SeloDoContrato, situacaoDoContrato, textoDaVigencia, textoDoVencimento } from '@/components/contratos/SeloDoContrato';
+import { Botao, LinhaDeDetalhe } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
 import type { Contrato } from '@/services/contratoService';
-import { formatarDataHora } from '@/services/utilitarios';
-
-function Linha({ rotulo, valor }: { rotulo: string; valor?: string | null }) {
-  if (!valor) return null;
-  return (
-    <div className="grid grid-cols-[130px_minmax(0,1fr)] gap-3 py-2.5 text-sm">
-      <dt className="text-apagado">{rotulo}</dt>
-      <dd className="m-0 break-words whitespace-pre-line">{valor}</dd>
-    </div>
-  );
-}
+import { formatarDataHora, formatarMoeda } from '@/services/utilitarios';
 
 /** Tudo sobre o contrato e, para a gestão, editar, rescindir e excluir. */
 export function DetalhesDoContrato({
@@ -71,13 +55,13 @@ export function DetalhesDoContrato({
           {vencimento && <span className="text-sm font-semibold text-aviso">{vencimento.charAt(0).toUpperCase() + vencimento.slice(1)}</span>}
         </div>
         <dl className="m-0 divide-y divide-borda-suave">
-          <Linha rotulo="Serviço" valor={contrato.servico} />
-          <Linha rotulo="Valor" valor={formatarValor(contrato.valor)} />
-          <Linha rotulo="Vigência" valor={textoDaVigencia(contrato)} />
-          <Linha rotulo="Responsável" valor={contrato.responsavel} />
-          <Linha rotulo="Observações" valor={contrato.observacoes} />
-          <Linha rotulo="Cadastrado em" valor={formatarDataHora(contrato.dataCadastro)} />
-          <Linha rotulo="Última alteração" valor={formatarDataHora(contrato.dataAtualizacao)} />
+          <LinhaDeDetalhe rotulo="Serviço" valor={contrato.servico} />
+          <LinhaDeDetalhe rotulo="Valor" valor={formatarMoeda(contrato.valor)} />
+          <LinhaDeDetalhe rotulo="Vigência" valor={textoDaVigencia(contrato)} />
+          <LinhaDeDetalhe rotulo="Responsável" valor={contrato.responsavel} />
+          <LinhaDeDetalhe rotulo="Observações" valor={contrato.observacoes} />
+          <LinhaDeDetalhe rotulo="Cadastrado em" valor={formatarDataHora(contrato.dataCadastro)} />
+          <LinhaDeDetalhe rotulo="Última alteração" valor={formatarDataHora(contrato.dataAtualizacao)} />
         </dl>
       </div>
     </Modal>

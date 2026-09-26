@@ -87,6 +87,52 @@ export function agoraParaCampo(): string {
   return format(new Date(), 'HH:mm');
 }
 
+/** "18:00:00" vira "18:00". */
+export function horario(valor?: string | null): string {
+  return valor ? valor.slice(0, 5) : '';
+}
+
+/** "18:00 às 23:00" */
+export function faixaDeHorario(inicio?: string | null, fim?: string | null): string {
+  if (!inicio || !fim) return '';
+  return `${horario(inicio)} às ${horario(fim)}`;
+}
+
+const MOEDA = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+/** 1200.5 vira "R$ 1.200,50"; sem valor, texto vazio. */
+export function formatarMoeda(valor?: number | null): string {
+  return valor == null ? '' : MOEDA.format(Number(valor));
+}
+
+/** "1.234,56", "1234,56" ou "1234.56" viram 1234.56; texto que não é valor vira NaN. */
+export function lerValorEmReais(texto: string): number {
+  const limpo = texto.replace(/[R$\s]/g, '');
+  if (!limpo) return NaN;
+  const normalizado = limpo.includes(',') ? limpo.replace(/\./g, '').replace(',', '.') : limpo;
+  return /^\d+(\.\d{1,2})?$/.test(normalizado) ? Number(normalizado) : NaN;
+}
+
+/** Número de um campo do formulário ("72.5" ou "72,5"); vazio, ou texto que não é número, vira null. */
+export function numeroOuNulo(texto: string): number | null {
+  const limpo = texto.trim().replace(',', '.');
+  if (!limpo) return null;
+  const numero = Number(limpo);
+  return Number.isFinite(numero) ? numero : null;
+}
+
+/** Número no formato brasileiro, sem casas decimais sobrando: 72,5 · 1.250 · 0,35. */
+export function formatarNumero(valor?: number | null, casas = 2): string {
+  if (valor == null) return '';
+  return Number(valor).toLocaleString('pt-BR', { maximumFractionDigits: casas });
+}
+
+/** "Em Reforma" vira "Em reforma": as descrições da API vêm com iniciais maiúsculas em cada palavra. */
+export function emFrase(texto?: string | null): string {
+  if (!texto) return '';
+  return texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
+}
+
 /** "302 · Bloco A", ou só o número quando a unidade não tem bloco. */
 export function rotuloUnidade(numero?: string | null, bloco?: string | null): string {
   if (!numero) return '';

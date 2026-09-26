@@ -2,18 +2,11 @@
 
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { Botao, Campo, CampoDeSelecao, CampoDeTexto } from '@/components/Interface';
+import { Botao, CaixaDeErro, Campo, CampoDeSelecao, CampoDeTexto } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
-import { ErroDoFormulario, emFrase } from '@/components/unidades/PecasDeCadastro';
 import { useSessao } from '@/context/SessaoContext';
 import { unidadeInativaDoErro, unidadeService, type OpcoesUnidade, type Unidade } from '@/services/unidadeService';
-import { mensagemErroApi, rotuloUnidade } from '@/services/utilitarios';
-
-/** "72.5" do campo vira 72.5; vazio vira null. */
-function numeroOuNulo(texto: string): number | null {
-  const limpo = texto.trim().replace(',', '.');
-  return limpo === '' ? null : Number(limpo);
-}
+import { emFrase, mensagemErroApi, numeroOuNulo, rotuloUnidade } from '@/services/utilitarios';
 
 /**
  * Cadastro e edição de unidade. Se o cadastro repete uma unidade que já existiu e foi inativada, a janela oferece
@@ -122,7 +115,7 @@ export function FormularioDaUnidade({
       }
     >
       <form id="formulario-unidade" onSubmit={salvar} className="grid gap-4 sm:grid-cols-2">
-        {erro && <ErroDoFormulario className="sm:col-span-2">{erro}</ErroDoFormulario>}
+        {erro && <CaixaDeErro className="sm:col-span-2">{erro}</CaixaDeErro>}
         {unidadeInativa != null && (
           <div className="flex flex-col gap-3 rounded-xl bg-aviso-fundo px-4 py-3 text-sm text-aviso sm:col-span-2" role="alert">
             <p>

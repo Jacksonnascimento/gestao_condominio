@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Botao, Campo } from '@/components/Interface';
+import { Botao, CaixaDeErro, Campo } from '@/components/Interface';
 import { TelaDeAcesso } from '@/components/TelaDeAcesso';
 import { autenticacaoService } from '@/services/autenticacaoService';
 import { mensagemErroApi } from '@/services/utilitarios';
@@ -58,9 +58,7 @@ function DefinirSenha() {
         </p>
       )}
       {etapa === 'invalido' && (
-        <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo" role="alert">
-          {mensagem}
-        </p>
+        <CaixaDeErro>{mensagem}</CaixaDeErro>
       )}
       {etapa === 'concluido' && (
         <p className="rounded-xl bg-realce px-4 py-3 text-sm text-tinta" role="status">
@@ -69,11 +67,7 @@ function DefinirSenha() {
       )}
       {etapa === 'formulario' && (
         <form onSubmit={salvar} className="flex flex-col gap-4">
-          {erro && (
-            <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo" role="alert">
-              {erro}
-            </p>
-          )}
+          {erro && <CaixaDeErro>{erro}</CaixaDeErro>}
           <Campo
             rotulo="Nova senha"
             type="password"

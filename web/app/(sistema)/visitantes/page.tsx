@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ChevronDown, EllipsisVertical, LogOut, Plus, Search } from 'lucide-react';
+import { ChevronDown, EllipsisVertical, LogOut, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { DetalhesDoVisitante } from '@/components/visitantes/DetalhesDoVisitante';
 import { FormularioDoVisitante } from '@/components/visitantes/FormularioDoVisitante';
 import { SeloDoVisitante, estaNoCondominio } from '@/components/visitantes/SeloDoVisitante';
-import { Abas, Botao, CabecalhoDaPagina, Cartao, Paginacao, Vazio, type Aba } from '@/components/Interface';
+import { Abas, Botao, CabecalhoDaPagina, CampoDeBusca, Cartao, Paginacao, Vazio, type Aba } from '@/components/Interface';
 import { useSessao } from '@/context/SessaoContext';
 import { confirmar } from '@/services/confirmacao';
 import type { Pagina } from '@/services/tipos';
@@ -106,9 +106,8 @@ export default function PaginaDeVisitantes() {
     setVersao((v) => v + 1);
   };
 
+  // Pela janela de detalhes, a confirmação abre por cima dela; confirmada, a janela fecha
   async function registrarSaida(visitante: VisitanteResumo) {
-    // A janela de detalhes fecha antes da pergunta, para as duas não ficarem abertas uma sobre a outra
-    setJanela(null);
     const unidade = rotuloUnidade(visitante.unidadeNumero, visitante.unidadeBloco);
     const confirmado = await confirmar({
       titulo: 'Registrar saída',
@@ -116,6 +115,7 @@ export default function PaginaDeVisitantes() {
       textoConfirmar: 'Registrar saída',
     });
     if (!confirmado) return;
+    setJanela(null);
     setSaindo(visitante.id);
     try {
       await visitanteService.registrarSaida(visitante.id);
@@ -195,17 +195,13 @@ export default function PaginaDeVisitantes() {
               <ChevronDown size={16} className="pointer-events-none absolute right-3" aria-hidden />
             </label>
           )}
-          <label className="flex h-11 w-full items-center gap-2 rounded-[10px] border border-borda bg-superficie px-3 text-apagado sm:h-10 sm:w-64">
-            <Search size={16} aria-hidden />
-            <span className="sr-only">Buscar visitantes pelo nome</span>
-            <input
-              type="search"
-              value={buscaDigitada}
-              onChange={(e) => setBuscaDigitada(e.target.value)}
-              placeholder="Nome do visitante"
-              className="min-w-0 grow border-0 bg-transparent text-sm text-tinta outline-none placeholder:text-apagado"
-            />
-          </label>
+          <CampoDeBusca
+            valor={buscaDigitada}
+            aoMudar={setBuscaDigitada}
+            rotulo="Buscar visitantes pelo nome"
+            dica="Nome do visitante"
+            className="w-full sm:w-64"
+          />
         </div>
       </div>
 

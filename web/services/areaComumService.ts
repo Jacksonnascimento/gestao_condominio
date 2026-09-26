@@ -1,6 +1,6 @@
 import api from '@/services/api';
 import type { Pagina } from '@/services/tipos';
-import { limparParametros } from '@/services/utilitarios';
+import { formatarMoeda, horario, limparParametros } from '@/services/utilitarios';
 
 export interface TurnoDaArea {
   codigo: number;
@@ -117,29 +117,11 @@ export function pedidoDaArea(area: AreaComum): PedidoDeAreaComum {
   };
 }
 
-/** "18:00:00" vira "18:00". */
-export function horario(valor?: string | null): string {
-  return valor ? valor.slice(0, 5) : '';
-}
-
-/** "18:00 às 23:00" */
-export function faixaDeHorario(inicio?: string | null, fim?: string | null): string {
-  if (!inicio || !fim) return '';
-  return `${horario(inicio)} às ${horario(fim)}`;
-}
-
-const REAIS = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-
-/** 150 vira "R$ 150,00". */
-export function formatarReais(valor?: number | null): string {
-  return valor == null ? '' : REAIS.format(valor);
-}
-
 /** "Até 80 pessoas" etc.: as regras da área em frases curtas, para cartões e para quem vai reservar. */
 export function regrasDaArea(area: AreaComum): string[] {
   const regras: string[] = [];
   if (area.capacidadeMaxima) regras.push(`Até ${area.capacidadeMaxima} ${area.capacidadeMaxima === 1 ? 'pessoa' : 'pessoas'}`);
-  regras.push(area.taxaValor ? `Taxa de ${formatarReais(area.taxaValor)}` : 'Sem taxa de uso');
+  regras.push(area.taxaValor ? `Taxa de ${formatarMoeda(area.taxaValor)}` : 'Sem taxa de uso');
   if (!area.permiteConvidados) regras.push('Sem convidados de fora');
   else if (area.limiteConvidados) regras.push(`Até ${area.limiteConvidados} ${area.limiteConvidados === 1 ? 'convidado' : 'convidados'}`);
   else regras.push('Aceita convidados');

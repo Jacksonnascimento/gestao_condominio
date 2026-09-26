@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Botao, Campo } from '@/components/Interface';
+import { Botao, CaixaDeErro, Campo } from '@/components/Interface';
 import { TelaDeAcesso } from '@/components/TelaDeAcesso';
 import { autenticacaoService } from '@/services/autenticacaoService';
 import { mensagemErroApi } from '@/services/utilitarios';
@@ -36,11 +36,7 @@ export default function PaginaEsqueciSenha() {
         </p>
       ) : (
         <form onSubmit={enviar} className="flex flex-col gap-4">
-          {erro && (
-            <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo" role="alert">
-              {erro}
-            </p>
-          )}
+          {erro && <CaixaDeErro>{erro}</CaixaDeErro>}
           <Campo rotulo="E-mail" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} obrigatorio />
           <Botao type="submit" variante="primario" carregando={enviando} className="mt-2 h-12 w-full">
             Enviar link

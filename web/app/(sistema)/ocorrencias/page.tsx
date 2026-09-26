@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { DetalhesDaOcorrencia } from '@/components/ocorrencias/DetalhesDaOcorrencia';
 import { RegistrarOcorrencia } from '@/components/ocorrencias/RegistrarOcorrencia';
 import { SeloDaOcorrencia } from '@/components/ocorrencias/SeloDaOcorrencia';
-import { Abas, Botao, CabecalhoDaPagina, Cartao, Paginacao, Vazio, type Aba } from '@/components/Interface';
+import { Abas, Botao, CabecalhoDaPagina, CampoDeBusca, Cartao, Paginacao, Vazio, type Aba } from '@/components/Interface';
 import { useSessao } from '@/context/SessaoContext';
 import {
   ocorrenciaService,
@@ -140,17 +140,12 @@ export default function PaginaDeOcorrencias() {
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Abas rotulo="Situação" abas={abas} valor={situacao} aoMudar={mudarFiltro(setSituacao)} />
-          <label className="flex h-10 w-full items-center gap-2 rounded-[10px] border border-borda bg-superficie px-3 text-apagado sm:w-72">
-            <Search size={16} aria-hidden />
-            <span className="sr-only">Buscar ocorrências pelo título</span>
-            <input
-              type="search"
-              value={tituloDigitado}
-              onChange={(e) => setTituloDigitado(e.target.value)}
-              placeholder="Buscar pelo título"
-              className="min-w-0 grow border-0 bg-transparent text-sm text-tinta outline-none placeholder:text-apagado"
-            />
-          </label>
+          <CampoDeBusca
+            valor={tituloDigitado}
+            aoMudar={setTituloDigitado}
+            rotulo="Buscar ocorrências pelo título"
+            dica="Buscar pelo título"
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-2.5 text-sm sm:flex sm:flex-wrap sm:items-end">

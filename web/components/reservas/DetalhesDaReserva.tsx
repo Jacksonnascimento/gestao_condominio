@@ -5,20 +5,10 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { aprovarReserva, cancelarReserva } from '@/components/reservas/acoesDaReserva';
 import { SeloDaReserva, turnoDaReserva } from '@/components/reservas/SeloDaReserva';
-import { Botao } from '@/components/Interface';
+import { Botao, LinhaDeDetalhe } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
 import type { Reserva } from '@/services/reservaService';
 import { formatarData, formatarDataHora, rotuloUnidade } from '@/services/utilitarios';
-
-function Linha({ rotulo, valor }: { rotulo: string; valor?: string | null }) {
-  if (!valor) return null;
-  return (
-    <div className="grid grid-cols-[130px_minmax(0,1fr)] gap-3 py-2.5 text-sm">
-      <dt className="text-apagado">{rotulo}</dt>
-      <dd className="m-0 break-words">{valor}</dd>
-    </div>
-  );
-}
 
 /** "sábado, 10 de outubro de 2026" */
 function dataPorExtenso(data: string): string {
@@ -90,12 +80,12 @@ export function DetalhesDaReserva({
           </p>
         )}
         <dl className="m-0 divide-y divide-borda-suave">
-          <Linha rotulo="Data" valor={dataPorExtenso(reserva.data)} />
-          <Linha rotulo="Horário" valor={turnoDaReserva(reserva)} />
-          <Linha rotulo="Unidade" valor={rotuloUnidade(reserva.unidadeNumero, reserva.unidadeBloco)} />
-          <Linha rotulo="Pedida por" valor={reserva.solicitanteNome} />
-          <Linha rotulo="Pedida em" valor={formatarDataHora(reserva.dataRegistro)} />
-          <Linha rotulo="Condomínio" valor={reserva.condominioNome} />
+          <LinhaDeDetalhe rotulo="Data" valor={dataPorExtenso(reserva.data)} />
+          <LinhaDeDetalhe rotulo="Horário" valor={turnoDaReserva(reserva)} />
+          <LinhaDeDetalhe rotulo="Unidade" valor={rotuloUnidade(reserva.unidadeNumero, reserva.unidadeBloco)} />
+          <LinhaDeDetalhe rotulo="Pedida por" valor={reserva.solicitanteNome} />
+          <LinhaDeDetalhe rotulo="Pedida em" valor={formatarDataHora(reserva.dataRegistro)} />
+          <LinhaDeDetalhe rotulo="Condomínio" valor={reserva.condominioNome} />
         </dl>
         <section aria-label="Convidados" className="flex flex-col gap-2">
           <h3 className="text-sm font-extrabold">

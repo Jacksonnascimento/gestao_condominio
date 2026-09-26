@@ -1,7 +1,6 @@
 import { Selo, type TomDoSelo } from '@/components/Interface';
-import { emFrase } from '@/components/unidades/PecasDeCadastro';
 import type { Unidade } from '@/services/unidadeService';
-import { descricaoDoEnum } from '@/services/utilitarios';
+import { descricaoDoEnum, emFrase } from '@/services/utilitarios';
 
 const TOM: Record<string, TomDoSelo> = {
   OCUPADA: 'info',

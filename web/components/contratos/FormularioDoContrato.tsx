@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { situacaoDoContrato } from '@/components/contratos/SeloDoContrato';
-import { Botao, Campo, CampoDeSelecao, CampoDeTexto } from '@/components/Interface';
+import { Botao, CaixaDeErro, Campo, CampoDeSelecao, CampoDeTexto } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
 import { useSessao } from '@/context/SessaoContext';
 import { contratoService, type Contrato } from '@/services/contratoService';
@@ -93,11 +93,7 @@ export function FormularioDoContrato({
       }
     >
       <form id="formulario-contrato" onSubmit={salvar} className="grid gap-4 sm:grid-cols-2">
-        {erro && (
-          <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo sm:col-span-2" role="alert">
-            {erro}
-          </p>
-        )}
+        {erro && <CaixaDeErro className="sm:col-span-2">{erro}</CaixaDeErro>}
         <Campo rotulo="Empresa" value={formulario.empresa} onChange={mudar('empresa')} obrigatorio maxLength={100} />
         <Campo
           rotulo="Serviço"

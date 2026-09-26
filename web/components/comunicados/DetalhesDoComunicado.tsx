@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Download, Paperclip, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { SelosDoComunicado, extensaoDoAnexo } from '@/components/comunicados/SelosDoComunicado';
-import { useTravaDaJanela } from '@/components/comunicados/useTravaDaJanela';
 import { Botao } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
 import { comunicadoService, type Comunicado } from '@/services/comunicadoService';
@@ -24,8 +23,8 @@ export function DetalhesDoComunicado({
   aoExcluir: () => void;
 }) {
   const [baixando, setBaixando] = useState(false);
-  // Enquanto a confirmação ou a exclusão estão em andamento, esta janela não fecha
-  const { travada: ocupado, travar: setOcupado, fechar } = useTravaDaJanela(aoFechar);
+  // Enquanto a exclusão está em andamento, esta janela não fecha
+  const [ocupado, setOcupado] = useState(false);
 
   async function baixar() {
     setBaixando(true);
@@ -39,17 +38,14 @@ export function DetalhesDoComunicado({
   }
 
   async function excluir() {
-    setOcupado(true);
     const confirmado = await confirmar({
       titulo: 'Excluir comunicado',
       mensagem: `O comunicado “${comunicado.titulo}” e o seu anexo serão apagados e ninguém mais poderá lê-lo. Essa ação não pode ser desfeita.`,
       textoConfirmar: 'Excluir',
       perigo: true,
     });
-    if (!confirmado) {
-      setOcupado(false);
-      return;
-    }
+    if (!confirmado) return;
+    setOcupado(true);
     try {
       await comunicadoService.excluir(comunicado.id);
       toast.success('Comunicado excluído.');
@@ -70,7 +66,7 @@ export function DetalhesDoComunicado({
       titulo={comunicado.titulo}
       subtitulo={`Publicado em ${publicado}`}
       largura="lg"
-      aoFechar={fechar}
+      aoFechar={aoFechar}
       ocupado={ocupado}
       rodape={
         <>

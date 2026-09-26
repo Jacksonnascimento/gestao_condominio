@@ -2,7 +2,8 @@
 
 import { Clock, Pencil, Power, Trash2 } from 'lucide-react';
 import { Botao, Selo } from '@/components/Interface';
-import { faixaDeHorario, regrasDaArea, type AreaComum } from '@/services/areaComumService';
+import { regrasDaArea, type AreaComum } from '@/services/areaComumService';
+import { faixaDeHorario } from '@/services/utilitarios';
 
 /** Uma área por cartão: nome, situação, regras em frases curtas, turnos e as ações de quem gerencia. */
 export function CartaoDaAreaComum({

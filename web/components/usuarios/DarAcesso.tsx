@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { digitosDoCpf, formatarCpf } from '@/components/usuarios/cpf';
-import { Botao, Campo, CampoDeSelecao } from '@/components/Interface';
+import { Botao, CaixaDeErro, Campo, CampoDeSelecao } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
 import type { Papel } from '@/services/autenticacaoService';
+import { digitosDoCpf, formatarCpf } from '@/services/documentos';
 import type { Opcao } from '@/services/tipos';
 import {
   usuarioService,
@@ -160,11 +160,7 @@ export function DarAcesso({
       }
     >
       <form id="dar-acesso" onSubmit={salvar} className="grid gap-4 sm:grid-cols-2">
-        {erro && (
-          <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo sm:col-span-2" role="alert">
-            {erro}
-          </p>
-        )}
+        {erro && <CaixaDeErro className="sm:col-span-2">{erro}</CaixaDeErro>}
 
         <CampoDeSelecao rotulo="Papel" value={papel} onChange={(e) => setPapel(e.target.value)} obrigatorio className="sm:col-span-2">
           <option value="">Escolha o papel</option>

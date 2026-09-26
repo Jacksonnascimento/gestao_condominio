@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { useTravaDaJanela } from '@/components/comunicados/useTravaDaJanela';
-import { Botao, Campo, CampoDeSelecao, CampoDeTexto } from '@/components/Interface';
+import { Botao, CaixaDeErro, Campo, CampoDeSelecao, CampoDeTexto } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
 import { useSessao } from '@/context/SessaoContext';
 import { ocorrenciaService, type OpcoesOcorrencia, type TipoOcorrencia } from '@/services/ocorrenciaService';
@@ -27,7 +26,7 @@ export function RegistrarOcorrencia({
   const [tipo, setTipo] = useState('');
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescricao] = useState('');
-  const { travada: salvando, travar: setSalvando, fechar } = useTravaDaJanela(aoFechar);
+  const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
 
   async function salvar(evento: React.FormEvent) {
@@ -54,7 +53,7 @@ export function RegistrarOcorrencia({
     <Modal
       titulo="Registrar ocorrência"
       subtitulo={condominio?.nome}
-      aoFechar={fechar}
+      aoFechar={aoFechar}
       ocupado={salvando}
       rodape={
         <>
@@ -68,11 +67,7 @@ export function RegistrarOcorrencia({
       }
     >
       <form id="registrar-ocorrencia" onSubmit={salvar} className="grid gap-4 sm:grid-cols-2">
-        {erro && (
-          <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo sm:col-span-2" role="alert">
-            {erro}
-          </p>
-        )}
+        {erro && <CaixaDeErro className="sm:col-span-2">{erro}</CaixaDeErro>}
         <CampoDeSelecao rotulo="Tipo" value={tipo} onChange={(e) => setTipo(e.target.value)} obrigatorio>
           <option value="">Escolha o tipo</option>
           {opcoes.tipos.map((t) => (

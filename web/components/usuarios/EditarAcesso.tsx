@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { KeyRound } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Botao, Campo, CampoDeSelecao } from '@/components/Interface';
+import { Botao, CaixaDeErro, Campo, CampoDeSelecao } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
 import type { Papel } from '@/services/autenticacaoService';
 import { confirmar } from '@/services/confirmacao';
@@ -92,11 +92,7 @@ export function EditarAcesso({
     >
       <div className="flex flex-col gap-5">
         <form id="editar-acesso" onSubmit={salvar} className="grid gap-4 sm:grid-cols-2">
-          {erro && (
-            <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo sm:col-span-2" role="alert">
-              {erro}
-            </p>
-          )}
+          {erro && <CaixaDeErro className="sm:col-span-2">{erro}</CaixaDeErro>}
           <Campo rotulo="Nome" value={nome} onChange={(e) => setNome(e.target.value)} obrigatorio maxLength={100} className="sm:col-span-2" />
           <Campo
             rotulo="E-mail"

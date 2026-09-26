@@ -1,5 +1,5 @@
-import { baixarArquivo } from '@/components/comunicados/baixarArquivo';
 import api from '@/services/api';
+import { baixarArquivo } from '@/services/arquivos';
 import type { Opcao, Pagina } from '@/services/tipos';
 import { limparParametros } from '@/services/utilitarios';
 

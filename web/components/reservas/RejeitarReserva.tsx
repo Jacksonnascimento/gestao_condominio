@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { resumoDaReserva } from '@/components/reservas/acoesDaReserva';
-import { Botao, CampoDeTexto } from '@/components/Interface';
+import { Botao, CaixaDeErro, CampoDeTexto } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
 import { reservaService, type Reserva } from '@/services/reservaService';
 import { mensagemErroApi } from '@/services/utilitarios';
@@ -55,11 +55,7 @@ export function RejeitarReserva({
       }
     >
       <form id="rejeitar-reserva" onSubmit={salvar} className="flex flex-col gap-4">
-        {erro && (
-          <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo" role="alert">
-            {erro}
-          </p>
-        )}
+        {erro && <CaixaDeErro>{erro}</CaixaDeErro>}
         <CampoDeTexto
           rotulo="Motivo"
           value={motivo}

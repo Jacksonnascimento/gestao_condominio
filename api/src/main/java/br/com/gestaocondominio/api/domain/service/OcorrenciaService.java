@@ -54,4 +54,24 @@ public interface OcorrenciaService {
     Ocorrencia finalizarOcorrencia(Integer ocorrenciaId, OcorrenciaFinalizarRequestDTO dto, Pessoa usuarioLogado);
 
     Ocorrencia buscarOcorrenciaPorIdEValidarAcesso(Integer id, Pessoa usuarioLogado, boolean edicao);
+
+    // ---- Usados pela API /api/v1 ----
+
+    /**
+     * Se a pessoa gerencia ocorrências em algum condomínio (administrador geral, síndico, administração ou funcionário
+     * administrativo). É o que a tela usa para mostrar os filtros de data e os botões de gestão.
+     */
+    boolean podeGerenciarOcorrencias(Pessoa usuarioLogado);
+
+    /**
+     * Se a pessoa gerencia esta ocorrência: administrador geral, ou síndico, administração ou funcionário
+     * administrativo com vínculo ativo no condomínio dela. Confere antes se a pessoa pode ver a ocorrência.
+     */
+    boolean gerenciaOcorrencia(Integer ocorrenciaId, Pessoa usuarioLogado);
+
+    /**
+     * Recusa (403) quem não gerencia a ocorrência. Na tela, comentários e anexos (ver, incluir, excluir e baixar) só
+     * aparecem para quem gerencia; os métodos acima aceitam também o autor e os ocupantes da unidade.
+     */
+    void conferirGestao(Integer ocorrenciaId, Pessoa usuarioLogado);
 }

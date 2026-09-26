@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { CampoDeArquivo } from '@/components/comunicados/CampoDeArquivo';
-import { useTravaDaJanela } from '@/components/comunicados/useTravaDaJanela';
-import { Botao, Campo, CampoDeSelecao, CampoDeTexto } from '@/components/Interface';
+import { CampoDeArquivo } from '@/components/CampoDeArquivo';
+import { Botao, CaixaDeErro, Campo, CampoDeSelecao, CampoDeTexto } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
 import { useSessao } from '@/context/SessaoContext';
 import {
@@ -42,7 +41,7 @@ export function FormularioDeComunicado({
     return condominio && opcoes.condominios.some((c) => c.codigo === condominio.id) ? [condominio.id] : [];
   });
   const [anexo, setAnexo] = useState<File | null>(null);
-  const { travada: salvando, travar: setSalvando, fechar } = useTravaDaJanela(aoFechar);
+  const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
 
   const marcarCondominio = (codigo: number, marcado: boolean) =>
@@ -83,7 +82,7 @@ export function FormularioDeComunicado({
       titulo={comunicado ? 'Editar comunicado' : 'Publicar comunicado'}
       subtitulo={escolheCondominios ? undefined : condominio?.nome}
       largura="lg"
-      aoFechar={fechar}
+      aoFechar={aoFechar}
       ocupado={salvando}
       rodape={
         <>
@@ -97,11 +96,7 @@ export function FormularioDeComunicado({
       }
     >
       <form id="formulario-comunicado" onSubmit={salvar} className="grid gap-4 sm:grid-cols-2">
-        {erro && (
-          <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo sm:col-span-2" role="alert">
-            {erro}
-          </p>
-        )}
+        {erro && <CaixaDeErro className="sm:col-span-2">{erro}</CaixaDeErro>}
         <Campo
           rotulo="Título"
           value={titulo}

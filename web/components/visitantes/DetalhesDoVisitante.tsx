@@ -3,20 +3,10 @@
 import { useEffect, useState } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import { SeloDoVisitante, estaNoCondominio } from '@/components/visitantes/SeloDoVisitante';
-import { Botao } from '@/components/Interface';
+import { Botao, CaixaDeErro, LinhaDeDetalhe } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
 import { formatarDataHora, mensagemErroApi, rotuloUnidade } from '@/services/utilitarios';
 import { visitanteService, type VisitanteDetalhe, type VisitanteResumo } from '@/services/visitanteService';
-
-function Linha({ rotulo, valor }: { rotulo: string; valor?: string | null }) {
-  if (!valor) return null;
-  return (
-    <div className="grid grid-cols-[130px_minmax(0,1fr)] gap-3 py-2.5 text-sm">
-      <dt className="text-apagado">{rotulo}</dt>
-      <dd className="m-0 break-words whitespace-pre-line">{valor}</dd>
-    </div>
-  );
-}
 
 /**
  * Tudo sobre a visita. Documentos e observações só aparecem para a administração e a portaria (a API não os manda
@@ -82,20 +72,16 @@ export function DetalhesDoVisitante({
         <div>
           <SeloDoVisitante visitante={dados} />
         </div>
-        {erro && (
-          <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo" role="alert">
-            {erro}
-          </p>
-        )}
+        {erro && <CaixaDeErro>{erro}</CaixaDeErro>}
         <dl className="m-0 divide-y divide-borda-suave">
-          <Linha rotulo="Unidade" valor={unidade} />
-          <Linha rotulo="Quem autorizou" valor={dados.moradorNome} />
-          <Linha rotulo="Telefone" valor={dados.telefone} />
-          <Linha rotulo="CPF" valor={detalhe?.cpf} />
-          <Linha rotulo="RG" valor={detalhe?.rg} />
-          <Linha rotulo="Entrada" valor={formatarDataHora(dados.dataEntrada)} />
-          <Linha rotulo="Saída" valor={formatarDataHora(dados.dataSaida)} />
-          <Linha rotulo="Observações" valor={detalhe?.observacoes} />
+          <LinhaDeDetalhe rotulo="Unidade" valor={unidade} />
+          <LinhaDeDetalhe rotulo="Quem autorizou" valor={dados.moradorNome} />
+          <LinhaDeDetalhe rotulo="Telefone" valor={dados.telefone} />
+          <LinhaDeDetalhe rotulo="CPF" valor={detalhe?.cpf} />
+          <LinhaDeDetalhe rotulo="RG" valor={detalhe?.rg} />
+          <LinhaDeDetalhe rotulo="Entrada" valor={formatarDataHora(dados.dataEntrada)} />
+          <LinhaDeDetalhe rotulo="Saída" valor={formatarDataHora(dados.dataSaida)} />
+          <LinhaDeDetalhe rotulo="Observações" valor={detalhe?.observacoes} />
         </dl>
         {!detalhe && !erro && (
           <p className="flex items-center gap-2 text-sm text-apagado" role="status">

@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { Botao, Campo, CampoDeSelecao } from '@/components/Interface';
+import { Botao, CaixaDeErro, Campo, CampoDeSelecao } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
-import { financeiroService, lerValorEmReais, nomeDaUnidade, type UnidadePagadora } from '@/services/financeiroService';
-import { hojeParaCampo, mensagemErroApi } from '@/services/utilitarios';
+import { financeiroService, nomeDaUnidade, type UnidadePagadora } from '@/services/financeiroService';
+import { hojeParaCampo, lerValorEmReais, mensagemErroApi } from '@/services/utilitarios';
 
 /** Cobrança fora da taxa do mês (multa, reserva, conserto...) para uma unidade. */
 export function GerarBoletoAvulso({
@@ -68,11 +68,7 @@ export function GerarBoletoAvulso({
       }
     >
       <form id="gerar-boleto" onSubmit={salvar} className="grid gap-4 sm:grid-cols-2">
-        {erro && (
-          <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo sm:col-span-2" role="alert">
-            {erro}
-          </p>
-        )}
+        {erro && <CaixaDeErro className="sm:col-span-2">{erro}</CaixaDeErro>}
         <CampoDeSelecao
           rotulo="Unidade"
           value={unidadeId}

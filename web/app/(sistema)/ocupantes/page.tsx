@@ -7,8 +7,7 @@ import { CadastrarOcupante } from '@/components/ocupantes/CadastrarOcupante';
 import { DetalhesDoOcupante } from '@/components/ocupantes/DetalhesDoOcupante';
 import { EditarOcupante } from '@/components/ocupantes/EditarOcupante';
 import { SeloDoVinculo } from '@/components/ocupantes/SeloDoVinculo';
-import { Abas, Botao, CabecalhoDaPagina, Cartao, Paginacao, Vazio, type Aba } from '@/components/Interface';
-import { CampoDeBusca } from '@/components/unidades/PecasDeCadastro';
+import { Abas, Botao, CabecalhoDaPagina, CampoDeBusca, Cartao, Paginacao, Vazio, type Aba } from '@/components/Interface';
 import { useSessao } from '@/context/SessaoContext';
 import { confirmar } from '@/services/confirmacao';
 import {
@@ -124,8 +123,8 @@ export default function PaginaDeOcupantes() {
     setVersao((v) => v + 1);
   };
 
+  // A confirmação abre por cima da janela de detalhes; confirmada, a janela fecha
   async function remover(ocupante: Ocupante) {
-    setJanela(null);
     const unidade = rotuloUnidade(ocupante.unidadeNumero, ocupante.unidadeBloco);
     const confirmado = await confirmar({
       titulo: 'Remover ocupante',
@@ -133,10 +132,8 @@ export default function PaginaDeOcupantes() {
       textoConfirmar: 'Remover',
       perigo: true,
     });
-    if (!confirmado) {
-      setJanela({ tipo: 'detalhes', ocupante });
-      return;
-    }
+    if (!confirmado) return;
+    setJanela(null);
     try {
       await ocupanteService.remover(ocupante.id);
       toast.success('Ocupante removido da unidade.');

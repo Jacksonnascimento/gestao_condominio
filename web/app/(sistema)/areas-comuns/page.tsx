@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { CartaoDaAreaComum } from '@/components/areas-comuns/CartaoDaAreaComum';
 import { FormularioDaAreaComum } from '@/components/areas-comuns/FormularioDaAreaComum';
-import { Abas, Botao, CabecalhoDaPagina, Cartao, Paginacao, Vazio, type Aba } from '@/components/Interface';
+import { Abas, Botao, CabecalhoDaPagina, CampoDeBusca, Cartao, Paginacao, Vazio, type Aba } from '@/components/Interface';
 import { useSessao } from '@/context/SessaoContext';
 import {
   areaComumService,
@@ -179,17 +179,7 @@ export default function PaginaDeAreasComuns() {
             setPagina(0);
           }}
         />
-        <label className="flex h-11 w-full items-center gap-2 rounded-[10px] border border-borda bg-superficie px-3 text-apagado sm:h-10 sm:w-72">
-          <Search size={16} aria-hidden />
-          <span className="sr-only">Buscar áreas comuns</span>
-          <input
-            type="search"
-            value={buscaDigitada}
-            onChange={(e) => setBuscaDigitada(e.target.value)}
-            placeholder="Nome ou descrição"
-            className="min-w-0 grow border-0 bg-transparent text-sm text-tinta outline-none placeholder:text-apagado"
-          />
-        </label>
+        <CampoDeBusca valor={buscaDigitada} aoMudar={setBuscaDigitada} rotulo="Buscar áreas comuns" dica="Nome ou descrição" />
       </div>
 
       {!carregando && itens.length === 0 ? (

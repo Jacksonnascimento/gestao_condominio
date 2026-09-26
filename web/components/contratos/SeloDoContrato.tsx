@@ -23,13 +23,6 @@ export function SeloDoContrato({ contrato }: { contrato: Contrato }) {
   return <Selo tom={selo.tom}>{selo.texto}</Selo>;
 }
 
-const MOEDA = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-
-/** 1200.5 vira "R$ 1.200,50". */
-export function formatarValor(valor: number | null | undefined): string {
-  return valor == null ? '' : MOEDA.format(valor);
-}
-
 /** "01/01/2026 a 31/12/2026". */
 export function textoDaVigencia(contrato: Contrato): string {
   return `${formatarData(contrato.dataInicio)} a ${formatarData(contrato.dataFim)}`;

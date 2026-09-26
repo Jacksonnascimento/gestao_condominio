@@ -3,15 +3,22 @@
 import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { SeloDoVinculo } from '@/components/ocupantes/SeloDoVinculo';
-import { Botao } from '@/components/Interface';
+import { Botao, LinhaDeDetalhe } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
-import { LinhaDeDetalhe, emFrase, formatarNumero } from '@/components/unidades/PecasDeCadastro';
 import { SeloDaUnidade } from '@/components/unidades/SeloDaUnidade';
 import { useSessao } from '@/context/SessaoContext';
 import { ocupanteService, type OpcoesOcupante, type Ocupante } from '@/services/ocupanteService';
 import type { Pagina } from '@/services/tipos';
 import type { Unidade } from '@/services/unidadeService';
-import { descricaoDoEnum, formatarData, formatarDataHora, mensagemErroApi, rotuloUnidade } from '@/services/utilitarios';
+import {
+  descricaoDoEnum,
+  emFrase,
+  formatarData,
+  formatarDataHora,
+  formatarNumero,
+  mensagemErroApi,
+  rotuloUnidade,
+} from '@/services/utilitarios';
 
 const LIMITE_DE_OCUPANTES = 50;
 

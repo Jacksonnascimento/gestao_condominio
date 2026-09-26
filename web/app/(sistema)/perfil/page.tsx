@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { FotoDoPerfil } from '@/components/perfil/FotoDoPerfil';
 import { TrocarSenha } from '@/components/perfil/TrocarSenha';
-import { formatarCpf } from '@/components/usuarios/cpf';
-import { Botao, CabecalhoDaPagina, Campo, Cartao, Selo, TituloDoCartao, Vazio } from '@/components/Interface';
+import { Botao, CabecalhoDaPagina, CaixaDeErro, Campo, Cartao, Selo, TituloDoCartao, Vazio } from '@/components/Interface';
 import { useSessao } from '@/context/SessaoContext';
 import type { UsuarioLogado } from '@/services/autenticacaoService';
+import { formatarCpf } from '@/services/documentos';
 import { perfilService } from '@/services/perfilService';
 import { mensagemErroApi } from '@/services/utilitarios';
 
@@ -51,11 +51,7 @@ function DadosPessoais({ perfil, aoSalvar }: { perfil: UsuarioLogado; aoSalvar: 
             <span className="truncate text-sm text-apagado">{perfil.email}</span>
           </div>
         </div>
-        {erro && (
-          <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo" role="alert">
-            {erro}
-          </p>
-        )}
+        {erro && <CaixaDeErro>{erro}</CaixaDeErro>}
         <div className="grid gap-4 sm:grid-cols-2">
           <Campo
             rotulo="Nome"

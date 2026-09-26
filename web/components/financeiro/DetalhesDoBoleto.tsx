@@ -3,19 +3,10 @@
 import { Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { SeloDoBoleto } from '@/components/financeiro/SeloDoBoleto';
-import { Botao } from '@/components/Interface';
+import { Botao, LinhaDeDetalhe } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
-import { formatarMoeda, nomeDaUnidade, type Boleto } from '@/services/financeiroService';
-import { formatarData } from '@/services/utilitarios';
-
-function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
-  return (
-    <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-3 py-2.5 text-sm">
-      <dt className="text-apagado">{rotulo}</dt>
-      <dd className="m-0 break-words">{children}</dd>
-    </div>
-  );
-}
+import { nomeDaUnidade, type Boleto } from '@/services/financeiroService';
+import { formatarData, formatarMoeda } from '@/services/utilitarios';
 
 /** Código para pagar (linha digitável ou Pix), com o botão de copiar. */
 function CodigoParaCopiar({ rotulo, codigo, aviso }: { rotulo: string; codigo: string; aviso: string }) {
@@ -57,13 +48,13 @@ export function DetalhesDoBoleto({ boleto, aoFechar }: { boleto: Boleto; aoFecha
     >
       <div className="flex flex-col gap-5">
         <dl className="m-0 divide-y divide-borda-suave">
-          <Linha rotulo="Situação">
+          <LinhaDeDetalhe rotulo="Situação">
             <SeloDoBoleto boleto={boleto} />
-          </Linha>
-          <Linha rotulo="Valor">
+          </LinhaDeDetalhe>
+          <LinhaDeDetalhe rotulo="Valor">
             <span className="font-bold tabular-nums">{formatarMoeda(boleto.valor)}</span>
-          </Linha>
-          <Linha rotulo="Vencimento">{formatarData(boleto.dataVencimento)}</Linha>
+          </LinhaDeDetalhe>
+          <LinhaDeDetalhe rotulo="Vencimento">{formatarData(boleto.dataVencimento)}</LinhaDeDetalhe>
         </dl>
         {!pago && boleto.linhaDigitavel && (
           <CodigoParaCopiar rotulo="Linha digitável" codigo={boleto.linhaDigitavel} aviso="Linha digitável copiada." />

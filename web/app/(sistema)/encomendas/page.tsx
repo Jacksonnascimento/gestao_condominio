@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { EllipsisVertical, Plus, Search } from 'lucide-react';
+import { EllipsisVertical, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { DetalhesDaEncomenda } from '@/components/encomendas/DetalhesDaEncomenda';
 import { EntregarEncomenda } from '@/components/encomendas/EntregarEncomenda';
 import { RegistrarEncomenda } from '@/components/encomendas/RegistrarEncomenda';
 import { SeloDaEncomenda, estaAguardando } from '@/components/encomendas/SeloDaEncomenda';
-import { Abas, Botao, CabecalhoDaPagina, Cartao, Paginacao, Vazio, type Aba } from '@/components/Interface';
+import { Abas, Botao, CabecalhoDaPagina, CampoDeBusca, Cartao, Paginacao, Vazio, type Aba } from '@/components/Interface';
 import { useSessao } from '@/context/SessaoContext';
 import {
   encomendaService,
@@ -121,17 +121,7 @@ export default function PaginaDeEncomendas() {
             setPagina(0);
           }}
         />
-        <label className="flex h-10 w-full items-center gap-2 rounded-[10px] border border-borda bg-superficie px-3 text-apagado sm:w-72">
-          <Search size={16} aria-hidden />
-          <span className="sr-only">Buscar encomendas</span>
-          <input
-            type="search"
-            value={buscaDigitada}
-            onChange={(e) => setBuscaDigitada(e.target.value)}
-            placeholder="Unidade ou destinatário"
-            className="min-w-0 grow border-0 bg-transparent text-sm text-tinta outline-none placeholder:text-apagado"
-          />
-        </label>
+        <CampoDeBusca valor={buscaDigitada} aoMudar={setBuscaDigitada} rotulo="Buscar encomendas" dica="Unidade ou destinatário" />
       </div>
 
       <Cartao aria-label="Lista de encomendas" aria-busy={carregando}>

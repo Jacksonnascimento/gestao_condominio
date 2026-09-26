@@ -2,14 +2,10 @@
 
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { Botao, Campo, CampoDeSelecao } from '@/components/Interface';
+import { Botao, CaixaDeErro, Campo, CampoDeSelecao } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
-import {
-  cadastroDeCondominiosService,
-  formatarCep,
-  type Condominio,
-  type DadosDoCondominio,
-} from '@/services/cadastroDeCondominiosService';
+import { condominioService, type Condominio, type DadosDoCondominio } from '@/services/condominioService';
+import { formatarCep } from '@/services/documentos';
 import type { Opcao } from '@/services/tipos';
 import { mensagemErroApi } from '@/services/utilitarios';
 
@@ -17,12 +13,6 @@ const UFS = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA',
   'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
 ];
-
-/** 45000000 vira 45000-000 enquanto se digita. */
-function mascaraDeCep(texto: string): string {
-  const numeros = texto.replace(/\D/g, '').slice(0, 8);
-  return numeros.length > 5 ? `${numeros.slice(0, 5)}-${numeros.slice(5)}` : numeros;
-}
 
 /** Os campos como aparecem no formulário, todos em texto. */
 type CamposDeTexto = Record<keyof DadosDoCondominio, string>;
@@ -63,7 +53,7 @@ export function FormularioDoCondominio({
   const [erro, setErro] = useState('');
 
   const mudar = (campo: keyof CamposDeTexto) => (evento: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setCampos((atual) => ({ ...atual, [campo]: campo === 'cep' ? mascaraDeCep(evento.target.value) : evento.target.value }));
+    setCampos((atual) => ({ ...atual, [campo]: campo === 'cep' ? formatarCep(evento.target.value) : evento.target.value }));
 
   async function salvar(evento: React.FormEvent) {
     evento.preventDefault();
@@ -87,10 +77,10 @@ export function FormularioDoCondominio({
     setSalvando(true);
     try {
       if (condominio) {
-        await cadastroDeCondominiosService.atualizar(condominio.id, dados);
+        await condominioService.atualizar(condominio.id, dados);
         toast.success('Condomínio atualizado.');
       } else {
-        await cadastroDeCondominiosService.cadastrar(dados);
+        await condominioService.cadastrar(dados);
         toast.success('Condomínio cadastrado.');
       }
       aoSalvar();
@@ -119,11 +109,7 @@ export function FormularioDoCondominio({
       }
     >
       <form id="formulario-condominio" onSubmit={salvar} className="grid gap-4 sm:grid-cols-6">
-        {erro && (
-          <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo sm:col-span-6" role="alert">
-            {erro}
-          </p>
-        )}
+        {erro && <CaixaDeErro className="sm:col-span-6">{erro}</CaixaDeErro>}
         <Campo rotulo="Nome" value={campos.nome} onChange={mudar('nome')} obrigatorio maxLength={100} className="sm:col-span-4" />
         <CampoDeSelecao rotulo="Tipo" value={campos.tipologia} onChange={mudar('tipologia')} obrigatorio className="sm:col-span-2">
           {tipologias.map((t) => (

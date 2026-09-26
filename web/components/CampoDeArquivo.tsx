@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState } from 'react';
 import { Paperclip, X } from 'lucide-react';
-import { TAMANHO_MAXIMO_DE_ARQUIVO, formatarTamanho } from '@/components/comunicados/baixarArquivo';
+import { TAMANHO_MAXIMO_DE_ARQUIVO, formatarTamanho } from '@/services/arquivos';
 
 /**
  * Escolha de um arquivo para anexar, no visual dos outros campos. Recusa na hora arquivos acima do limite da API

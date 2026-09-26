@@ -3,12 +3,11 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { CamposDoVinculo, type DadosDoVinculo } from '@/components/ocupantes/CamposDoVinculo';
-import { formatarDocumento, problemaDoDocumento, somenteDigitos, tipoDePessoa } from '@/components/ocupantes/documento';
-import { Botao, Campo, CampoDeSelecao } from '@/components/Interface';
+import { Botao, CaixaDeErro, Campo, CampoDeSelecao } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
-import { ErroDoFormulario } from '@/components/unidades/PecasDeCadastro';
 import { useSessao } from '@/context/SessaoContext';
 import { condominioService, type UnidadeResumo } from '@/services/condominioService';
+import { digitosDoDocumento, formatarDocumento, problemaDoDocumento, tipoDePessoa } from '@/services/documentos';
 import { ocupanteService, type OpcoesOcupante } from '@/services/ocupanteService';
 import { pessoaService, type PessoaResumo } from '@/services/pessoaService';
 import { hojeParaCampo, mensagemErroApi, rotuloUnidade, statusDoErro } from '@/services/utilitarios';
@@ -77,7 +76,7 @@ export function CadastrarOcupante({
     };
   }, [unidadeFixa, condominio]);
 
-  const digitos = somenteDigitos(documento);
+  const digitos = digitosDoDocumento(documento);
   const consultada = consulta.situacao === 'encontrada' || consulta.situacao === 'nova';
 
   function mudarDocumento(texto: string) {
@@ -167,7 +166,7 @@ export function CadastrarOcupante({
       }
     >
       <form id="cadastrar-ocupante" onSubmit={salvar} className="flex flex-col gap-6">
-        {erro && <ErroDoFormulario>{erro}</ErroDoFormulario>}
+        {erro && <CaixaDeErro>{erro}</CaixaDeErro>}
 
         {!unidadeFixa && (
           <CampoDeSelecao rotulo="Unidade" value={unidadeId} onChange={(e) => setUnidadeId(e.target.value)} obrigatorio disabled={!unidades}>
@@ -201,7 +200,7 @@ export function CadastrarOcupante({
                 </Botao>
               )}
             </div>
-            {erroDoDocumento && <ErroDoFormulario>{erroDoDocumento}</ErroDoFormulario>}
+            {erroDoDocumento && <CaixaDeErro>{erroDoDocumento}</CaixaDeErro>}
             {!consultada && !erroDoDocumento && (
               <p className="text-xs text-apagado">
                 Informe o documento para ver se a pessoa já tem cadastro no sistema. Se tiver, os dados dela são aproveitados.

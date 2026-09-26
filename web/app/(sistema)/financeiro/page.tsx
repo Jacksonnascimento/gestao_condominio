@@ -1,22 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { DetalhesDoBoleto } from '@/components/financeiro/DetalhesDoBoleto';
 import { GerarBoletoAvulso } from '@/components/financeiro/GerarBoletoAvulso';
 import { SeloDoBoleto } from '@/components/financeiro/SeloDoBoleto';
-import { Abas, Botao, CabecalhoDaPagina, Cartao, Paginacao, Vazio, type Aba } from '@/components/Interface';
+import { Abas, Botao, CabecalhoDaPagina, CampoDeBusca, Cartao, Paginacao, Vazio, type Aba } from '@/components/Interface';
 import { useSessao } from '@/context/SessaoContext';
 import {
   financeiroService,
-  formatarMoeda,
   nomeDaUnidade,
   type Boleto,
   type OpcoesFinanceiro,
   type PainelFinanceiro,
 } from '@/services/financeiroService';
-import { formatarData, mensagemErroApi } from '@/services/utilitarios';
+import { formatarData, formatarMoeda, mensagemErroApi } from '@/services/utilitarios';
 
 const TAMANHO = 10;
 const COLUNAS = 'lg:grid-cols-[1.2fr_1.5fr_120px_130px_110px_112px]';
@@ -158,20 +157,15 @@ export default function PaginaDoFinanceiro() {
             setPagina(0);
           }}
         />
-        <label className="flex h-10 w-full items-center gap-2 rounded-[10px] border border-borda bg-superficie px-3 text-apagado sm:w-72">
-          <Search size={16} aria-hidden />
-          <span className="sr-only">Buscar boletos</span>
-          <input
-            type="search"
-            value={busca}
-            onChange={(e) => {
-              setBusca(e.target.value);
-              setPagina(0);
-            }}
-            placeholder="Unidade ou descrição"
-            className="min-w-0 grow border-0 bg-transparent text-sm text-tinta outline-none placeholder:text-apagado"
-          />
-        </label>
+        <CampoDeBusca
+          valor={busca}
+          aoMudar={(valor) => {
+            setBusca(valor);
+            setPagina(0);
+          }}
+          rotulo="Buscar boletos"
+          dica="Unidade ou descrição"
+        />
       </div>
 
       <Cartao aria-label="Boletos" aria-busy={carregando}>

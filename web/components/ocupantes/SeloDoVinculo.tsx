@@ -1,7 +1,6 @@
 import { Selo } from '@/components/Interface';
-import { emFrase } from '@/components/unidades/PecasDeCadastro';
 import type { Ocupante } from '@/services/ocupanteService';
-import { descricaoDoEnum } from '@/services/utilitarios';
+import { descricaoDoEnum, emFrase } from '@/services/utilitarios';
 
 /** Vínculo da pessoa com a unidade: proprietário em destaque, os demais em tom neutro. */
 export function SeloDoVinculo({ ocupante }: { ocupante: Ocupante }) {

@@ -1,11 +1,11 @@
 'use client';
 
 import { forwardRef, useId } from 'react';
-import { ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LoaderCircle, Search } from 'lucide-react';
 
 /*
- * Peças de interface usadas em todas as telas, no visual aprovado: botões, campos, selos, abas, cabeçalho de
- * página, cartões e paginação.
+ * Peças de interface usadas em todas as telas, no visual aprovado: botões, campos, filtros, selos, abas, cabeçalho
+ * de página, cartões, linhas de detalhe e paginação.
  */
 
 type VarianteDoBotao = 'primario' | 'secundario' | 'texto' | 'perigo';
@@ -119,6 +119,106 @@ export function CampoDeTexto({
   );
 }
 
+/** Caixa de marcar com o texto ao lado, clicável por inteiro (alvo de 44px de altura). */
+export function CaixaDeMarcar({
+  rotulo,
+  ajuda,
+  className = '',
+  id,
+  ...resto
+}: { rotulo: React.ReactNode; ajuda?: string } & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'>) {
+  const gerado = useId();
+  const idDoCampo = id ?? gerado;
+  return (
+    <div className={`flex flex-col ${className}`}>
+      <label htmlFor={idDoCampo} className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-semibold text-tinta-2">
+        <input id={idDoCampo} type="checkbox" className="size-[18px] shrink-0 cursor-pointer accent-ouro" {...resto} />
+        <span>{rotulo}</span>
+      </label>
+      {ajuda && <span className="-mt-1.5 pl-[30px] text-xs text-apagado">{ajuda}</span>}
+    </div>
+  );
+}
+
+/** Aviso de erro no topo de um formulário ou de uma janela. */
+export const CaixaDeErro = forwardRef<HTMLParagraphElement, { children: React.ReactNode; className?: string }>(
+  function CaixaDeErro({ children, className = '' }, ref) {
+    return (
+      <p ref={ref} className={`rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo ${className}`} role="alert">
+        {children}
+      </p>
+    );
+  },
+);
+
+/** Caixa das barras de filtro: altura de 44px no celular e 40px a partir do tablet. */
+const CLASSE_DA_CAIXA_DE_FILTRO =
+  'flex h-11 items-center gap-2 rounded-[10px] border border-borda bg-superficie px-3 text-sm text-apagado focus-within:border-ouro sm:h-10';
+
+/** Busca com lupa das listagens; o rótulo fica só para leitores de tela. */
+export function CampoDeBusca({
+  valor,
+  aoMudar,
+  rotulo,
+  dica,
+  className = 'w-full sm:w-72',
+}: {
+  valor: string;
+  aoMudar: (valor: string) => void;
+  /** Texto para leitores de tela: "Buscar unidades". */
+  rotulo: string;
+  dica: string;
+  /** Largura da caixa; por padrão, a linha toda no celular e 288px a partir do tablet. */
+  className?: string;
+}) {
+  return (
+    <label className={`${CLASSE_DA_CAIXA_DE_FILTRO} ${className}`}>
+      <Search size={16} aria-hidden />
+      <span className="sr-only">{rotulo}</span>
+      <input
+        type="search"
+        value={valor}
+        onChange={(e) => aoMudar(e.target.value)}
+        placeholder={dica}
+        className="min-w-0 grow border-0 bg-transparent text-sm text-tinta outline-none placeholder:text-apagado"
+      />
+    </label>
+  );
+}
+
+const CLASSE_DO_CONTROLE_DO_FILTRO = 'min-w-0 grow border-0 bg-transparent font-semibold text-tinta outline-none';
+
+/** Filtro de escolha compacto, com o rótulo dentro da caixa: "Área  Todas ▾". */
+export function FiltroDeSelecao({
+  rotulo,
+  className = '',
+  children,
+  ...resto
+}: { rotulo: string } & React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <label className={`${CLASSE_DA_CAIXA_DE_FILTRO} ${className}`}>
+      <span className="shrink-0">{rotulo}</span>
+      <select className={`${CLASSE_DO_CONTROLE_DO_FILTRO} cursor-pointer sm:max-w-52`} {...resto}>
+        {children}
+      </select>
+    </label>
+  );
+}
+
+/** Filtro de data compacto, com o rótulo dentro da caixa: "De  01/09/2026". */
+export function FiltroDeData({
+  rotulo,
+  className = '',
+  ...resto
+}: { rotulo: string } & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'>) {
+  return (
+    <label className={`${CLASSE_DA_CAIXA_DE_FILTRO} ${className}`}>
+      <span className="shrink-0">{rotulo}</span>
+      <input type="date" className={CLASSE_DO_CONTROLE_DO_FILTRO} {...resto} />
+    </label>
+  );
+}
+
 export type TomDoSelo = 'aviso' | 'neutro' | 'info' | 'perigo';
 
 const CLASSES_DO_SELO: Record<TomDoSelo, string> = {
@@ -228,6 +328,21 @@ export function TituloDoCartao({ titulo, children }: { titulo: string; children?
 /** Mensagem no lugar de uma lista vazia. */
 export function Vazio({ children }: { children: React.ReactNode }) {
   return <p className="px-5 py-8 text-center text-sm text-apagado">{children}</p>;
+}
+
+/**
+ * Uma linha "rótulo: valor" das janelas de detalhes, dentro de um <dl>. O valor vem em `valor` ou como conteúdo; a
+ * linha some quando não há nenhum dos dois. Quebras de linha do texto (observações) são mantidas.
+ */
+export function LinhaDeDetalhe({ rotulo, valor, children }: { rotulo: string; valor?: React.ReactNode; children?: React.ReactNode }) {
+  const conteudo = children ?? valor;
+  if (conteudo == null || conteudo === '') return null;
+  return (
+    <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-3 py-2.5 text-sm sm:grid-cols-[140px_minmax(0,1fr)]">
+      <dt className="text-apagado">{rotulo}</dt>
+      <dd className="m-0 break-words whitespace-pre-line">{conteudo}</dd>
+    </div>
+  );
 }
 
 export function Paginacao({

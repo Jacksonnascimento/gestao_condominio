@@ -1,7 +1,6 @@
 import { Selo, type TomDoSelo } from '@/components/Interface';
-import { faixaDeHorario } from '@/services/areaComumService';
 import type { Reserva } from '@/services/reservaService';
-import { descricaoDoEnum, valorDoEnum } from '@/services/utilitarios';
+import { descricaoDoEnum, faixaDeHorario, valorDoEnum } from '@/services/utilitarios';
 
 const TOM: Record<string, TomDoSelo> = {
   PENDENTE_APROVACAO: 'aviso',

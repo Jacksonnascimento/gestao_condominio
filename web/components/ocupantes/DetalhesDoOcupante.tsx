@@ -1,9 +1,8 @@
 'use client';
 
 import { descricaoDoTipoDePeriodo, SeloDoVinculo } from '@/components/ocupantes/SeloDoVinculo';
-import { Botao } from '@/components/Interface';
+import { Botao, LinhaDeDetalhe } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
-import { LinhaDeDetalhe } from '@/components/unidades/PecasDeCadastro';
 import type { Ocupante } from '@/services/ocupanteService';
 import { formatarData, rotuloUnidade } from '@/services/utilitarios';
 

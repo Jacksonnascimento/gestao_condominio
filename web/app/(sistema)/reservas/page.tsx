@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { EllipsisVertical, Plus, Search } from 'lucide-react';
+import { EllipsisVertical, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AgendaDeReservas } from '@/components/reservas/AgendaDeReservas';
 import { aprovarReserva, cancelarReserva } from '@/components/reservas/acoesDaReserva';
@@ -9,7 +9,18 @@ import { DetalhesDaReserva } from '@/components/reservas/DetalhesDaReserva';
 import { PedirReserva } from '@/components/reservas/PedirReserva';
 import { RejeitarReserva } from '@/components/reservas/RejeitarReserva';
 import { SeloDaReserva, turnoDaReserva } from '@/components/reservas/SeloDaReserva';
-import { Abas, Botao, CabecalhoDaPagina, Cartao, Paginacao, Vazio, type Aba } from '@/components/Interface';
+import {
+  Abas,
+  Botao,
+  CabecalhoDaPagina,
+  CampoDeBusca,
+  Cartao,
+  FiltroDeData,
+  FiltroDeSelecao,
+  Paginacao,
+  Vazio,
+  type Aba,
+} from '@/components/Interface';
 import { useSessao } from '@/context/SessaoContext';
 import {
   reservaService,
@@ -31,9 +42,6 @@ type Janela =
   | { tipo: 'detalhes'; reserva: Reserva }
   | { tipo: 'rejeitar'; reserva: Reserva }
   | null;
-
-const CLASSE_DO_FILTRO =
-  'flex h-11 items-center gap-2 rounded-[10px] border border-borda bg-superficie px-3 text-sm text-apagado focus-within:border-ouro sm:h-10';
 
 export default function PaginaDeReservas() {
   const { condominio } = useSessao();
@@ -176,42 +184,34 @@ export default function PaginaDeReservas() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <label className={`${CLASSE_DO_FILTRO} w-full sm:w-auto`}>
-            <span>Área</span>
-            <select
-              value={area === '' ? '' : String(area)}
-              onChange={(e) => mudarFiltro(setAreaId)(e.target.value)}
-              className="min-w-0 grow cursor-pointer border-0 bg-transparent font-semibold text-tinta outline-none sm:max-w-52"
-            >
-              <option value="">Todas</option>
-              {areasDoFiltro.map((a) => (
-                <option key={a.codigo} value={a.codigo}>
-                  {a.nome}
-                </option>
-              ))}
-            </select>
-          </label>
+          <FiltroDeSelecao
+            rotulo="Área"
+            value={area === '' ? '' : String(area)}
+            onChange={(e) => mudarFiltro(setAreaId)(e.target.value)}
+            className="w-full sm:w-auto"
+          >
+            <option value="">Todas</option>
+            {areasDoFiltro.map((a) => (
+              <option key={a.codigo} value={a.codigo}>
+                {a.nome}
+              </option>
+            ))}
+          </FiltroDeSelecao>
           {visao === 'lista' && (
             <>
-              <label className={`${CLASSE_DO_FILTRO} grow sm:grow-0`}>
-                <span>De</span>
-                <input
-                  type="date"
-                  value={dataInicio}
-                  onChange={(e) => mudarFiltro(setDataInicio)(e.target.value)}
-                  className="min-w-0 grow border-0 bg-transparent font-semibold text-tinta outline-none"
-                />
-              </label>
-              <label className={`${CLASSE_DO_FILTRO} grow sm:grow-0`}>
-                <span>Até</span>
-                <input
-                  type="date"
-                  value={dataFim}
-                  min={dataInicio || undefined}
-                  onChange={(e) => mudarFiltro(setDataFim)(e.target.value)}
-                  className="min-w-0 grow border-0 bg-transparent font-semibold text-tinta outline-none"
-                />
-              </label>
+              <FiltroDeData
+                rotulo="De"
+                value={dataInicio}
+                onChange={(e) => mudarFiltro(setDataInicio)(e.target.value)}
+                className="grow sm:grow-0"
+              />
+              <FiltroDeData
+                rotulo="Até"
+                value={dataFim}
+                min={dataInicio || undefined}
+                onChange={(e) => mudarFiltro(setDataFim)(e.target.value)}
+                className="grow sm:grow-0"
+              />
             </>
           )}
           {temFiltroExtra && (
@@ -229,17 +229,13 @@ export default function PaginaDeReservas() {
               Limpar filtros
             </Botao>
           )}
-          <label className={`${CLASSE_DO_FILTRO} w-full sm:ml-auto sm:w-72`}>
-            <Search size={16} aria-hidden />
-            <span className="sr-only">Buscar reservas</span>
-            <input
-              type="search"
-              value={buscaDigitada}
-              onChange={(e) => setBuscaDigitada(e.target.value)}
-              placeholder="Área, morador ou unidade"
-              className="min-w-0 grow border-0 bg-transparent text-sm text-tinta outline-none placeholder:text-apagado"
-            />
-          </label>
+          <CampoDeBusca
+            valor={buscaDigitada}
+            aoMudar={setBuscaDigitada}
+            rotulo="Buscar reservas"
+            dica="Área, morador ou unidade"
+            className="w-full sm:ml-auto sm:w-72"
+          />
         </div>
         {periodoInvertido && (
           <p className="text-[13px] text-perigo" role="alert">

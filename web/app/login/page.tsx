@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Botao, Campo } from '@/components/Interface';
+import { Botao, CaixaDeErro, Campo } from '@/components/Interface';
 import { TelaDeAcesso } from '@/components/TelaDeAcesso';
 import { autenticacaoService } from '@/services/autenticacaoService';
 import { gravarSessao } from '@/services/sessao';
@@ -42,11 +42,7 @@ function FormularioDeLogin() {
           Sua sessão terminou. Entre de novo para continuar.
         </p>
       )}
-      {erro && (
-        <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo" role="alert">
-          {erro}
-        </p>
-      )}
+      {erro && <CaixaDeErro>{erro}</CaixaDeErro>}
       <form onSubmit={entrar} className="flex flex-col gap-4">
         <Campo
           rotulo="E-mail"

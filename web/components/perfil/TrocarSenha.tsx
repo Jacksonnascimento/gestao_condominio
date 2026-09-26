@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Botao, Campo, Cartao, TituloDoCartao } from '@/components/Interface';
+import { Botao, CaixaDeErro, Campo, Cartao, TituloDoCartao } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
 import { perfilService } from '@/services/perfilService';
 import { encerrarSessao } from '@/services/sessao';
@@ -44,11 +44,7 @@ export function TrocarSenha() {
     <Cartao>
       <TituloDoCartao titulo="Senha" />
       <form onSubmit={salvar} className="grid gap-4 border-t border-borda-suave px-5 py-5 sm:grid-cols-2">
-        {erro && (
-          <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo sm:col-span-2" role="alert">
-            {erro}
-          </p>
-        )}
+        {erro && <CaixaDeErro className="sm:col-span-2">{erro}</CaixaDeErro>}
         <Campo
           rotulo="Senha atual"
           type="password"

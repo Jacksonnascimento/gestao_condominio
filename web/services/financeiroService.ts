@@ -59,21 +59,6 @@ export interface NovoBoletoAvulso {
   dataVencimento?: string;
 }
 
-const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-
-/** R$ 1.234,56 */
-export function formatarMoeda(valor?: number | null): string {
-  return moeda.format(Number(valor ?? 0));
-}
-
-/** "1.234,56", "1234,56" ou "1234.56" viram 1234.56; texto que não é valor vira NaN. */
-export function lerValorEmReais(texto: string): number {
-  const limpo = texto.replace(/[R$\s]/g, '');
-  if (!limpo) return NaN;
-  const normalizado = limpo.includes(',') ? limpo.replace(/\./g, '').replace(',', '.') : limpo;
-  return /^\d+(\.\d{1,2})?$/.test(normalizado) ? Number(normalizado) : NaN;
-}
-
 /** Os blocos já vêm cadastrados como "Bloco A": evita o "Bloco Bloco A" montado pela API. */
 export function nomeDaUnidade(texto?: string | null): string {
   return (texto ?? '').replace(/Bloco\s+Bloco\s+/gi, 'Bloco ');

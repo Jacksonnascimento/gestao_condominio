@@ -3,12 +3,12 @@
 import { useEffect, useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Paperclip, Pencil, Plus, Search } from 'lucide-react';
+import { Paperclip, Pencil, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { DetalhesDoComunicado } from '@/components/comunicados/DetalhesDoComunicado';
 import { FormularioDeComunicado } from '@/components/comunicados/FormularioDeComunicado';
 import { SelosDoComunicado } from '@/components/comunicados/SelosDoComunicado';
-import { Abas, Botao, CabecalhoDaPagina, Cartao, Paginacao, Vazio, type Aba } from '@/components/Interface';
+import { Abas, Botao, CabecalhoDaPagina, CampoDeBusca, Cartao, FiltroDeSelecao, Paginacao, Vazio, type Aba } from '@/components/Interface';
 import { useSessao } from '@/context/SessaoContext';
 import {
   comunicadoService,
@@ -136,36 +136,29 @@ export default function PaginaDeComunicados() {
         />
         <div className="flex w-full flex-wrap items-center gap-2.5 sm:w-auto">
           {podePublicar && opcoes && (
-            <label className="flex h-10 w-full items-center gap-2 rounded-[10px] border border-borda bg-superficie pr-1 pl-3 text-sm text-apagado sm:w-auto">
-              <span className="shrink-0">Para</span>
-              <select
-                value={publico}
-                onChange={(e) => {
-                  setPublico(e.target.value as PublicoDoComunicado | '');
-                  setPagina(0);
-                }}
-                className="h-full min-w-0 grow cursor-pointer border-0 bg-transparent font-semibold text-tinta outline-none"
-              >
-                <option value="">qualquer público</option>
-                {opcoes.publicos.map((p) => (
-                  <option key={p.valor} value={p.valor}>
-                    {p.descricao}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <FiltroDeSelecao
+              rotulo="Para"
+              value={publico}
+              onChange={(e) => {
+                setPublico(e.target.value as PublicoDoComunicado | '');
+                setPagina(0);
+              }}
+              className="w-full sm:w-auto"
+            >
+              <option value="">qualquer público</option>
+              {opcoes.publicos.map((p) => (
+                <option key={p.valor} value={p.valor}>
+                  {p.descricao}
+                </option>
+              ))}
+            </FiltroDeSelecao>
           )}
-          <label className="flex h-10 w-full items-center gap-2 rounded-[10px] border border-borda bg-superficie px-3 text-apagado sm:w-72">
-            <Search size={16} aria-hidden />
-            <span className="sr-only">Buscar comunicados pelo título</span>
-            <input
-              type="search"
-              value={buscaDigitada}
-              onChange={(e) => setBuscaDigitada(e.target.value)}
-              placeholder="Buscar pelo título"
-              className="min-w-0 grow border-0 bg-transparent text-sm text-tinta outline-none placeholder:text-apagado"
-            />
-          </label>
+          <CampoDeBusca
+            valor={buscaDigitada}
+            aoMudar={setBuscaDigitada}
+            rotulo="Buscar comunicados pelo título"
+            dica="Buscar pelo título"
+          />
         </div>
       </div>
 

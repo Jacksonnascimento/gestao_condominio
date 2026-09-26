@@ -3,12 +3,11 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, Download, FileText, LoaderCircle, MessageSquare, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { formatarTamanho } from '@/components/comunicados/baixarArquivo';
-import { CampoDeArquivo } from '@/components/comunicados/CampoDeArquivo';
-import { useTravaDaJanela } from '@/components/comunicados/useTravaDaJanela';
+import { CampoDeArquivo } from '@/components/CampoDeArquivo';
 import { SeloDaOcorrencia } from '@/components/ocorrencias/SeloDaOcorrencia';
-import { Botao, CampoDeTexto } from '@/components/Interface';
+import { Botao, CaixaDeErro, CampoDeTexto, LinhaDeDetalhe } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
+import { formatarTamanho } from '@/services/arquivos';
 import { confirmar } from '@/services/confirmacao';
 import {
   ocorrenciaService,
@@ -18,16 +17,6 @@ import {
 } from '@/services/ocorrenciaService';
 import type { Opcao } from '@/services/tipos';
 import { formatarDataHora, mensagemErroApi, rotuloUnidade, textoLegivelDeCodigo } from '@/services/utilitarios';
-
-function Linha({ rotulo, valor }: { rotulo: string; valor?: string | null }) {
-  if (!valor) return null;
-  return (
-    <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-3 py-2.5 text-sm sm:grid-cols-[140px_minmax(0,1fr)]">
-      <dt className="text-apagado">{rotulo}</dt>
-      <dd className="m-0 break-words">{valor}</dd>
-    </div>
-  );
-}
 
 function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
@@ -82,8 +71,10 @@ export function DetalhesDaOcorrencia({
   const [parecer, setParecer] = useState('');
   const [enviando, setEnviando] = useState<'comentario' | 'anexo' | 'parecer' | null>(null);
   const [baixando, setBaixando] = useState<number | null>(null);
+  const [excluindo, setExcluindo] = useState<number | null>(null);
   const [erro, setErro] = useState('');
-  const { travada, travar, fechar } = useTravaDaJanela(aoFechar);
+  // Enquanto um envio ou uma exclusão está em andamento, a janela não fecha
+  const ocupado = enviando !== null || excluindo !== null;
 
   const id = resumo.id;
 
@@ -110,7 +101,6 @@ export function DetalhesDaOcorrencia({
   async function enviar(qual: 'comentario' | 'anexo' | 'parecer', acao: () => Promise<unknown>, sucesso: string, falha: string) {
     setErro('');
     setEnviando(qual);
-    travar(true);
     try {
       await acao();
       toast.success(sucesso);
@@ -121,7 +111,6 @@ export function DetalhesDaOcorrencia({
       return false;
     } finally {
       setEnviando(null);
-      travar(false);
     }
   }
 
@@ -166,17 +155,14 @@ export function DetalhesDaOcorrencia({
   }
 
   async function excluirAnexo(anexo: AnexoDaOcorrencia) {
-    travar(true);
     const confirmado = await confirmar({
       titulo: 'Excluir anexo',
       mensagem: `O arquivo “${anexo.nomeOriginal}” será apagado desta ocorrência. Essa ação não pode ser desfeita.`,
       textoConfirmar: 'Excluir',
       perigo: true,
     });
-    if (!confirmado) {
-      travar(false);
-      return;
-    }
+    if (!confirmado) return;
+    setExcluindo(anexo.id);
     try {
       await ocorrenciaService.excluirAnexo(id, anexo.id);
       toast.success('Anexo excluído.');
@@ -184,7 +170,7 @@ export function DetalhesDaOcorrencia({
     } catch (e) {
       toast.error(mensagemErroApi(e, 'Não foi possível excluir o anexo.'));
     } finally {
-      travar(false);
+      setExcluindo(null);
     }
   }
 
@@ -199,7 +185,7 @@ export function DetalhesDaOcorrencia({
   const rodape =
     gerencia && !resolvida && modo === 'resolver' ? (
       <>
-        <Botao variante="texto" onClick={() => setModo('acompanhar')} disabled={travada} className="max-sm:h-11">
+        <Botao variante="texto" onClick={() => setModo('acompanhar')} disabled={ocupado} className="max-sm:h-11">
           Voltar
         </Botao>
         <Botao type="submit" form="resolver-ocorrencia" variante="primario" carregando={enviando === 'parecer'} disabled={!parecer.trim()} className="max-sm:h-11">
@@ -214,14 +200,14 @@ export function DetalhesDaOcorrencia({
               setErro('');
               setModo('resolver');
             }}
-            disabled={travada}
+            disabled={ocupado}
             className="mr-auto max-sm:h-11"
           >
             <CheckCircle2 size={16} aria-hidden />
             Resolver ocorrência
           </Botao>
         )}
-        <Botao variante={gerencia && !resolvida ? 'texto' : 'secundario'} onClick={aoFechar} disabled={travada} className="max-sm:h-11">
+        <Botao variante={gerencia && !resolvida ? 'texto' : 'secundario'} onClick={aoFechar} disabled={ocupado} className="max-sm:h-11">
           Fechar
         </Botao>
       </>
@@ -232,15 +218,13 @@ export function DetalhesDaOcorrencia({
       titulo={ocorrencia?.titulo ?? resumo.titulo}
       subtitulo={[descricaoDoTipo, unidade, ocorrencia?.condominioNome ?? resumo.condominioNome].filter(Boolean).join(' · ')}
       largura="lg"
-      aoFechar={fechar}
-      ocupado={travada}
+      aoFechar={aoFechar}
+      ocupado={ocupado}
       rodape={rodape}
     >
       {!ocorrencia ? (
         erroAoCarregar ? (
-          <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo" role="alert">
-            {erroAoCarregar}
-          </p>
+          <CaixaDeErro>{erroAoCarregar}</CaixaDeErro>
         ) : (
           <p className="flex items-center gap-2 py-6 text-sm text-apagado" role="status">
             <LoaderCircle size={16} className="animate-spin" aria-hidden />
@@ -256,10 +240,10 @@ export function DetalhesDaOcorrencia({
           <p className="m-0 text-[15px] leading-relaxed break-words whitespace-pre-line">{ocorrencia.descricao}</p>
 
           <dl className="m-0 divide-y divide-borda-suave border-y border-borda-suave">
-            <Linha rotulo="Registrada em" valor={formatarDataHora(ocorrencia.dataRegistro)} />
-            <Linha rotulo="Registrada por" valor={ocorrencia.nomePessoaRegistro} />
-            <Linha rotulo="Unidade" valor={unidade} />
-            <Linha rotulo="Tipo" valor={descricaoDoTipo} />
+            <LinhaDeDetalhe rotulo="Registrada em" valor={formatarDataHora(ocorrencia.dataRegistro)} />
+            <LinhaDeDetalhe rotulo="Registrada por" valor={ocorrencia.nomePessoaRegistro} />
+            <LinhaDeDetalhe rotulo="Unidade" valor={unidade} />
+            <LinhaDeDetalhe rotulo="Tipo" valor={descricaoDoTipo} />
           </dl>
 
           {resolvida && ocorrencia.parecerFinal && (
@@ -327,7 +311,7 @@ export function DetalhesDaOcorrencia({
                             type="button"
                             aria-label={`Excluir ${anexo.nomeOriginal}`}
                             onClick={() => excluirAnexo(anexo)}
-                            disabled={travada}
+                            disabled={ocupado}
                             className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-apagado hover:bg-perigo-fundo hover:text-perigo sm:size-[34px]"
                           >
                             <Trash2 size={16} aria-hidden />
@@ -341,11 +325,7 @@ export function DetalhesDaOcorrencia({
 
               {!resolvida && (
                 <div className="flex flex-col gap-4 rounded-xl bg-cabecalho p-4">
-                  {erro && (
-                    <p className="m-0 rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo" role="alert">
-                      {erro}
-                    </p>
-                  )}
+                  {erro && <CaixaDeErro>{erro}</CaixaDeErro>}
                   {modo === 'resolver' ? (
                     <form id="resolver-ocorrencia" onSubmit={resolver} className="flex flex-col gap-3">
                       <CampoDeTexto
@@ -370,7 +350,7 @@ export function DetalhesDaOcorrencia({
                           ajuda={situacao === 'ABERTA' ? 'O primeiro comentário coloca a ocorrência em análise.' : undefined}
                         />
                         <div className="flex justify-end">
-                          <Botao type="submit" carregando={enviando === 'comentario'} disabled={!comentario.trim() || travada} className="max-sm:h-11">
+                          <Botao type="submit" carregando={enviando === 'comentario'} disabled={!comentario.trim() || ocupado} className="max-sm:h-11">
                             {enviando !== 'comentario' && <MessageSquare size={16} aria-hidden />}
                             {situacao === 'ABERTA' ? 'Comentar e colocar em análise' : 'Comentar'}
                           </Botao>
@@ -382,11 +362,11 @@ export function DetalhesDaOcorrencia({
                           rotulo="Anexar arquivo"
                           arquivo={arquivo}
                           aoMudar={setArquivo}
-                          disabled={travada}
+                          disabled={ocupado}
                           ajuda="Fotos, laudos ou outros documentos da ocorrência."
                         />
                         <div className="flex justify-end">
-                          <Botao onClick={anexar} carregando={enviando === 'anexo'} disabled={!arquivo || travada} className="max-sm:h-11">
+                          <Botao onClick={anexar} carregando={enviando === 'anexo'} disabled={!arquivo || ocupado} className="max-sm:h-11">
                             Enviar arquivo
                           </Botao>
                         </div>

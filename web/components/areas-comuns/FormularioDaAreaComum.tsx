@@ -3,12 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { CaixaDeMarcar } from '@/components/areas-comuns/CaixaDeMarcar';
-import { Botao, Campo, CampoDeTexto } from '@/components/Interface';
+import { Botao, CaixaDeErro, CaixaDeMarcar, Campo, CampoDeTexto } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
 import { useSessao } from '@/context/SessaoContext';
-import { areaComumService, horario, type AreaComum, type PedidoDeAreaComum } from '@/services/areaComumService';
-import { mensagemErroApi } from '@/services/utilitarios';
+import { areaComumService, type AreaComum, type PedidoDeAreaComum } from '@/services/areaComumService';
+import { horario, mensagemErroApi, numeroOuNulo } from '@/services/utilitarios';
 
 interface TurnoNoFormulario {
   /** Só para a lista da tela; turnos novos ainda não têm código. */
@@ -22,14 +21,6 @@ interface TurnoNoFormulario {
 
 let proximaChave = 0;
 const novaChave = () => `novo-${++proximaChave}`;
-
-/** "" vira null; o resto, número. */
-function numeroOuNulo(valor: string): number | null {
-  const texto = valor.trim().replace(',', '.');
-  if (!texto) return null;
-  const numero = Number(texto);
-  return Number.isFinite(numero) ? numero : null;
-}
 
 function Secao({ titulo, ajuda, children }: { titulo: string; ajuda?: string; children: React.ReactNode }) {
   return (
@@ -178,11 +169,7 @@ export function FormularioDaAreaComum({
       }
     >
       <form id="formulario-area-comum" onSubmit={salvar} className="flex flex-col gap-7">
-        {erro && (
-          <p ref={caixaDoErro} className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo" role="alert">
-            {erro}
-          </p>
-        )}
+        {erro && <CaixaDeErro ref={caixaDoErro}>{erro}</CaixaDeErro>}
 
         <Secao titulo="Sobre a área">
           <Campo rotulo="Nome" value={formulario.nome} onChange={mudar('nome')} obrigatorio maxLength={100} placeholder="Salão de festas, churrasqueira…" />

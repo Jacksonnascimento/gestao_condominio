@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { Botao, Campo } from '@/components/Interface';
+import { Botao, CaixaDeErro, Campo } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
 import { encomendaService, type Encomenda } from '@/services/encomendaService';
 import { agoraParaCampo, hojeParaCampo, mensagemErroApi, rotuloUnidade } from '@/services/utilitarios';
@@ -58,11 +58,7 @@ export function EntregarEncomenda({
       }
     >
       <form id="entregar-encomenda" onSubmit={salvar} className="grid gap-4 sm:grid-cols-2">
-        {erro && (
-          <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo sm:col-span-2" role="alert">
-            {erro}
-          </p>
-        )}
+        {erro && <CaixaDeErro className="sm:col-span-2">{erro}</CaixaDeErro>}
         <Campo
           rotulo="Quem retirou"
           value={nomeRetirada}

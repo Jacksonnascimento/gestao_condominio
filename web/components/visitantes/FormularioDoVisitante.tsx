@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Botao, Campo, CampoDeSelecao, CampoDeTexto } from '@/components/Interface';
+import { Botao, CaixaDeErro, Campo, CampoDeSelecao, CampoDeTexto } from '@/components/Interface';
 import { Modal } from '@/components/Modal';
 import { useSessao } from '@/context/SessaoContext';
+import { formatarCpf, formatarTelefone } from '@/services/documentos';
 import { mensagemErroApi, rotuloUnidade } from '@/services/utilitarios';
 import {
   visitanteService,
@@ -12,25 +13,6 @@ import {
   type UnidadeDoVisitante,
   type VisitanteDetalhe,
 } from '@/services/visitanteService';
-
-/** 12345678901 vira 123.456.789-01, conforme a pessoa digita. */
-function mascaraCpf(texto: string): string {
-  const d = texto.replace(/\D/g, '').slice(0, 11);
-  return d
-    .replace(/^(\d{3})(\d)/, '$1.$2')
-    .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
-    .replace(/\.(\d{3})(\d{1,2})$/, '.$1-$2');
-}
-
-/** 77999991234 vira (77) 99999-1234; com 10 dígitos, (77) 3421-1234. */
-function mascaraTelefone(texto: string): string {
-  const d = texto.replace(/\D/g, '').slice(0, 11);
-  if (d.length <= 2) return d.length ? `(${d}` : '';
-  const ddd = d.slice(0, 2);
-  const resto = d.slice(2);
-  const corte = resto.length > 8 ? 5 : 4;
-  return resto.length > corte ? `(${ddd}) ${resto.slice(0, corte)}-${resto.slice(corte)}` : `(${ddd}) ${resto}`;
-}
 
 /**
  * Entrada de um visitante na portaria, ou a correção dos dados de um registro. A data e a hora da entrada são as do
@@ -157,11 +139,7 @@ export function FormularioDoVisitante({
       }
     >
       <form id="formulario-visitante" onSubmit={salvar} className="grid gap-4 sm:grid-cols-2">
-        {erro && (
-          <p className="rounded-xl bg-perigo-fundo px-4 py-3 text-sm text-perigo sm:col-span-2" role="alert">
-            {erro}
-          </p>
-        )}
+        {erro && <CaixaDeErro className="sm:col-span-2">{erro}</CaixaDeErro>}
         <Campo
           rotulo="Nome do visitante"
           value={formulario.nome}
@@ -201,7 +179,7 @@ export function FormularioDoVisitante({
           <Campo
             rotulo="CPF"
             value={formulario.cpf}
-            onChange={(e) => setFormulario((atual) => ({ ...atual, cpf: mascaraCpf(e.target.value) }))}
+            onChange={(e) => setFormulario((atual) => ({ ...atual, cpf: formatarCpf(e.target.value) }))}
             inputMode="numeric"
             placeholder="000.000.000-00"
             maxLength={14}
@@ -212,7 +190,7 @@ export function FormularioDoVisitante({
             rotulo="Telefone"
             type="tel"
             value={formulario.telefone}
-            onChange={(e) => setFormulario((atual) => ({ ...atual, telefone: mascaraTelefone(e.target.value) }))}
+            onChange={(e) => setFormulario((atual) => ({ ...atual, telefone: formatarTelefone(e.target.value) }))}
             placeholder="(00) 00000-0000"
             maxLength={20}
             autoComplete="off"

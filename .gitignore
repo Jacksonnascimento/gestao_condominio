@@ -5,3 +5,6 @@ api/target/classes/application.properties
 
 # Cópias de trabalho criadas pelo Claude Code
 .claude/worktrees/
+
+# Arquivos enviados pela API rodando de dentro de api/
+api/uploads/

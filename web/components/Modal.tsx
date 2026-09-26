@@ -4,6 +4,9 @@ import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
+/** Janelas abertas, da de baixo para a de cima. */
+const janelasAbertas: string[] = [];
+
 /**
  * Janela sobre a tela, com título, conteúdo e rodapé de ações. Fecha no Esc, no X e ao clicar fora; enquanto
  * `ocupado` (salvando), não fecha.
@@ -27,25 +30,32 @@ export function Modal({
 }) {
   const idDoTitulo = useId();
   const caixa = useRef<HTMLDivElement>(null);
+  // O Esc lê sempre o estado atual (salvando ou não) e a função de fechar mais recente
+  const atual = useRef({ ocupado, aoFechar });
+  useEffect(() => {
+    atual.current = { ocupado, aoFechar };
+  });
 
   useEffect(() => {
+    janelasAbertas.push(idDoTitulo);
     const anterior = document.activeElement as HTMLElement | null;
     const primeiro = caixa.current?.querySelector<HTMLElement>('input, select, textarea, button:not([data-fechar])');
     primeiro?.focus();
     const aoTeclar = (evento: KeyboardEvent) => {
-      if (evento.key === 'Escape' && !ocupado) aoFechar();
+      // Com uma janela sobre a outra (uma confirmação, por exemplo), o Esc fecha só a de cima
+      const deCima = janelasAbertas[janelasAbertas.length - 1] === idDoTitulo;
+      if (evento.key === 'Escape' && deCima && !atual.current.ocupado) atual.current.aoFechar();
     };
     document.addEventListener('keydown', aoTeclar);
     const rolagem = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
+      janelasAbertas.splice(janelasAbertas.indexOf(idDoTitulo), 1);
       document.removeEventListener('keydown', aoTeclar);
       document.body.style.overflow = rolagem;
       anterior?.focus();
     };
-    // Só na abertura: o foco inicial e a trava de rolagem não devem se repetir a cada renderização
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [idDoTitulo]);
 
   const larguras = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl' };
 

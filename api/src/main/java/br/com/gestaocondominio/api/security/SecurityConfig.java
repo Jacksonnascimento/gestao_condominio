@@ -1,5 +1,6 @@
 package br.com.gestaocondominio.api.security;
 
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -84,6 +85,9 @@ public class SecurityConfig {
                 .ignoringRequestMatchers("/public/**")
             )
             .authorizeHttpRequests(auth -> auth
+                // O repasse para /error (de qualquer caminho, inclusive da API) passa por esta cadeia; sem liberar,
+                // uma falha numa chamada da API com token virava redirecionamento para o login em vez do erro real
+                .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers(
                     "/login", "/css/**", "/js/**", "/images/**", "/webjars/**",
                     "/esqueci-senha", "/definir-senha",

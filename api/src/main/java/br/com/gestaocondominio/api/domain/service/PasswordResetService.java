@@ -24,6 +24,13 @@ public class PasswordResetService {
 
     @Transactional
     public void createPasswordResetToken(String email, int expiryHours) {
+        String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+        createPasswordResetToken(email, expiryHours, baseUrl);
+    }
+
+    /** Envia o link de redefinição apontando para {@code baseUrl}, que é o endereço do sistema web do cliente. */
+    @Transactional
+    public void createPasswordResetToken(String email, int expiryHours, String baseUrl) {
         Pessoa pessoa = pessoaRepository.findByPesEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Não foi encontrado um usuário com o e-mail: " + email));
 
@@ -45,7 +52,6 @@ public class PasswordResetService {
         PasswordResetToken myToken = new PasswordResetToken(token, pessoa, expiryHours);
         tokenRepository.save(myToken);
 
-        String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
         String resetUrl = baseUrl + "/definir-senha?token=" + token;
 
         emailService.sendPasswordResetEmail(pessoa.getPesEmail(), resetUrl, pessoa.getPesNome());

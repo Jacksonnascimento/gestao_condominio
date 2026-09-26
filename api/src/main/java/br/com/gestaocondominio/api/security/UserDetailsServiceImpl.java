@@ -30,7 +30,18 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Pessoa pessoa = pessoaRepository.findByPesEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com o e-mail: " + username));
+        return carregar(pessoa);
+    }
 
+    /** Usado pelo login por token, que guarda o código da pessoa, e não o e-mail, que pode mudar. */
+    public UserDetailsImpl loadUserByCodigo(Integer pesCod) throws UsernameNotFoundException {
+        Pessoa pessoa = pessoaRepository.findById(pesCod)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + pesCod));
+        return carregar(pessoa);
+    }
+
+    private UserDetailsImpl carregar(Pessoa pessoa) {
+        String username = pessoa.getPesEmail();
         List<GrantedAuthority> authorities = new ArrayList<>();
 
         if (pessoa.getPesIsGlobalAdmin() != null && pessoa.getPesIsGlobalAdmin()) {

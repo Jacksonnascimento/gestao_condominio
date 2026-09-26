@@ -29,7 +29,7 @@ public class ReservaServiceImpl implements ReservaService {
     @Transactional
     public Reserva solicitarReserva(ReservaRequestDTO dto) {
         if (dto.getTermosAceitos() == null || !dto.getTermosAceitos()) {
-            throw new RuntimeException("É obrigatório aceitar os termos de uso.");
+            throw new IllegalArgumentException("É obrigatório aceitar os termos de uso.");
         }
 
         AreaComum area = areaComumService.buscarPorId(dto.getAreCod());
@@ -60,7 +60,7 @@ public class ReservaServiceImpl implements ReservaService {
         reserva.setConvidados(new ArrayList<>());
         if (Boolean.TRUE.equals(area.getPermiteConvidados()) && dto.getConvidados() != null) {
             if (area.getLimiteConvidados() != null && dto.getConvidados().size() > area.getLimiteConvidados()) {
-                throw new RuntimeException("Limite de convidados excedido. Máximo permitido: " + area.getLimiteConvidados());
+                throw new IllegalArgumentException("Limite de convidados excedido. Máximo permitido: " + area.getLimiteConvidados());
             }
 
             for (ReservaConvidadoDTO convDTO : dto.getConvidados()) {
@@ -81,7 +81,7 @@ public class ReservaServiceImpl implements ReservaService {
     public Reserva aprovarReserva(Integer resCod, Integer pesCodAprovador) {
         Reserva reserva = buscarPorId(resCod);
         if (reserva.getStatus() != ReservaStatus.PENDENTE_APROVACAO) {
-            throw new RuntimeException("Apenas reservas pendentes podem ser aprovadas.");
+            throw new IllegalArgumentException("Apenas reservas pendentes podem ser aprovadas.");
         }
         reserva.setStatus(ReservaStatus.APROVADA);
         reserva.setAprovador(pessoaService.buscarPessoaPorId(pesCodAprovador)
@@ -94,7 +94,7 @@ public class ReservaServiceImpl implements ReservaService {
     public Reserva rejeitarReserva(Integer resCod, Integer pesCodAprovador, String motivo) {
         Reserva reserva = buscarPorId(resCod);
         if (reserva.getStatus() != ReservaStatus.PENDENTE_APROVACAO) {
-            throw new RuntimeException("Apenas reservas pendentes podem ser rejeitadas.");
+            throw new IllegalArgumentException("Apenas reservas pendentes podem ser rejeitadas.");
         }
         reserva.setStatus(ReservaStatus.REJEITADA);
         reserva.setAprovador(pessoaService.buscarPessoaPorId(pesCodAprovador)
@@ -108,10 +108,10 @@ public class ReservaServiceImpl implements ReservaService {
     public Reserva cancelarReserva(Integer resCod, Integer pesCodMorador) {
         Reserva reserva = buscarPorId(resCod);
         if (!reserva.getMorador().getPesCod().equals(pesCodMorador)) {
-            throw new RuntimeException("Apenas o solicitante pode cancelar esta reserva.");
+            throw new IllegalArgumentException("Apenas o solicitante pode cancelar esta reserva.");
         }
         if (reserva.getStatus() == ReservaStatus.CONCLUIDA || reserva.getStatus() == ReservaStatus.REJEITADA) {
-            throw new RuntimeException("Não é possível cancelar uma reserva neste status.");
+            throw new IllegalArgumentException("Não é possível cancelar uma reserva neste status.");
         }
         reserva.setStatus(ReservaStatus.CANCELADA_PELO_MORADOR);
         return reservaRepository.save(reserva);
@@ -136,10 +136,10 @@ public class ReservaServiceImpl implements ReservaService {
     private void validarAntecedencia(AreaComum area, LocalDate dataReserva) {
         long dias = ChronoUnit.DAYS.between(LocalDate.now(), dataReserva);
         if (dias < area.getDiasAntecedenciaMin()) {
-            throw new RuntimeException("A reserva deve ser feita com no mínimo " + area.getDiasAntecedenciaMin() + " dia(s) de antecedência.");
+            throw new IllegalArgumentException("A reserva deve ser feita com no mínimo " + area.getDiasAntecedenciaMin() + " dia(s) de antecedência.");
         }
         if (dias > area.getDiasAntecedenciaMax()) {
-            throw new RuntimeException("A reserva não pode ultrapassar " + area.getDiasAntecedenciaMax() + " dia(s) de antecedência.");
+            throw new IllegalArgumentException("A reserva não pode ultrapassar " + area.getDiasAntecedenciaMax() + " dia(s) de antecedência.");
         }
     }
 
@@ -156,7 +156,7 @@ public class ReservaServiceImpl implements ReservaService {
         conflitantes.removeIf(r -> r.getStatus() == ReservaStatus.REJEITADA);
 
         if (!conflitantes.isEmpty()) {
-            throw new RuntimeException("Já existe uma reserva para esta área/turno nesta data.");
+            throw new IllegalArgumentException("Já existe uma reserva para esta área/turno nesta data.");
         }
     }
 }

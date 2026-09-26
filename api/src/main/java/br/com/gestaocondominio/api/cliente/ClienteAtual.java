@@ -13,6 +13,9 @@ import java.util.function.Supplier;
  */
 public final class ClienteAtual {
 
+    /** Marcador dos endereços configurados por modelo, como {@code https://{cliente}.condigtal.com.br}. */
+    public static final String MARCADOR = "{cliente}";
+
     private static final ThreadLocal<Cliente> ATUAL = new ThreadLocal<>();
 
     private ClienteAtual() {
@@ -57,5 +60,17 @@ public final class ClienteAtual {
 
     static void limpar() {
         ATUAL.remove();
+    }
+
+    /**
+     * Endereço configurado com o marcador {@code {cliente}} trocado pelo identificador do cliente atual. Assim uma só
+     * variável ({@code WEB_URL_PUBLICA=https://{cliente}.condigtal.com.br}) serve a todos os clientes.
+     */
+    public static String noEndereco(String modelo) {
+        String identificador = identificador();
+        if (modelo == null || identificador == null) {
+            return modelo;
+        }
+        return modelo.replace(MARCADOR, identificador);
     }
 }

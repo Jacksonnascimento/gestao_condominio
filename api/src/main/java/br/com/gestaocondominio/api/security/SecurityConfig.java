@@ -3,8 +3,12 @@ package br.com.gestaocondominio.api.security;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -19,12 +23,14 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -39,9 +45,40 @@ public class SecurityConfig {
         this.userDetailsService = userDetailsService;
     }
 
+    /**
+     * API usada pelo sistema web (Next.js) e pelo aplicativo: sem sessão nem CSRF, com login por token
+     * ({@link FiltroDoToken}). Vem antes da cadeia das telas antigas e só vale para os caminhos abaixo.
+     */
     @Bean
+    @Order(1)
+    public SecurityFilterChain apiFilterChain(HttpSecurity http, TokenService tokenService,
+                                              RespostasDeSeguranca respostas) throws Exception {
+        return http
+            .securityMatcher("/api/v1/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
+            .cors(Customizer.withDefaults())
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(excecoes -> excecoes
+                .authenticationEntryPoint(respostas)
+                .accessDeniedHandler(respostas))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .requestMatchers(HttpMethod.POST,
+                    "/api/v1/auth/login", "/api/v1/auth/renovar",
+                    "/api/v1/auth/esqueci-senha", "/api/v1/auth/redefinir-senha").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/auth/redefinir-senha/*").permitAll()
+                .anyRequest().authenticated())
+            .addFilterBefore(new FiltroDoToken(tokenService, userDetailsService),
+                UsernamePasswordAuthenticationFilter.class)
+            .build();
+    }
+
+    /** Telas antigas em Thymeleaf, com login por formulário e sessão, até a migração para o Next.js terminar. */
+    @Bean
+    @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            .cors(Customizer.withDefaults())
             // Configuração para permitir POST externo no endpoint de leads (ignorando CSRF apenas para /public/)
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/public/**")
@@ -121,14 +158,34 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Origens que o navegador pode usar para chamar a API com login: os endereços do sistema web de cada cliente,
+     * separados por vírgula em {@code CORS_ORIGENS}. Aceita padrões, como {@code https://*.condigtal.com.br}, que
+     * cobrem todos os clientes, inclusive os que ainda vão entrar. O aplicativo não passa por CORS.
+     *
+     * <p>O cadastro de interessados ({@code /public/**}) recebe o formulário do site de divulgação, de qualquer
+     * origem, e sem credenciais.</p>
+     */
     @Bean
-    public CorsFilter corsFilter() {
+    public CorsConfigurationSource corsConfigurationSource(@Value("${condigtal.cors.origens}") String origens) {
+        CorsConfiguration api = new CorsConfiguration();
+        api.setAllowedOriginPatterns(Arrays.stream(origens.split(","))
+                .map(String::trim)
+                .filter(origem -> !origem.isEmpty())
+                .toList());
+        api.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        api.setAllowedHeaders(List.of("*"));
+        api.setExposedHeaders(List.of("Content-Disposition"));
+        api.setAllowCredentials(true);
+
+        CorsConfiguration publico = new CorsConfiguration();
+        publico.addAllowedOrigin("*");
+        publico.setAllowedHeaders(Arrays.asList("Origin", "Content-Type", "Accept"));
+        publico.setAllowedMethods(Arrays.asList("POST", "OPTIONS"));
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOrigin("*");
-        config.setAllowedHeaders(Arrays.asList("Origin", "Content-Type", "Accept", "Authorization"));
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        source.registerCorsConfiguration("/**", config);
-        return new CorsFilter(source);
+        source.registerCorsConfiguration("/api/v1/**", api);
+        source.registerCorsConfiguration("/public/**", publico);
+        return source;
     }
 }

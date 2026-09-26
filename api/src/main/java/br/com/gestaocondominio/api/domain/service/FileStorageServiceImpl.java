@@ -1,5 +1,6 @@
 package br.com.gestaocondominio.api.domain.service;
 
+import br.com.gestaocondominio.api.cliente.ClienteAtual;
 import br.com.gestaocondominio.api.exception.StorageException;
 import jakarta.annotation.PostConstruct;
 import org.springframework.core.io.Resource;
@@ -20,7 +21,7 @@ import java.util.UUID;
 @Service
 public class FileStorageServiceImpl implements FileStorageService {
 
-    private final Path rootLocation = Paths.get("uploads");
+    private final Path uploads = Paths.get("uploads");
     private static final String COMUNICADOS_DIR = "comunicados";
 
     private static final String OCORRENCIAS_DIR = "ocorrencias";
@@ -29,9 +30,7 @@ public class FileStorageServiceImpl implements FileStorageService {
     @PostConstruct
     public void init() {
         try {
-            Files.createDirectories(rootLocation.resolve(COMUNICADOS_DIR));
-
-            Files.createDirectories(rootLocation.resolve(OCORRENCIAS_DIR));
+            Files.createDirectories(uploads);
         } catch (IOException e) {
             throw new StorageException("Não foi possível inicializar os diretórios de uploads", e);
         }
@@ -57,7 +56,7 @@ public class FileStorageServiceImpl implements FileStorageService {
         }
 
         String newFilename = UUID.randomUUID().toString() + fileExtension;
-        Path destinationDirectory = this.rootLocation.resolve(subdiretorio);
+        Path destinationDirectory = pastaDoCliente().resolve(subdiretorio);
 
         try {
 
@@ -88,7 +87,7 @@ public class FileStorageServiceImpl implements FileStorageService {
     @Override
     public Resource loadAsResource(String filename, String subdiretorio) {
         try {
-            Path file = rootLocation.resolve(subdiretorio).resolve(filename).normalize().toAbsolutePath();
+            Path file = dentroDaPasta(subdiretorio, filename);
             Resource resource = new UrlResource(file.toUri());
             if (resource.exists() || resource.isReadable()) {
                 return resource;
@@ -114,10 +113,29 @@ public class FileStorageServiceImpl implements FileStorageService {
         }
 
         try {
-            Path file = rootLocation.resolve(subdiretorio).resolve(filename).normalize().toAbsolutePath();
+            Path file = dentroDaPasta(subdiretorio, filename);
             Files.deleteIfExists(file);
         } catch (IOException e) {
             throw new StorageException("Falha ao excluir o arquivo: " + filename, e);
         }
+    }
+
+    /**
+     * Pasta de arquivos do cliente atual, dentro de {@code uploads/}. Numa instalação de um cliente só, os arquivos
+     * ficam direto em {@code uploads/}, como sempre ficaram.
+     */
+    private Path pastaDoCliente() {
+        String cliente = ClienteAtual.identificador();
+        return cliente == null ? uploads : uploads.resolve(cliente);
+    }
+
+    /** Caminho do arquivo, recusando nome que sairia da pasta do cliente (como {@code ../outro-cliente/...}). */
+    private Path dentroDaPasta(String subdiretorio, String filename) {
+        Path pasta = pastaDoCliente().resolve(subdiretorio).normalize().toAbsolutePath();
+        Path file = pasta.resolve(filename).normalize().toAbsolutePath();
+        if (!file.startsWith(pasta)) {
+            throw new StorageException("Nome de arquivo inválido: " + filename);
+        }
+        return file;
     }
 }

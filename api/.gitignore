@@ -18,6 +18,3 @@ target/
 # Ignorar arquivos de sistema operacional
 .DS_Store
 Thumbs.db
-
-# Ignorar o arquivo de propriedades da aplicação
-api/src/main/resources/application.properties

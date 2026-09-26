@@ -21,7 +21,7 @@ FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
 # Copia apenas o .jar gerado no estágio anterior
-COPY --from=builder /app/target/api-0.0.1-SNAPSHOT.jar ./app.jar
+COPY --from=builder /app/target/gestaodecondominio.jar ./app.jar
 
 # Expõe a porta que a aplicação Spring Boot usa
 EXPOSE 8080

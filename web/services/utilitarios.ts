@@ -73,7 +73,8 @@ export function formatarMomento(valor?: string | Date | null): string {
 
 /** Dia da semana abreviado, em maiúsculas: "DOM". */
 export function diaDaSemanaCurto(valor: string | Date): string {
-  return format(paraData(valor), 'EEE', { locale: ptBR }).replace('.', '').toUpperCase();
+  // "domingo", "segunda-feira", "sábado"... viram DOM, SEG, SÁB
+  return format(paraData(valor), 'EEEE', { locale: ptBR }).slice(0, 3).toUpperCase();
 }
 
 /** Data de hoje no formato dos campos de data (2026-09-26). */

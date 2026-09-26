@@ -3,29 +3,43 @@ package br.com.gestaocondominio.api.domain.service;
 import br.com.gestaocondominio.api.controller.dto.ContratoRequestDTO;
 import br.com.gestaocondominio.api.domain.entity.Condominio;
 import br.com.gestaocondominio.api.domain.entity.Contrato;
+import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.enums.StatusContrato;
+import br.com.gestaocondominio.api.domain.enums.UserRole;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.ContratoRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class ContratoService {
 
+    /** Papéis que veem e gerenciam os contratos do condomínio. */
+    public static final UserRole[] PAPEIS_DE_GESTAO = {UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM};
+
     @Autowired
     private ContratoRepository contratoRepository;
     @Autowired
     private CondominioRepository condominioRepository;
+    @Autowired
+    private UsuarioCondominioService usuarioCondominioService;
 
     public Contrato criarContrato(Integer condominioId, ContratoRequestDTO dto) {
         Condominio condominio = condominioRepository.findById(condominioId)
@@ -53,11 +67,18 @@ public class ContratoService {
 
     public List<Contrato> listarContratos(Integer condominioId, String busca, StatusContrato status,
             Boolean isProximoVencimento, Boolean isHistorico, LocalDate inicioApos, LocalDate fimAntes) {
+        return listarContratos(condominioId == null ? null : Set.of(condominioId), busca, status,
+                isProximoVencimento, isHistorico, inicioApos, fimAntes);
+    }
+
+    /** Como o de cima, para um conjunto de condomínios; {@code null} não filtra por condomínio. */
+    private List<Contrato> listarContratos(Collection<Integer> condominioIds, String busca, StatusContrato status,
+            Boolean isProximoVencimento, Boolean isHistorico, LocalDate inicioApos, LocalDate fimAntes) {
         Specification<Contrato> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            if (condominioId != null) {
-                predicates.add(cb.equal(root.get("condominio").get("conCod"), condominioId));
+            if (condominioIds != null) {
+                predicates.add(root.get("condominio").get("conCod").in(condominioIds));
             }
 
             if (StringUtils.hasText(busca)) {
@@ -101,11 +122,15 @@ public class ContratoService {
     }
 
     public Map<StatusContrato, Long> contarContratosPorStatus(Integer condominioId) {
+        return contarContratosPorStatus(condominioId == null ? null : Set.of(condominioId));
+    }
+
+    private Map<StatusContrato, Long> contarContratosPorStatus(Collection<Integer> condominioIds) {
         Specification<Contrato> spec = (root, query, cb) -> {
-            if (condominioId == null) {
+            if (condominioIds == null) {
                 return cb.conjunction();
             }
-            return cb.equal(root.get("condominio").get("conCod"), condominioId);
+            return root.get("condominio").get("conCod").in(condominioIds);
         };
 
         List<Contrato> todosContratos = contratoRepository.findAll(spec);
@@ -113,6 +138,113 @@ public class ContratoService {
 
         return todosContratos.stream()
                 .collect(Collectors.groupingBy(Contrato::getStatus, Collectors.counting()));
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // API v1: as mesmas operações, conferindo quem está logado. Contratos são vistos e gerenciados pelo administrador
+    // geral, em todos os condomínios, e por síndico, administração e funcionário administrativo, só nos condomínios em
+    // que têm esse papel.
+    // ---------------------------------------------------------------------------------------------------------------
+
+    public boolean podeGerenciar(Pessoa usuario) {
+        return UsuarioCondominioService.isAdministradorGeral(usuario)
+                || !usuarioCondominioService.condominiosComPapel(usuario, PAPEIS_DE_GESTAO).isEmpty();
+    }
+
+    /** Condomínios cujos contratos a pessoa gerencia, para a escolha na listagem e no cadastro. */
+    public List<Condominio> condominiosDisponiveis(Pessoa usuario) {
+        return usuarioCondominioService.condominiosDisponiveis(usuario, PAPEIS_DE_GESTAO);
+    }
+
+    /**
+     * Contratos de uma das abas da tela (ativos, próximos a vencer ou histórico), dos condomínios que a pessoa
+     * gerencia, ordenados por início e fim. O {@code status} só filtra o histórico (finalizados ou rescindidos).
+     */
+    public Page<Contrato> consultarContratos(Pessoa usuario, Integer condominioId, String busca, StatusContrato status,
+                                             boolean proximosAVencer, boolean historico, LocalDate inicioApos,
+                                             LocalDate fimAntes, Pageable pageable) {
+        List<Contrato> contratos = listarContratos(alcance(usuario, condominioId), busca, historico ? status : null,
+                proximosAVencer, historico, inicioApos, fimAntes);
+        int inicio = (int) Math.min(pageable.getOffset(), contratos.size());
+        int fim = Math.min(inicio + pageable.getPageSize(), contratos.size());
+        return new PageImpl<>(contratos.subList(inicio, fim), pageable, contratos.size());
+    }
+
+    public Map<StatusContrato, Long> contarContratosPorStatus(Pessoa usuario, Integer condominioId) {
+        return contarContratosPorStatus(alcance(usuario, condominioId));
+    }
+
+    /** Um contrato, com a situação calculada pela data de fim, se a pessoa gerencia o condomínio dele. */
+    public Contrato buscarContrato(Long id, Pessoa usuario) {
+        Contrato contrato = contratoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Contrato não encontrado."));
+        conferirGestao(usuario, contrato.getCondominio().getConCod());
+        atualizarStatusCalculado(contrato);
+        return contrato;
+    }
+
+    /**
+     * Cadastra o contrato no condomínio informado. Sem condomínio, vale o único que a pessoa gerencia, como na tela
+     * antiga, em que só o administrador geral escolhe.
+     */
+    public Contrato criarContrato(ContratoRequestDTO dto, Pessoa usuario) {
+        Integer condominioId = dto.getCondominioId() != null ? dto.getCondominioId() : unicoCondominio(usuario);
+        conferirGestao(usuario, condominioId);
+        if (!condominioRepository.existsById(condominioId)) {
+            throw new EntityNotFoundException("Condomínio não encontrado.");
+        }
+        validarPeriodo(dto);
+        return criarContrato(condominioId, dto);
+    }
+
+    /** Altera os dados do contrato. O condomínio dele não muda. */
+    public Contrato atualizarContrato(Long id, ContratoRequestDTO dto, Pessoa usuario) {
+        Contrato contrato = buscarContrato(id, usuario);
+        validarPeriodo(dto);
+        preencherDadosContrato(contrato, dto);
+        return contratoRepository.save(contrato);
+    }
+
+    public void excluirContrato(Long id, Pessoa usuario) {
+        contratoRepository.delete(buscarContrato(id, usuario));
+    }
+
+    /** Condomínios da consulta: o pedido, se a pessoa o gerencia; senão, todos os que ela gerencia. */
+    private Set<Integer> alcance(Pessoa usuario, Integer condominioId) {
+        if (condominioId != null) {
+            conferirGestao(usuario, condominioId);
+            return Set.of(condominioId);
+        }
+        if (UsuarioCondominioService.isAdministradorGeral(usuario)) {
+            return null;
+        }
+        Set<Integer> condominios = usuarioCondominioService.condominiosComPapel(usuario, PAPEIS_DE_GESTAO);
+        if (condominios.isEmpty()) {
+            throw new AccessDeniedException("Você não gerencia contratos de nenhum condomínio.");
+        }
+        return condominios;
+    }
+
+    private void conferirGestao(Pessoa usuario, Integer condominioId) {
+        if (!usuarioCondominioService.possuiPapelNoCondominio(usuario, condominioId, PAPEIS_DE_GESTAO)) {
+            throw new AccessDeniedException("Você não gerencia os contratos deste condomínio.");
+        }
+    }
+
+    private Integer unicoCondominio(Pessoa usuario) {
+        if (!UsuarioCondominioService.isAdministradorGeral(usuario)) {
+            Set<Integer> condominios = usuarioCondominioService.condominiosComPapel(usuario, PAPEIS_DE_GESTAO);
+            if (condominios.size() == 1) {
+                return condominios.iterator().next();
+            }
+        }
+        throw new IllegalArgumentException("Informe o condomínio.");
+    }
+
+    private void validarPeriodo(ContratoRequestDTO dto) {
+        if (dto.getDataInicio() != null && dto.getDataFim() != null && dto.getDataFim().isBefore(dto.getDataInicio())) {
+            throw new IllegalArgumentException("A data de fim não pode ser anterior à data de início.");
+        }
     }
 
     private void atualizarStatusCalculado(Contrato contrato) {

@@ -243,7 +243,12 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
         try {
             String simpleFilename = Paths.get(anexo.getCaminhoArquivo()).getFileName().toString();
             fileStorageService.delete(simpleFilename, OCORRENCIAS_DIR);
-            anexoRepository.delete(anexo); 
+            // A ocorrência carregada acima traz os anexos (cascade ALL): sem tirar o anexo da lista, o Hibernate
+            // desfaz a exclusão ao salvar, e o registro ficava no banco apontando para um arquivo já apagado.
+            if (ocorrencia.getAnexos() != null) {
+                ocorrencia.getAnexos().remove(anexo);
+            }
+            anexoRepository.delete(anexo);
         } catch (StorageException e) {
             throw new RuntimeException("Falha ao excluir o arquivo físico do anexo: " + e.getMessage(), e);
         } catch (Exception e) {
@@ -358,6 +363,37 @@ public class OcorrenciaServiceImpl implements OcorrenciaService {
 
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso Negado. Você não tem permissão para "
                 + (edicao ? "modificar" : "visualizar") + " esta ocorrência.");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean podeGerenciarOcorrencias(Pessoa usuarioLogado) {
+        return Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin()) || usuarioCondominioService.possuiRole(
+                usuarioLogado, UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean gerenciaOcorrencia(Integer ocorrenciaId, Pessoa usuarioLogado) {
+        Ocorrencia ocorrencia = buscarOcorrenciaPorIdEValidarAcesso(ocorrenciaId, usuarioLogado, false);
+        if (Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin())) {
+            return true;
+        }
+        Integer conCodOcorrencia = ocorrencia.getCondominio().getConCod();
+        return usuarioCondominioService.findByPessoa(usuarioLogado).stream()
+                .anyMatch(uc -> uc.getConCod().equals(conCodOcorrencia)
+                        && Boolean.TRUE.equals(uc.getUscAtivoAssociacao())
+                        && (uc.getUscPapel() == UserRole.SINDICO || uc.getUscPapel() == UserRole.ADMIN
+                                || uc.getUscPapel() == UserRole.FUNCIONARIO_ADM));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void conferirGestao(Integer ocorrenciaId, Pessoa usuarioLogado) {
+        if (!gerenciaOcorrencia(ocorrenciaId, usuarioLogado)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Apenas o síndico, a administração ou o "
+                    + "funcionário administrativo do condomínio podem tratar esta ocorrência.");
+        }
     }
 
     private void validarAcessoCriacao(Unidade unidade, Pessoa usuarioLogado) {

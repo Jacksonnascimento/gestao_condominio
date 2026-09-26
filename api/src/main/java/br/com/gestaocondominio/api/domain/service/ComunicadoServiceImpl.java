@@ -1,18 +1,23 @@
 package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.controller.dto.ComunicadoRequestDTO;
+import br.com.gestaocondominio.api.controller.v1.dto.ComunicadoDTOs.ComunicadoResposta;
 import br.com.gestaocondominio.api.domain.entity.*;
 import br.com.gestaocondominio.api.domain.enums.OcupanteVinculo;
 import br.com.gestaocondominio.api.domain.enums.PublicoDestino;
 import br.com.gestaocondominio.api.domain.enums.UserRole;
 import br.com.gestaocondominio.api.domain.repository.*;
+import br.com.gestaocondominio.api.exception.StorageException;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.file.Paths;
 import java.util.HashSet;
@@ -63,6 +68,17 @@ public class ComunicadoServiceImpl implements ComunicadoService {
             Pageable pageable) {
 
         Pessoa pessoaLogada = pessoaService.getLoggedInUser();
+        return comunicadoRepository.findAll(
+                especificacaoVisivel(pessoaLogada, titulo, mensagem, publicoDestinoFiltroTela, isUrgente), pageable);
+    }
+
+    /**
+     * Comunicados que a pessoa pode ver, com os filtros da tela. O administrador geral vê todos; os demais veem os do
+     * seu condomínio (o primeiro vínculo), e só o síndico e a administração veem todos os públicos: o morador vê os
+     * destinados a todos e ao seu tipo de vínculo com a unidade, e os funcionários, os destinados aos funcionários.
+     */
+    private Specification<Comunicado> especificacaoVisivel(Pessoa pessoaLogada, String titulo, String mensagem,
+                                                           String publicoDestinoFiltroTela, Boolean isUrgente) {
         Integer conCodAtivo = null;
         Set<PublicoDestino> publicosPermitidosParaVisualizar = new HashSet<>();
         boolean isUsuarioAdminCondo = false;
@@ -73,8 +89,7 @@ public class ComunicadoServiceImpl implements ComunicadoService {
         } else {
             conCodAtivo = usuarioCondominioService.getCondominioIdDoUsuario(pessoaLogada);
             if (conCodAtivo == null) {
-                Specification<Comunicado> spec = (root, query, cb) -> cb.disjunction();
-                return comunicadoRepository.findAll(spec, pageable);
+                return (root, query, cb) -> cb.disjunction();
             }
 
             final Integer finalConCodAtivo = conCodAtivo;
@@ -111,7 +126,7 @@ public class ComunicadoServiceImpl implements ComunicadoService {
             }
         }
 
-        Specification<Comunicado> spec = ComunicadoSpecification.filtrar(
+        return ComunicadoSpecification.filtrar(
                 pessoaLogada,
                 conCodAtivo,
                 publicosPermitidosParaVisualizar,
@@ -121,8 +136,6 @@ public class ComunicadoServiceImpl implements ComunicadoService {
                 publicoDestinoFiltroTela,
                 isUrgente
         );
-
-        return comunicadoRepository.findAll(spec, pageable);
     }
 
     @Override
@@ -138,11 +151,203 @@ public class ComunicadoServiceImpl implements ComunicadoService {
 
     @Override
     @Transactional
-    // MUDANÇA: de 'void' para 'Comunicado'
     public Comunicado criar(ComunicadoRequestDTO dto, MultipartFile anexo) {
         Pessoa criador = pessoaService.getLoggedInUser();
-        String caminhoAnexo = null;
+        try {
+            return gravarNovo(dto, anexo, criador);
+        } catch (Exception e) {
+            throw new RuntimeException("Falha ao criar comunicado: " + e.getMessage(), e);
+        }
+    }
 
+    @Override
+    @Transactional
+    public Comunicado atualizar(Integer id, ComunicadoRequestDTO dto, MultipartFile anexo) {
+        Pessoa editor = pessoaService.getLoggedInUser();
+        Comunicado comunicado = comunicadoRepository.findById(id)
+                .map(c -> {
+                    c.getCondominios().size();
+                    return c;
+                })
+                .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado para atualização. ID: " + id));
+        try {
+            return gravarAlteracao(comunicado, dto, anexo, editor);
+        } catch (Exception e) {
+            throw new RuntimeException("Falha ao atualizar comunicado: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void excluir(Integer id) {
+        Comunicado comunicado = comunicadoRepository.findById(id)
+                .map(c -> {
+                    c.getCondominios().size();
+                    return c;
+                })
+                .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado para exclusão. ID: " + id));
+        try {
+            apagar(comunicado);
+        } catch (Exception e) {
+            throw new RuntimeException("Falha ao excluir comunicado ID " + id + ": " + e.getMessage(), e);
+        }
+    }
+
+    // ---- Usados pela API /api/v1: recebem quem está logado e conferem a permissão ----
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ComunicadoResposta> consultarVisiveis(Pessoa usuarioLogado, String titulo, String mensagem,
+                                                      PublicoDestino publicoDestino, Boolean urgente,
+                                                      Pageable pageable) {
+        Integer condominioGerenciado = condominioGerenciado(usuarioLogado);
+        boolean administradorGeral = Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin());
+        return comunicadoRepository.findAll(especificacaoVisivel(usuarioLogado, titulo, mensagem,
+                        publicoDestino == null ? null : publicoDestino.name(), urgente), pageable)
+                .map(comunicado -> ComunicadoResposta.de(comunicado, administradorGeral,
+                        podeGerenciar(usuarioLogado, condominioGerenciado, comunicado)));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ComunicadoResposta buscarVisivel(Integer id, Pessoa usuarioLogado) {
+        Comunicado comunicado = buscarVisivelOuFalhar(id, usuarioLogado);
+        return ComunicadoResposta.de(comunicado, Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin()),
+                podeGerenciar(usuarioLogado, condominioGerenciado(usuarioLogado), comunicado));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean podeGerenciar(Pessoa usuarioLogado) {
+        return Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin()) || condominioGerenciado(usuarioLogado) != null;
+    }
+
+    @Override
+    @Transactional
+    public ComunicadoResposta criar(ComunicadoRequestDTO dto, MultipartFile anexo, Pessoa usuarioLogado) {
+        if (!podeGerenciar(usuarioLogado)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Apenas o síndico ou a administração do condomínio podem publicar comunicados.");
+        }
+        conferirCondominiosDeDestino(usuarioLogado, dto.getCondominioIds());
+        Comunicado comunicado = gravarNovo(dto, anexo, usuarioLogado);
+        return ComunicadoResposta.de(comunicado, Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin()), true);
+    }
+
+    @Override
+    @Transactional
+    public ComunicadoResposta atualizar(Integer id, ComunicadoRequestDTO dto, MultipartFile anexo,
+                                        Pessoa usuarioLogado) {
+        Comunicado comunicado = buscarParaGerenciar(id, usuarioLogado);
+        conferirCondominiosDeDestino(usuarioLogado, dto.getCondominioIds());
+        Comunicado salvo = gravarAlteracao(comunicado, dto, anexo, usuarioLogado);
+        return ComunicadoResposta.de(salvo, Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin()), true);
+    }
+
+    @Override
+    @Transactional
+    public void excluir(Integer id, Pessoa usuarioLogado) {
+        apagar(buscarParaGerenciar(id, usuarioLogado));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Resource carregarAnexo(Integer id, Pessoa usuarioLogado) {
+        Comunicado comunicado = buscarVisivelOuFalhar(id, usuarioLogado);
+        if (comunicado.getCaminhoAnexo() == null || comunicado.getCaminhoAnexo().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Este comunicado não possui anexo.");
+        }
+        String nomeDoArquivo = Paths.get(comunicado.getCaminhoAnexo()).getFileName().toString();
+        try {
+            return fileStorageService.loadAsResource(nomeDoArquivo, COMUNICADOS_DIR);
+        } catch (StorageException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Arquivo não encontrado no servidor. Pode ter sido excluído ou movido.");
+        }
+    }
+
+    /** O comunicado, se quem está logado pode vê-lo pela mesma regra da listagem. */
+    private Comunicado buscarVisivelOuFalhar(Integer id, Pessoa usuarioLogado) {
+        Comunicado comunicado = comunicadoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado."));
+        if (Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin())) {
+            return comunicado;
+        }
+        // Contagem, e não exists(): a especificação só busca as associações junto quando a consulta não é de total.
+        Specification<Comunicado> visivel = especificacaoVisivel(usuarioLogado, null, null, null, null);
+        Specification<Comunicado> doId = (root, query, cb) -> cb.equal(root.get("comId"), id);
+        if (comunicadoRepository.count(visivel.and(doId)) == 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Acesso negado. Você não tem permissão para ver este comunicado.");
+        }
+        return comunicado;
+    }
+
+    /**
+     * O comunicado, se quem está logado pode alterá-lo: o administrador geral altera qualquer um; o síndico e a
+     * administração, os publicados só para o condomínio deles. Um comunicado que o administrador geral mandou para
+     * vários condomínios só ele altera, porque salvar pela tela do condomínio o tiraria dos outros.
+     */
+    private Comunicado buscarParaGerenciar(Integer id, Pessoa usuarioLogado) {
+        Comunicado comunicado = comunicadoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado."));
+        if (!podeGerenciar(usuarioLogado, condominioGerenciado(usuarioLogado), comunicado)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Acesso negado. Você não tem permissão para alterar este comunicado.");
+        }
+        return comunicado;
+    }
+
+    private boolean podeGerenciar(Pessoa usuarioLogado, Integer condominioGerenciado, Comunicado comunicado) {
+        if (Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin())) {
+            return true;
+        }
+        if (condominioGerenciado == null || comunicado.getCondominios() == null) {
+            return false;
+        }
+        Set<Integer> destinos = comunicado.getCondominios().stream()
+                .map(Condominio::getConCod)
+                .collect(Collectors.toSet());
+        return destinos.equals(Set.of(condominioGerenciado));
+    }
+
+    /**
+     * Condomínio em que a pessoa publica comunicados: o mesmo que a listagem usa (o primeiro vínculo), desde que nele
+     * ela seja síndico ou administração, com o vínculo ativo. Nulo quando não publica em nenhum.
+     */
+    private Integer condominioGerenciado(Pessoa usuarioLogado) {
+        if (Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin())) {
+            return null;
+        }
+        Integer conCodAtivo = usuarioCondominioService.getCondominioIdDoUsuario(usuarioLogado);
+        if (conCodAtivo == null) {
+            return null;
+        }
+        boolean gerencia = usuarioCondominioRepository.findByPesCod(usuarioLogado.getPesCod()).stream()
+                .anyMatch(uc -> uc.getConCod().equals(conCodAtivo)
+                        && Boolean.TRUE.equals(uc.getUscAtivoAssociacao())
+                        && (uc.getUscPapel() == UserRole.ADMIN || uc.getUscPapel() == UserRole.SINDICO));
+        return gerencia ? conCodAtivo : null;
+    }
+
+    /** O administrador geral escolhe os condomínios; todos precisam existir. Os demais publicam no próprio. */
+    private void conferirCondominiosDeDestino(Pessoa usuarioLogado, List<Integer> condominioIds) {
+        if (!Boolean.TRUE.equals(usuarioLogado.getPesIsGlobalAdmin())) {
+            return;
+        }
+        if (condominioIds == null || condominioIds.isEmpty()) {
+            throw new IllegalArgumentException("Selecione ao menos um condomínio.");
+        }
+        Set<Integer> pedidos = new HashSet<>(condominioIds);
+        if (pedidos.contains(null) || condominioRepository.findAllById(pedidos).size() != pedidos.size()) {
+            throw new IllegalArgumentException("Um dos condomínios selecionados não foi encontrado.");
+        }
+    }
+
+    // ---- Gravação comum às telas antigas e à API ----
+
+    private Comunicado gravarNovo(ComunicadoRequestDTO dto, MultipartFile anexo, Pessoa criador) {
+        String caminhoAnexo = null;
         try {
             if (anexo != null) {
                 if (anexo.isEmpty()) {
@@ -163,30 +368,20 @@ public class ComunicadoServiceImpl implements ComunicadoService {
                     .condominios(condominiosAlvo)
                     .build();
 
-            // MUDANÇA: Salva e retorna a entidade
             return comunicadoRepository.save(comunicado);
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             if (caminhoAnexo != null) {
                 String simpleFilename = Paths.get(caminhoAnexo).getFileName().toString();
                 fileStorageService.delete(simpleFilename, COMUNICADOS_DIR);
             }
-            throw new RuntimeException("Falha ao criar comunicado: " + e.getMessage(), e);
+            throw e;
         }
     }
 
-    @Override
-    @Transactional
-    // MUDANÇA: de 'void' para 'Comunicado'
-    public Comunicado atualizar(Integer id, ComunicadoRequestDTO dto, MultipartFile anexo) {
-        Pessoa editor = pessoaService.getLoggedInUser();
-        Comunicado comunicado = comunicadoRepository.findById(id)
-                .map(c -> {
-                    c.getCondominios().size();
-                    return c;
-                })
-                .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado para atualização. ID: " + id));
-
+    /** Um anexo novo substitui o antigo, que é apagado depois de salvar. */
+    private Comunicado gravarAlteracao(Comunicado comunicado, ComunicadoRequestDTO dto, MultipartFile anexo,
+                                       Pessoa editor) {
         String novoCaminhoAnexo = null;
         String antigoCaminhoAnexo = comunicado.getCaminhoAnexo();
 
@@ -207,49 +402,35 @@ public class ComunicadoServiceImpl implements ComunicadoService {
             comunicado.setIsUrgente(dto.getIsUrgente());
             comunicado.setCondominios(condominiosAlvo);
 
-            // MUDANÇA: Salva e retorna a entidade
             Comunicado comunicadoSalvo = comunicadoRepository.save(comunicado);
 
             if (novoCaminhoAnexo != null && antigoCaminhoAnexo != null) {
                 String simpleFilename = Paths.get(antigoCaminhoAnexo).getFileName().toString();
                 fileStorageService.delete(simpleFilename, COMUNICADOS_DIR);
             }
-            
+
             return comunicadoSalvo;
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             if (novoCaminhoAnexo != null && !novoCaminhoAnexo.equals(antigoCaminhoAnexo)) {
                 String simpleFilename = Paths.get(novoCaminhoAnexo).getFileName().toString();
                 fileStorageService.delete(simpleFilename, COMUNICADOS_DIR);
             }
-            throw new RuntimeException("Falha ao atualizar comunicado: " + e.getMessage(), e);
+            throw e;
         }
     }
 
-    @Override
-    @Transactional
-    public void excluir(Integer id) {
-        Comunicado comunicado = comunicadoRepository.findById(id)
-                .map(c -> {
-                    c.getCondominios().size();
-                    return c;
-                })
-                .orElseThrow(() -> new EntityNotFoundException("Comunicado não encontrado para exclusão. ID: " + id));
-
+    private void apagar(Comunicado comunicado) {
         String caminhoAnexo = comunicado.getCaminhoAnexo();
 
-        try {
-            comunicadoLeituraRepository.deleteByComunicadoId(id);
-            comunicado.getCondominios().clear();
-            comunicadoRepository.save(comunicado);
-            comunicadoRepository.delete(comunicado);
+        comunicadoLeituraRepository.deleteByComunicadoId(comunicado.getComId());
+        comunicado.getCondominios().clear();
+        comunicadoRepository.save(comunicado);
+        comunicadoRepository.delete(comunicado);
 
-            if (caminhoAnexo != null) {
-                String simpleFilename = Paths.get(caminhoAnexo).getFileName().toString();
-                fileStorageService.delete(simpleFilename, COMUNICADOS_DIR);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Falha ao excluir comunicado ID " + id + ": " + e.getMessage(), e);
+        if (caminhoAnexo != null) {
+            String simpleFilename = Paths.get(caminhoAnexo).getFileName().toString();
+            fileStorageService.delete(simpleFilename, COMUNICADOS_DIR);
         }
     }
 

@@ -39,7 +39,8 @@ public class ComunicadoSpecification {
             }
 
            
-            if (Boolean.FALSE.equals(pessoa.getPesIsGlobalAdmin())) {
+            // Quem não é administrador geral (inclusive com a marcação vazia) só vê os do seu condomínio.
+            if (!Boolean.TRUE.equals(pessoa.getPesIsGlobalAdmin())) {
                 if (conCodAtivo != null) {
                     
                     predicates.add(cb.equal(root.join("condominios").get("conCod"), conCodAtivo));

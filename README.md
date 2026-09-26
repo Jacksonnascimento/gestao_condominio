@@ -5,7 +5,7 @@ Sistema de Gestão de Condomínios.
 
 **Em Construção**
 
-O CONDIGTAL é um sistema completo para gestão de condomínios, desenvolvido em Java com Spring Boot e utilizando Thymeleaf para renderização no servidor (Server-Side Rendering).
+O CONDIGTAL é um sistema completo para gestão de condomínios, com a API em Java (Spring Boot) e o sistema web em Next.js.
 
 ---
 
@@ -20,8 +20,7 @@ O projeto é construído com as seguintes tecnologias principais:
     * Spring Security
     * PostgreSQL
 * **Front-end:**
-    * Next.js 16, React 19 e Tailwind CSS 4, na pasta `web/` (sistema novo, em migração)
-    * Thymeleaf e Bootstrap 5 (telas antigas, removidas ao fim da migração)
+    * Next.js 16, React 19 e Tailwind CSS 4, na pasta `web/`
 
 ---
 

@@ -6,7 +6,6 @@ import br.com.gestaocondominio.api.domain.entity.Ocupante;
 import br.com.gestaocondominio.api.domain.entity.Pessoa;
 import br.com.gestaocondominio.api.domain.entity.Unidade;
 import br.com.gestaocondominio.api.domain.enums.OcupanteVinculo;
-import br.com.gestaocondominio.api.domain.enums.UserRole;
 import br.com.gestaocondominio.api.domain.repository.OcupanteRepository;
 import br.com.gestaocondominio.api.domain.repository.OcupanteSpecification;
 import br.com.gestaocondominio.api.domain.repository.PessoaRepository;
@@ -24,8 +23,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,62 +43,10 @@ public class OcupanteService {
     @Autowired
     private UsuarioCondominioService usuarioCondominioService;
 
-    @Transactional(readOnly = true)
-    public List<OcupanteResponseDTO> consultarOcupantesPorUsuario(Pessoa usuario, Integer condominioId, String busca,
-            OcupanteVinculo vinculo, Integer unidadeId) {
-        List<Ocupante> ocupantes = findOcupantesByUsuario(usuario, condominioId, busca, vinculo, unidadeId);
-
-        ocupantes.sort(Comparator.comparing(o -> (o.getPessoa() != null ? o.getPessoa().getPesNome() : ""),
-                String.CASE_INSENSITIVE_ORDER));
-
-        return ocupantes.stream()
-                .map(OcupanteResponseDTO::new)
-                .collect(Collectors.toList());
-    }
-
-    private List<Ocupante> findOcupantesByUsuario(Pessoa usuario, Integer condominioId, String busca,
-            OcupanteVinculo vinculo, Integer unidadeId) {
-        if (usuario.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuario, UserRole.SINDICO,
-                UserRole.ADMIN, UserRole.FUNCIONARIO_ADM)) {
-            Specification<Ocupante> spec = OcupanteSpecification.comFiltros(condominioId, busca, vinculo, unidadeId);
-            return ocupanteRepository.findAll(spec); 
-        } else {
-            List<Unidade> unidadesDoMorador = findUnidadesByMorador(usuario);
-            if (!unidadesDoMorador.isEmpty()) {
-                if (unidadeId != null) {
-                    boolean temAcesso = unidadesDoMorador.stream().anyMatch(u -> u.getUniCod().equals(unidadeId));
-                    if (temAcesso) {
-                        Specification<Ocupante> spec = OcupanteSpecification.comFiltros(null, busca, vinculo,
-                                unidadeId);
-                        return ocupanteRepository.findAll(spec); 
-                    }
-                } else {
-                    Specification<Ocupante> spec = OcupanteSpecification.comFiltros(null, busca, vinculo, null)
-                            .and((root, query, cb) -> root.get("unidade").in(unidadesDoMorador));
-                    return ocupanteRepository.findAll(spec);
-                }
-            }
-        }
-        return Collections.emptyList();
-    }
-
-    public List<OcupanteResponseDTO> consultarOcupantesPorUsuario(Pessoa usuario, Integer condominioId, String busca,
-            OcupanteVinculo vinculo) {
-        return this.consultarOcupantesPorUsuario(usuario, condominioId, busca, vinculo, null);
-    }
-
-    @Transactional(readOnly = true)
-    public Map<OcupanteVinculo, Long> contarOcupantesPorUsuario(Pessoa usuario, Integer condominioId) {
-        List<Ocupante> ocupantes = findOcupantesByUsuario(usuario, condominioId, null, null, null);
-        return ocupantes.stream()
-                .collect(Collectors.groupingBy(Ocupante::getOcuVinculo, Collectors.counting()));
-    }
-
-    @Transactional
-    public OcupanteResponseDTO cadastrarOcupante(OcupanteRequestDTO dto) {
+    private Ocupante cadastrarOcupante(OcupanteRequestDTO dto) {
         if (dto.getUnidadeId() == null || dto.getVinculo() == null || dto.getInicioOcupacao() == null
                 || dto.getPesCpfCnpj() == null || dto.getPesCpfCnpj().isBlank()) {
-            throw new IllegalArgumentException("CPF/CNPJ, Unidade, Vínculo e Início da Ocupação são obrigatórios.");
+            throw new IllegalArgumentException("Informe o CPF/CNPJ, a unidade, o vínculo e o início da ocupação.");
         }
 
         Pessoa pessoa = pessoaRepository.findByPesCpfCnpj(dto.getPesCpfCnpj())
@@ -116,8 +61,7 @@ public class OcupanteService {
                 });
 
         Unidade unidade = unidadeRepository.findById(dto.getUnidadeId())
-                .orElseThrow(
-                        () -> new IllegalArgumentException("Unidade não encontrada com o ID: " + dto.getUnidadeId()));
+                .orElseThrow(() -> new EntityNotFoundException("Unidade não encontrada."));
 
         ocupanteRepository.findByPessoaAndUnidade(pessoa, unidade).ifPresent(m -> {
             throw new IllegalArgumentException("Esta pessoa já está cadastrada como ocupante desta unidade.");
@@ -138,14 +82,7 @@ public class OcupanteService {
         novoOcupante.setOcuDtCadastro(LocalDateTime.now());
         novoOcupante.setOcuDtAtualizacao(LocalDateTime.now());
 
-        Ocupante ocupanteSalvo = ocupanteRepository.save(novoOcupante);
-        return new OcupanteResponseDTO(ocupanteSalvo);
-    }
-
-    @Transactional
-    public OcupanteResponseDTO editarOcupante(Integer id, OcupanteRequestDTO dto, Pessoa usuarioLogado) {
-        Ocupante ocupanteExistente = buscarPorIdEValidarAcesso(id, usuarioLogado);
-        return new OcupanteResponseDTO(aplicarEdicao(ocupanteExistente, dto));
+        return ocupanteRepository.save(novoOcupante);
     }
 
     private Ocupante aplicarEdicao(Ocupante ocupanteExistente, OcupanteRequestDTO dto) {
@@ -171,45 +108,12 @@ public class OcupanteService {
         return ocupanteRepository.save(ocupanteExistente);
     }
 
-    @Transactional
-    public void excluirOcupante(Integer id, Pessoa usuarioLogado) {
-        Ocupante ocupante = buscarPorIdEValidarAcesso(id, usuarioLogado);
-        ocupanteRepository.delete(ocupante);
-    }
-
-    @Transactional(readOnly = true)
-    public Ocupante buscarPorIdEValidarAcesso(Integer id, Pessoa usuario) {
-        Ocupante ocupante = ocupanteRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ocupante não encontrado"));
-
-        if (usuario.getPesIsGlobalAdmin() || usuarioCondominioService.possuiRole(usuario, UserRole.SINDICO,
-                UserRole.ADMIN, UserRole.FUNCIONARIO_ADM)) {
-            return ocupante;
-        }
-
-        if (usuarioCondominioService.possuiRole(usuario, UserRole.MORADOR)) {
-            boolean pertence = findUnidadesByMorador(usuario).stream()
-                    .anyMatch(unidade -> unidade.getUniCod().equals(ocupante.getUnidade().getUniCod())); // Comparar IDs
-            if (pertence) {
-                return ocupante;
-            }
-        }
-
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso Negado");
-    }
-
-    @Transactional(readOnly = true)
-    public List<Unidade> findUnidadesByMorador(Pessoa morador) {
+    private List<Unidade> findUnidadesByMorador(Pessoa morador) {
         return ocupanteRepository.findByPessoa(morador)
                 .stream()
                 .map(Ocupante::getUnidade)
                 .distinct()
                 .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public List<Ocupante> findOcupantesSemLoginMoradorByCondominio(Integer condominioId) {
-        return ocupanteRepository.findOcupantesSemLoginMoradorByCondominio(condominioId);
     }
 
     @Transactional(readOnly = true)
@@ -220,8 +124,7 @@ public class OcupanteService {
                 .collect(Collectors.toList());
     }
 
-    // --- Usados pela API v1. Diferente dos métodos acima, a gestão vale só nos condomínios em que a pessoa é
-    // síndico, administradora ou funcionário administrativo, e não em qualquer condomínio.
+    // --- A gestão vale só nos condomínios em que a pessoa é síndico, administradora ou funcionário administrativo.
 
     /**
      * Ocupantes que a pessoa pode ver, em ordem alfabética: todos para o administrador geral; os dos condomínios em
@@ -292,7 +195,7 @@ public class OcupanteService {
         if (pessoaNova && (!StringUtils.hasText(dto.getPesNome()) || !StringUtils.hasText(dto.getPesEmail()))) {
             throw new IllegalArgumentException("Para cadastrar uma pessoa nova, informe o nome e o e-mail.");
         }
-        return buscarComDetalhes(cadastrarOcupante(dto).id());
+        return buscarComDetalhes(cadastrarOcupante(dto).getOcuCod());
     }
 
     /**

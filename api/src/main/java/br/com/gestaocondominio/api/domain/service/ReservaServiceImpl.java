@@ -17,6 +17,7 @@ import br.com.gestaocondominio.api.domain.repository.AreaComumTurnoRepository;
 import br.com.gestaocondominio.api.domain.repository.OcupanteRepository;
 import br.com.gestaocondominio.api.domain.repository.ReservaRepository;
 import br.com.gestaocondominio.api.domain.repository.ReservaSpecification;
+import br.com.gestaocondominio.api.exception.ConflitoException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -45,124 +46,10 @@ public class ReservaServiceImpl implements ReservaService {
 
     private final ReservaRepository reservaRepository;
     private final AreaComumService areaComumService;
-    private final UnidadeService unidadeService;
-    private final PessoaService pessoaService;
     private final AreaComumTurnoRepository turnoRepository;
     private final AreaComumRepository areaComumRepository;
     private final OcupanteRepository ocupanteRepository;
     private final CondominioService condominioService;
-
-    @Override
-    @Transactional
-    public Reserva solicitarReserva(ReservaRequestDTO dto) {
-        if (dto.getTermosAceitos() == null || !dto.getTermosAceitos()) {
-            throw new IllegalArgumentException("É obrigatório aceitar os termos de uso.");
-        }
-
-        AreaComum area = areaComumService.buscarPorId(dto.getAreCod());
-
-        Unidade unidade = unidadeService.buscarUnidadePorId(dto.getUniCod())
-                .orElseThrow(() -> new RuntimeException("Unidade não encontrada."));
-
-        Pessoa morador = pessoaService.buscarPessoaPorId(dto.getPesCodMorador())
-                .orElseThrow(() -> new RuntimeException("Morador não encontrado."));
-
-        validarAntecedencia(area, dto.getData());
-        validarDisponibilidade(area, dto.getTurCod(), dto.getData());
-
-        Reserva reserva = new Reserva();
-        reserva.setAreaComum(area);
-        reserva.setUnidade(unidade);
-        reserva.setMorador(morador);
-        reserva.setData(dto.getData());
-        reserva.setTermosAceitos(dto.getTermosAceitos());
-        reserva.setStatus(ReservaStatus.PENDENTE_APROVACAO);
-
-        if (dto.getTurCod() != null) {
-            AreaComumTurno turno = turnoRepository.findById(dto.getTurCod())
-                    .orElseThrow(() -> new RuntimeException("Turno não encontrado."));
-            reserva.setTurno(turno);
-        }
-
-        reserva.setConvidados(new ArrayList<>());
-        if (Boolean.TRUE.equals(area.getPermiteConvidados()) && dto.getConvidados() != null) {
-            if (area.getLimiteConvidados() != null && dto.getConvidados().size() > area.getLimiteConvidados()) {
-                throw new IllegalArgumentException("Limite de convidados excedido. Máximo permitido: " + area.getLimiteConvidados());
-            }
-
-            for (ReservaConvidadoDTO convDTO : dto.getConvidados()) {
-                ReservaConvidado convidado = ReservaConvidado.builder()
-                        .reserva(reserva)
-                        .nome(convDTO.getNome())
-                        .documento(convDTO.getDocumento())
-                        .build();
-                reserva.getConvidados().add(convidado);
-            }
-        }
-
-        return reservaRepository.save(reserva);
-    }
-
-    @Override
-    @Transactional
-    public Reserva aprovarReserva(Integer resCod, Integer pesCodAprovador) {
-        Reserva reserva = buscarPorId(resCod);
-        if (reserva.getStatus() != ReservaStatus.PENDENTE_APROVACAO) {
-            throw new IllegalArgumentException("Apenas reservas pendentes podem ser aprovadas.");
-        }
-        reserva.setStatus(ReservaStatus.APROVADA);
-        reserva.setAprovador(pessoaService.buscarPessoaPorId(pesCodAprovador)
-                .orElseThrow(() -> new RuntimeException("Aprovador não encontrado.")));
-        return reservaRepository.save(reserva);
-    }
-
-    @Override
-    @Transactional
-    public Reserva rejeitarReserva(Integer resCod, Integer pesCodAprovador, String motivo) {
-        Reserva reserva = buscarPorId(resCod);
-        if (reserva.getStatus() != ReservaStatus.PENDENTE_APROVACAO) {
-            throw new IllegalArgumentException("Apenas reservas pendentes podem ser rejeitadas.");
-        }
-        reserva.setStatus(ReservaStatus.REJEITADA);
-        reserva.setAprovador(pessoaService.buscarPessoaPorId(pesCodAprovador)
-                .orElseThrow(() -> new RuntimeException("Aprovador não encontrado.")));
-        reserva.setMotivoRejeicao(motivo);
-        return reservaRepository.save(reserva);
-    }
-
-    @Override
-    @Transactional
-    public Reserva cancelarReserva(Integer resCod, Integer pesCodMorador) {
-        Reserva reserva = buscarPorId(resCod);
-        if (!reserva.getMorador().getPesCod().equals(pesCodMorador)) {
-            throw new IllegalArgumentException("Apenas o solicitante pode cancelar esta reserva.");
-        }
-        if (reserva.getStatus() == ReservaStatus.CONCLUIDA || reserva.getStatus() == ReservaStatus.REJEITADA) {
-            throw new IllegalArgumentException("Não é possível cancelar uma reserva neste status.");
-        }
-        reserva.setStatus(ReservaStatus.CANCELADA_PELO_MORADOR);
-        return reservaRepository.save(reserva);
-    }
-
-    @Override
-    public Reserva buscarPorId(Integer resCod) {
-        return reservaRepository.findById(resCod)
-                .orElseThrow(() -> new RuntimeException("Reserva não encontrada."));
-    }
-
-    @Override
-    public List<Reserva> listarPorCondominio(Integer conCod) {
-        return reservaRepository.findByAreaComumCondominioConCodOrderByDataDesc(conCod);
-    }
-
-    @Override
-    public List<Reserva> listarPorMorador(Integer pesCod) {
-        return reservaRepository.findByMoradorPesCodOrderByDataDesc(pesCod);
-    }
-
-    // ---------------------------------------------------------------------------------------------------------
-    // API v1
-    // ---------------------------------------------------------------------------------------------------------
 
     @Override
     @Transactional(readOnly = true)
@@ -238,22 +125,34 @@ public class ReservaServiceImpl implements ReservaService {
             throw new IllegalArgumentException("Esta área comum não permite convidados.");
         }
 
-        dto.setPesCodMorador(usuario.getPesCod());
-        return solicitarReserva(dto);
+        return gravarSolicitacao(dto, area, unidade, usuario);
     }
 
     @Override
     @Transactional
     public Reserva aprovarReserva(Integer resCod, Pessoa usuario) {
-        exigirGestao(carregar(resCod), usuario);
-        return aprovarReserva(resCod, usuario.getPesCod());
+        Reserva reserva = carregar(resCod);
+        exigirGestao(reserva, usuario);
+        if (reserva.getStatus() != ReservaStatus.PENDENTE_APROVACAO) {
+            throw new IllegalArgumentException("Apenas reservas pendentes podem ser aprovadas.");
+        }
+        reserva.setStatus(ReservaStatus.APROVADA);
+        reserva.setAprovador(usuario);
+        return reservaRepository.save(reserva);
     }
 
     @Override
     @Transactional
     public Reserva rejeitarReserva(Integer resCod, Pessoa usuario, String motivo) {
-        exigirGestao(carregar(resCod), usuario);
-        return rejeitarReserva(resCod, usuario.getPesCod(), motivo.trim());
+        Reserva reserva = carregar(resCod);
+        exigirGestao(reserva, usuario);
+        if (reserva.getStatus() != ReservaStatus.PENDENTE_APROVACAO) {
+            throw new IllegalArgumentException("Apenas reservas pendentes podem ser rejeitadas.");
+        }
+        reserva.setStatus(ReservaStatus.REJEITADA);
+        reserva.setAprovador(usuario);
+        reserva.setMotivoRejeicao(motivo.trim());
+        return reservaRepository.save(reserva);
     }
 
     @Override
@@ -267,7 +166,8 @@ public class ReservaServiceImpl implements ReservaService {
         if (!podeSerCancelada(reserva)) {
             throw new IllegalArgumentException("Só é possível cancelar reservas pendentes ou aprovadas.");
         }
-        return cancelarReserva(resCod, usuario.getPesCod());
+        reserva.setStatus(ReservaStatus.CANCELADA_PELO_MORADOR);
+        return reservaRepository.save(reserva);
     }
 
     @Override
@@ -313,6 +213,49 @@ public class ReservaServiceImpl implements ReservaService {
                         .toList(),
                 administradorGeral || !geridos.isEmpty(),
                 !unidades.isEmpty());
+    }
+
+    /** Grava a solicitação já conferida quanto à unidade, à área e ao turno: faltam antecedência e disponibilidade. */
+    private Reserva gravarSolicitacao(ReservaRequestDTO dto, AreaComum area, Unidade unidade, Pessoa morador) {
+        if (dto.getTermosAceitos() == null || !dto.getTermosAceitos()) {
+            throw new IllegalArgumentException("É obrigatório aceitar os termos de uso.");
+        }
+
+        validarAntecedencia(area, dto.getData());
+        validarDisponibilidade(area, dto.getTurCod(), dto.getData());
+
+        Reserva reserva = new Reserva();
+        reserva.setAreaComum(area);
+        reserva.setUnidade(unidade);
+        reserva.setMorador(morador);
+        reserva.setData(dto.getData());
+        reserva.setTermosAceitos(dto.getTermosAceitos());
+        reserva.setStatus(ReservaStatus.PENDENTE_APROVACAO);
+
+        if (dto.getTurCod() != null) {
+            AreaComumTurno turno = turnoRepository.findById(dto.getTurCod())
+                    .orElseThrow(() -> new EntityNotFoundException("Turno não encontrado."));
+            reserva.setTurno(turno);
+        }
+
+        reserva.setConvidados(new ArrayList<>());
+        if (Boolean.TRUE.equals(area.getPermiteConvidados()) && dto.getConvidados() != null) {
+            if (area.getLimiteConvidados() != null && dto.getConvidados().size() > area.getLimiteConvidados()) {
+                throw new IllegalArgumentException("Esta área comum permite no máximo " + area.getLimiteConvidados()
+                        + " convidado(s).");
+            }
+
+            for (ReservaConvidadoDTO convDTO : dto.getConvidados()) {
+                ReservaConvidado convidado = ReservaConvidado.builder()
+                        .reserva(reserva)
+                        .nome(convDTO.getNome())
+                        .documento(convDTO.getDocumento())
+                        .build();
+                reserva.getConvidados().add(convidado);
+            }
+        }
+
+        return reservaRepository.save(reserva);
     }
 
     private Specification<Reserva> visiveisPara(Pessoa usuario) {
@@ -387,7 +330,7 @@ public class ReservaServiceImpl implements ReservaService {
         }
 
         if (!conflitantes.isEmpty()) {
-            throw new IllegalArgumentException("Já existe uma reserva para esta área/turno nesta data.");
+            throw new ConflitoException("Já existe uma reserva para esta área e turno nesta data.");
         }
     }
 }

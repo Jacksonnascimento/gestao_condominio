@@ -50,7 +50,7 @@ public final class ReservaDTOs {
             @AssertTrue(message = "É obrigatório aceitar os termos de uso.") Boolean termosAceitos,
             @Valid List<ConvidadoPedido> convidados) {
 
-        /** Converte para o DTO que o {@code ReservaService} já usa nas telas antigas. */
+        /** Converte para o DTO que o {@code ReservaService} recebe. */
         public ReservaRequestDTO paraServico() {
             return ReservaRequestDTO.builder()
                     .areCod(areaId)

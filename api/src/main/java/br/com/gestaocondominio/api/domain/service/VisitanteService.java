@@ -1,6 +1,5 @@
 package br.com.gestaocondominio.api.domain.service;
 
-import br.com.gestaocondominio.api.controller.dto.VisitanteDTO;
 import br.com.gestaocondominio.api.controller.dto.VisitanteRequestDTO;
 import br.com.gestaocondominio.api.controller.v1.dto.VisitanteDTOs.MoradorOpcao;
 import br.com.gestaocondominio.api.controller.v1.dto.VisitanteDTOs.UnidadeOpcao;
@@ -22,7 +21,6 @@ import br.com.gestaocondominio.api.domain.repository.UnidadeRepository;
 import br.com.gestaocondominio.api.util.ValidadorDocumento;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -113,16 +111,6 @@ public class VisitanteService {
         }
         return filtros.and(VisitanteSpecification.visiveisPara(condominiosQueGerencia(usuarioLogado),
                 unidadesOcupadas(usuarioLogado)));
-    }
-
-    @Transactional(readOnly = true)
-    public Page<VisitanteDTO> consultarVisitantes(Pessoa usuarioLogado, Integer condominioId, String nome, Integer unidadeId, Pageable pageable) {
-        Specification<Visitante> spec = getSpec(usuarioLogado, condominioId, nome, unidadeId);
-        Page<Visitante> page = visitanteRepository.findAll(spec, pageable);
-        List<VisitanteDTO> dtos = page.getContent().stream()
-                .map(VisitanteDTO::new)
-                .collect(Collectors.toList());
-        return new PageImpl<>(dtos, pageable, page.getTotalElements());
     }
 
     @Transactional(readOnly = true)
@@ -282,12 +270,6 @@ public class VisitanteService {
         }
 
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado.");
-    }
-
-    @Transactional(readOnly = true)
-    public VisitanteDTO buscarPorIdDTO(Integer id, Pessoa usuarioLogado) {
-        Visitante visitante = buscarPorIdEValidarAcesso(id, usuarioLogado, false);
-        return new VisitanteDTO(visitante);
     }
 
     // --- Usados pela API /api/v1/visitantes ---

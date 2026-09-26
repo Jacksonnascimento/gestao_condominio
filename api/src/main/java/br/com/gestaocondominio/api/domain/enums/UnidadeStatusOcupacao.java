@@ -1,12 +1,9 @@
 package br.com.gestaocondominio.api.domain.enums;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-
-@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum UnidadeStatusOcupacao {
     OCUPADA("Ocupada"),
     VAZIA("Vazia"),
-    EM_REFORMA("Em Reforma"),
+    EM_REFORMA("Em reforma"),
     MULTIPROPRIEDADE("Multipropriedade");
 
     private final String descricao;

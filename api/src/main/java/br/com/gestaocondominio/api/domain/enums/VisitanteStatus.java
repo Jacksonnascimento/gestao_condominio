@@ -4,7 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum VisitanteStatus {
-    NO_LOCAL("No Local"),
+    NO_LOCAL("No local"),
     SAIU("Saiu");
 
     private final String descricao;

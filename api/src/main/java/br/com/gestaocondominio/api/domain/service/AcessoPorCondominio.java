@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  */
 final class AcessoPorCondominio {
 
-    /** Quem as telas antigas tratam como gestão ("isGerencial"): vê as unidades e gerencia os ocupantes. */
+    /** Gestão do condomínio: vê as unidades e gerencia os ocupantes. */
     static final UserRole[] GESTAO = {UserRole.SINDICO, UserRole.ADMIN, UserRole.FUNCIONARIO_ADM};
     /** Quem cadastra, edita e inativa unidades. */
     static final UserRole[] SINDICO_OU_ADMINISTRADORA = {UserRole.SINDICO, UserRole.ADMIN};

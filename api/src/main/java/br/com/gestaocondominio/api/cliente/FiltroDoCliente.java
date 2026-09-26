@@ -6,7 +6,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -29,8 +28,6 @@ import java.util.Optional;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class FiltroDoCliente extends OncePerRequestFilter {
-
-    private static final String ATRIBUTO_CLIENTE = FiltroDoCliente.class.getName() + ".cliente";
 
     private final ClientesAtendidos clientes;
     private final ObjectMapper objectMapper;
@@ -56,30 +53,9 @@ public class FiltroDoCliente extends OncePerRequestFilter {
 
         ClienteAtual.definir(cliente.get());
         try {
-            amarrarSessao(request, cliente.get());
             filterChain.doFilter(request, response);
-            // A sessão aberta nesta requisição (a do login, por exemplo) já sai marcada com o cliente.
-            amarrarSessao(request, cliente.get());
         } finally {
             ClienteAtual.limpar();
-        }
-    }
-
-    /**
-     * A sessão vale só no cliente em que foi aberta. Os códigos de pessoa se repetem de um banco para outro, então o
-     * cookie de sessão de um cliente, enviado ao endereço de outro, entraria lá como a pessoa de mesmo código. Sessão
-     * que chega por outro cliente é descartada, e a requisição segue sem login.
-     */
-    private static void amarrarSessao(HttpServletRequest request, Cliente cliente) {
-        HttpSession sessao = request.getSession(false);
-        if (sessao == null) {
-            return;
-        }
-        Object daSessao = sessao.getAttribute(ATRIBUTO_CLIENTE);
-        if (daSessao == null) {
-            sessao.setAttribute(ATRIBUTO_CLIENTE, cliente.identificador());
-        } else if (!daSessao.equals(cliente.identificador())) {
-            sessao.invalidate();
         }
     }
 

@@ -16,46 +16,8 @@ import java.util.List;
 
 public class OcupanteSpecification {
 
-    public static Specification<Ocupante> comFiltros(Integer condominioId, String busca, OcupanteVinculo vinculo, Integer unidadeId) {
-        
-        return (root, query, criteriaBuilder) -> {
-            
-            if (Long.class != query.getResultType() && long.class != query.getResultType()) {
-                root.fetch("pessoa", JoinType.LEFT);
-                root.fetch("unidade", JoinType.LEFT).fetch("condominio", JoinType.LEFT);
-                query.distinct(true);
-            }
-            
-            List<Predicate> predicates = new ArrayList<>();
-
-            if (condominioId != null) {
-                predicates.add(criteriaBuilder.equal(root.get("unidade").get("condominio").get("conCod"), condominioId));
-            }
-            
-            if (unidadeId != null) {
-                predicates.add(criteriaBuilder.equal(root.get("unidade").get("uniCod"), unidadeId));
-            }
-
-            if (StringUtils.hasText(busca)) {
-                String buscaPattern = "%" + busca.toLowerCase() + "%";
-                
-                Predicate buscaPredicate = criteriaBuilder.or(
-                    criteriaBuilder.like(criteriaBuilder.lower(root.get("pessoa").get("pesNome")), buscaPattern),
-                    criteriaBuilder.like(criteriaBuilder.lower(root.get("pessoa").get("pesEmail")), buscaPattern)
-                );
-                predicates.add(buscaPredicate);
-            }
-
-            if (vinculo != null) {
-                predicates.add(criteriaBuilder.equal(root.get("ocuVinculo"), vinculo));
-            }
-            
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
-    }
-
     /**
-     * Os mesmos filtros de {@link #comFiltros}, próprios para listagem paginada: sem {@code distinct} (as junções são
+     * Filtros da listagem paginada, por condomínio, unidade, vínculo e nome ou e-mail: sem {@code distinct} (as junções são
      * todas para um, então não repetem linhas) e em ordem alfabética do nome do ocupante.
      */
     public static Specification<Ocupante> paraListagem(Integer condominioId, String busca, OcupanteVinculo vinculo,

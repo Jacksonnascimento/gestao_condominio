@@ -44,7 +44,7 @@ public final class AreaComumDTOs {
             Boolean ativa,
             @Valid List<TurnoPedido> turnos) {
 
-        /** Converte para o DTO que o {@code AreaComumService} já usa nas telas antigas. */
+        /** Converte para o DTO que o {@code AreaComumService} recebe. */
         public AreaComumRequestDTO paraServico() {
             return AreaComumRequestDTO.builder()
                     .conCod(condominioId)

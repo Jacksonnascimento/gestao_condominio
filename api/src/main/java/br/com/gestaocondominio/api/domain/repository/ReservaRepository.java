@@ -18,12 +18,6 @@ import java.util.Optional;
 @Repository
 public interface ReservaRepository extends JpaRepository<Reserva, Integer>, JpaSpecificationExecutor<Reserva> {
 
-    // Carrega antecipadamente todos os objetos aninhados necessários para a tela
-    @EntityGraph(attributePaths = {"areaComum", "areaComum.condominio", "turno", "unidade", "morador", "convidados"})
-    List<Reserva> findByAreaComumCondominioConCodOrderByDataDesc(Integer conCod);
-
-    @EntityGraph(attributePaths = {"areaComum", "areaComum.condominio", "turno", "unidade", "morador", "convidados"})
-    List<Reserva> findByMoradorPesCodOrderByDataDesc(Integer pesCod);
 
     // Sobrescrevemos o findById padrão para garantir que a aprovação/cancelamento retorne o card com os dados prontos
     @EntityGraph(attributePaths = {"areaComum", "areaComum.condominio", "turno", "unidade", "morador", "convidados"})

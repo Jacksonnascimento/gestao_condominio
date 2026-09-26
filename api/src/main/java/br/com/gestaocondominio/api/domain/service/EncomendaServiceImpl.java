@@ -155,10 +155,10 @@ public class EncomendaServiceImpl implements EncomendaService {
         Encomenda encomenda = buscarPorIdEValidarAcesso(encomendaId, usuarioLogado, true);
 
         if (dto.getNovoStatus() == EncomendaStatus.RETIRADA) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Use a funcionalidade 'Registrar Retirada' para este status.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Para marcar a encomenda como retirada, use o registro de retirada.");
         }
         if (dto.getNovoStatus() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nenhum status selecionado.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Escolha a situação.");
         }
         if (encomenda.getStatus() == EncomendaStatus.RETIRADA) {
              throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é possível alterar o status de uma encomenda já retirada.");
@@ -175,7 +175,7 @@ public class EncomendaServiceImpl implements EncomendaService {
     @Transactional(readOnly = true)
     public Encomenda buscarPorIdEValidarAcesso(Long id, Pessoa usuarioLogado, boolean paraEscrita) {
         Encomenda encomenda = encomendaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Encomenda não encontrada com ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Encomenda não encontrada."));
 
         if (usuarioLogado.getPesIsGlobalAdmin()) {
             return encomenda;

@@ -5,7 +5,7 @@ import lombok.Getter;
 @Getter
 public enum OcorrenciaStatus {
     ABERTA("Aberta"),
-    EM_ANALISE("Em Análise"),
+    EM_ANALISE("Em análise"),
     RESOLVIDA("Resolvida");
 
     private final String descricao;

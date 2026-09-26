@@ -53,10 +53,6 @@ public interface OcorrenciaService {
 
     Ocorrencia finalizarOcorrencia(Integer ocorrenciaId, OcorrenciaFinalizarRequestDTO dto, Pessoa usuarioLogado);
 
-    Ocorrencia buscarOcorrenciaPorIdEValidarAcesso(Integer id, Pessoa usuarioLogado, boolean edicao);
-
-    // ---- Usados pela API /api/v1 ----
-
     /**
      * Se a pessoa gerencia ocorrências em algum condomínio (administrador geral, síndico, administração ou funcionário
      * administrativo). É o que a tela usa para mostrar os filtros de data e os botões de gestão.

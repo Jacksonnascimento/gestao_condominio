@@ -1,9 +1,8 @@
 package br.com.gestaocondominio.api.exception;
 
 /**
- * Tentativa de cadastrar uma unidade que já existe, mas está inativa. A mensagem mantém o formato
- * {@code UNIDADE_INATIVA:<id>} que a tela antiga de unidades lê para oferecer a reativação; a API v1 devolve o
- * {@link #getUnidadeId() id} num campo próprio.
+ * Tentativa de cadastrar uma unidade que já existe, mas está inativa. A resposta 409 leva o
+ * {@link #getUnidadeId() id} num campo próprio, para a tela oferecer a reativação.
  */
 public class UnidadeInativaException extends ConflitoException {
 

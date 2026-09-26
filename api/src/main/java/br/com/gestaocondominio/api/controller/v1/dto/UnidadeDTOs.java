@@ -84,10 +84,7 @@ public final class UnidadeDTOs {
         }
     }
 
-    /**
-     * Os enums de unidade saem como objeto no JSON das telas antigas ({@code @JsonFormat(OBJECT)}); aqui vão pelo
-     * nome, que é o valor aceito nos pedidos, com a descrição num campo à parte.
-     */
+    /** Os enums vão pelo nome, que é o valor aceito nos pedidos, com a descrição num campo à parte. */
     private static String nome(Enum<?> valor) {
         return valor == null ? null : valor.name();
     }

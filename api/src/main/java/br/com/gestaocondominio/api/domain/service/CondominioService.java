@@ -1,9 +1,12 @@
 package br.com.gestaocondominio.api.domain.service;
 
 import br.com.gestaocondominio.api.domain.entity.Condominio;
+import br.com.gestaocondominio.api.domain.entity.Unidade;
 import br.com.gestaocondominio.api.domain.repository.CondominioRepository;
 import br.com.gestaocondominio.api.domain.repository.UnidadeRepository;
 import br.com.gestaocondominio.api.domain.repository.UsuarioCondominioRepository;
+import br.com.gestaocondominio.api.exception.ConflitoException;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -13,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -82,6 +86,33 @@ public class CondominioService {
         return condominioOpt;
     }
 
+    /** Na API v1, cadastrar, editar, ativar e inativar condomínios é só do administrador geral. */
+    public boolean podeGerenciarCondominios() {
+        return AcessoPorCondominio.administradorGeral();
+    }
+
+    /** Condomínio que quem está logado pode ver (administrador geral ou vínculo ativo com ele). */
+    @Transactional(readOnly = true)
+    public Condominio buscarCondominioVisivel(Integer id) {
+        Condominio condominio = condominioRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Condomínio não encontrado."));
+        checkPermissionToViewCondo(condominio);
+        return condominio;
+    }
+
+    /**
+     * Unidades ativas do condomínio, por bloco e número, para as listas de escolha dos formulários dos outros módulos
+     * (encomendas, visitantes, ocorrências...). Vale a mesma regra de {@link #buscarCondominioVisivel}.
+     */
+    @Transactional(readOnly = true)
+    public List<Unidade> listarUnidadesAtivas(Integer conCod) {
+        buscarCondominioVisivel(conCod);
+        return unidadeRepository.findAtivasByCondominioConCodWithCondominio(conCod).stream()
+                .sorted(Comparator.comparing((Unidade u) -> u.getBloco() == null ? "" : u.getBloco())
+                        .thenComparing(Unidade::getUniNumero))
+                .toList();
+    }
+
     public Condominio atualizarCondominio(Integer id, Condominio condominioAtualizado) {
         Condominio condominioExistente = condominioRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Condomínio não encontrado com o ID: " + id));
@@ -144,11 +175,11 @@ public class CondominioService {
         checkPermissionToManageCondo(condominio);
 
         if (!unidadeRepository.findByCondominio(condominio).isEmpty()) {
-            throw new IllegalStateException("Não é possível inativar o condomínio, pois existem unidades vinculadas a ele.");
+            throw new ConflitoException("Não é possível inativar o condomínio, pois existem unidades vinculadas a ele.");
         }
 
         if (!usuarioCondominioRepository.findByCondominio(condominio).isEmpty()) {
-            throw new IllegalStateException("Não é possível inativar o condomínio, pois existem usuários/papéis vinculados a ele.");
+            throw new ConflitoException("Não é possível inativar o condomínio, pois existem usuários/papéis vinculados a ele.");
         }
 
         condominio.setConAtivo(false);

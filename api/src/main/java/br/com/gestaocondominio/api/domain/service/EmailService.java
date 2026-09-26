@@ -8,12 +8,23 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class EmailService {
 
+    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
+
     @Autowired
     private JavaMailSender mailSender;
+
+    /**
+     * Com {@code EMAIL_ATIVO=false} nada é enviado: o que iria por e-mail vai para o log, inclusive o link de
+     * redefinição de senha, para o fluxo poder ser testado sem servidor de e-mail. Em produção, sempre {@code true}.
+     */
+    @Value("${condigtal.email.ativo:false}")
+    private boolean envioAtivo;
 
     @Value("${spring.mail.properties.mail.smtp.from-name}")
     private String fromName;
@@ -23,6 +34,10 @@ public class EmailService {
 
     @Async
     public void sendPasswordResetEmail(String to, String tokenUrl, String nomeUsuario) {
+        if (!envioAtivo) {
+            log.info("Envio de e-mail desligado (EMAIL_ATIVO=false). Redefinição de senha para {}: {}", to, tokenUrl);
+            return;
+        }
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
@@ -57,6 +72,11 @@ public class EmailService {
 
     @Async
     public void sendLeadNotification(LeadRequestDTO lead) {
+        if (!envioAtivo) {
+            log.info("Envio de e-mail desligado (EMAIL_ATIVO=false). Novo interessado: {} ({})", lead.name(),
+                    lead.reason());
+            return;
+        }
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");

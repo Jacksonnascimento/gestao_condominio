@@ -188,12 +188,16 @@ public class UsuarioCondominioService {
         return usuarioCondominioRepository.findByPesCod(pessoa.getPesCod());
     }
 
+    /** Se a pessoa tem, em algum condomínio, um vínculo ativo com um dos papéis. Vínculo desativado não conta. */
     public boolean possuiRole(Pessoa pessoa, UserRole... roles) {
         if (pessoa == null || roles == null) {
             return false;
         }
         List<UsuarioCondominio> associacoes = findByPessoa(pessoa);
         for (UsuarioCondominio assoc : associacoes) {
+            if (!Boolean.TRUE.equals(assoc.getUscAtivoAssociacao())) {
+                continue;
+            }
             for (UserRole role : roles) {
                 if (assoc.getUscPapel() == role) {
                     return true;
@@ -203,8 +207,13 @@ public class UsuarioCondominioService {
         return false;
     }
 
+    /**
+     * Condomínio de um dos vínculos ativos da pessoa. Quem tem vários condomínios recebe só um deles: as telas antigas
+     * foram feitas para um condomínio por pessoa; a API v1 usa o alcance por condomínio, logo abaixo.
+     */
     public Integer getCondominioIdDoUsuario(Pessoa pessoa) {
         return findByPessoa(pessoa).stream()
+                .filter(vinculo -> Boolean.TRUE.equals(vinculo.getUscAtivoAssociacao()))
                 .findFirst()
                 .map(UsuarioCondominio::getConCod)
                 .orElse(null);

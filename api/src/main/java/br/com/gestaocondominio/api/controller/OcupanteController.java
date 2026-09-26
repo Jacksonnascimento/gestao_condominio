@@ -38,14 +38,14 @@ public class OcupanteController {
     }
 
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')")
     public ResponseEntity<OcupanteResponseDTO> cadastrarOcupante(@RequestBody OcupanteRequestDTO dto) {
         OcupanteResponseDTO responseDTO = ocupanteService.cadastrarOcupante(dto);
         return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')")
     public ResponseEntity<OcupanteResponseDTO> editarOcupante(@PathVariable Integer id, @RequestBody OcupanteRequestDTO dto) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         OcupanteResponseDTO responseDTO = ocupanteService.editarOcupante(id, dto, usuarioLogado);
@@ -53,7 +53,7 @@ public class OcupanteController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')")
     public ResponseEntity<Void> excluirOcupante(@PathVariable Integer id) {
         Pessoa usuarioLogado = pessoaService.getLoggedInUser();
         ocupanteService.excluirOcupante(id, usuarioLogado);

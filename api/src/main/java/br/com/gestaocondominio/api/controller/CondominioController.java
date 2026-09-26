@@ -10,7 +10,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Rota antiga, que nenhuma tela usa e não conferia permissão: fica restrita ao administrador geral. A API do sistema novo está em /api/v1/condominios.
+ */
 @RestController
+@PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')")
 @RequestMapping("/api/condominios")
 public class CondominioController {
 

@@ -1,5 +1,6 @@
 package br.com.gestaocondominio.api.controller;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import br.com.gestaocondominio.api.controller.dto.ContratoRequestDTO;
 import br.com.gestaocondominio.api.domain.entity.Contrato;
 import br.com.gestaocondominio.api.domain.enums.StatusContrato;
@@ -11,7 +12,11 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Rota antiga, que nenhuma tela usa e não conferia permissão: fica restrita ao administrador geral. A API do sistema novo está em /api/v1/contratos.
+ */
 @RestController
+@PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')")
 @RequestMapping("/condominios/{condominioId}/contratos")
 public class ContratoController {
 

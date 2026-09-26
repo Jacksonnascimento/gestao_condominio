@@ -43,6 +43,7 @@ public class UnidadeController {
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')")
     @GetMapping
     public ResponseEntity<List<Unidade>> listarTodasUnidades(
             @RequestParam(required = false, defaultValue = "false") boolean incluirInativas,
@@ -52,18 +53,21 @@ public class UnidadeController {
         return new ResponseEntity<>(unidades, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<Unidade> atualizarUnidade(@PathVariable Integer id, @RequestBody UnidadeRequestDTO dto) {
         Unidade unidadeSalva = unidadeService.atualizarUnidade(id, dto);
         return new ResponseEntity<>(unidadeSalva, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')")
     @PutMapping("/{id}/inativar")
     public ResponseEntity<Unidade> inativarUnidade(@PathVariable Integer id) {
         Unidade unidadeInativada = unidadeService.inativarUnidade(id);
         return new ResponseEntity<>(unidadeInativada, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')")
     @PutMapping("/{id}/ativar")
     public ResponseEntity<Unidade> ativarUnidade(@PathVariable Integer id) {
         Unidade unidadeAtivada = unidadeService.ativarUnidade(id);

@@ -1,6 +1,6 @@
 package br.com.gestaocondominio.api.controller.v1;
 
-import br.com.gestaocondominio.api.cliente.ClienteAtual;
+import br.com.gestaocondominio.api.cliente.EnderecoDoSistemaWeb;
 import br.com.gestaocondominio.api.controller.v1.dto.AutenticacaoDTOs.EsqueciSenhaRequest;
 import br.com.gestaocondominio.api.controller.v1.dto.AutenticacaoDTOs.LoginRequest;
 import br.com.gestaocondominio.api.controller.v1.dto.AutenticacaoDTOs.LoginResponse;
@@ -19,11 +19,9 @@ import br.com.gestaocondominio.api.security.UserDetailsServiceImpl;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -55,20 +53,20 @@ public class AutenticacaoController {
     private final PessoaRepository pessoaRepository;
     private final UsuarioCondominioRepository usuarioCondominioRepository;
     private final PasswordResetService passwordResetService;
-    private final String webUrlPublica;
+    private final EnderecoDoSistemaWeb enderecoDoSistemaWeb;
 
     public AutenticacaoController(AuthenticationManager authenticationManager, TokenService tokenService,
                                   UserDetailsServiceImpl userDetailsService, PessoaRepository pessoaRepository,
                                   UsuarioCondominioRepository usuarioCondominioRepository,
                                   PasswordResetService passwordResetService,
-                                  @Value("${condigtal.web.url-publica:}") String webUrlPublica) {
+                                  EnderecoDoSistemaWeb enderecoDoSistemaWeb) {
         this.authenticationManager = authenticationManager;
         this.tokenService = tokenService;
         this.userDetailsService = userDetailsService;
         this.pessoaRepository = pessoaRepository;
         this.usuarioCondominioRepository = usuarioCondominioRepository;
         this.passwordResetService = passwordResetService;
-        this.webUrlPublica = webUrlPublica;
+        this.enderecoDoSistemaWeb = enderecoDoSistemaWeb;
     }
 
     @PostMapping("/login")
@@ -118,10 +116,11 @@ public class AutenticacaoController {
      */
     @PostMapping("/esqueci-senha")
     @Operation(summary = "Envia por e-mail o link para definir uma nova senha")
-    public Mensagem esqueciSenha(@Valid @RequestBody EsqueciSenhaRequest pedido, HttpServletRequest request) {
+    public Mensagem esqueciSenha(@Valid @RequestBody EsqueciSenhaRequest pedido) {
+        String enderecoWeb = enderecoDoSistemaWeb.atual();
         try {
             passwordResetService.createPasswordResetToken(pedido.email().trim(), VALIDADE_LINK_SENHA_HORAS,
-                    enderecoDoSistemaWeb(request));
+                    enderecoWeb);
         } catch (IllegalArgumentException e) {
             log.info("Pedido de redefinição de senha não atendido: {}", e.getMessage());
         }
@@ -146,22 +145,6 @@ public class AutenticacaoController {
         TokensEmitidos tokens = tokenService.emitir(pessoa);
         return new LoginResponse(tokens.token(), tokens.tokenRenovacao(), tokens.expiraEm(),
                 UsuarioLogado.de(pessoa, usuarioCondominioRepository.findByPessoa(pessoa)));
-    }
-
-    /**
-     * Endereço do sistema web do cliente, que é onde o link do e-mail precisa abrir. Vem de {@code WEB_URL_PUBLICA}
-     * (com {@code {cliente}} trocado pelo cliente atual); sem ela, vale a origem de quem chamou.
-     */
-    private String enderecoDoSistemaWeb(HttpServletRequest request) {
-        String configurado = ClienteAtual.noEndereco(webUrlPublica);
-        if (configurado != null && !configurado.isBlank()) {
-            return configurado.replaceAll("/+$", "");
-        }
-        String origem = request.getHeader("Origin");
-        if (origem != null && !origem.isBlank()) {
-            return origem;
-        }
-        return request.getScheme() + "://" + request.getHeader("Host");
     }
 
     private ResponseStatusException sessaoEncerrada() {

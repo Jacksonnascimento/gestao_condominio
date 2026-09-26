@@ -24,14 +24,16 @@ public class PessoaController {
         this.pessoaService = pessoaService;
     }
 
+    // Usada pelos formulários de ocupante e de usuário, que só a gestão abre.
     @GetMapping("/por-cpf/{cpfCnpj}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyAuthority('ROLE_GLOBAL_ADMIN', 'ROLE_SINDICO', 'ROLE_ADMIN', 'ROLE_FUNCIONARIO_ADM')")
     public ResponseEntity<Pessoa> buscarPessoaPorCpfCnpj(@PathVariable String cpfCnpj) {
         return pessoaService.buscarPorCpfCnpj(cpfCnpj)
                 .map(pessoa -> new ResponseEntity<>(pessoa, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')")
     @PostMapping
     public ResponseEntity<Pessoa> cadastrarPessoa(@RequestBody Pessoa pessoa) {
         Pessoa novaPessoa = pessoaService.cadastrarPessoa(pessoa);
@@ -46,6 +48,7 @@ public class PessoaController {
         return new ResponseEntity<>(pessoaSalva, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<Pessoa> buscarPessoaPorId(@PathVariable Integer id) {
 
@@ -54,6 +57,7 @@ public class PessoaController {
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')")
     @GetMapping
     public ResponseEntity<List<Pessoa>> listarTodasPessoas() {
 
@@ -61,6 +65,7 @@ public class PessoaController {
         return new ResponseEntity<>(pessoas, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')")
     @GetMapping("/{id}/imagem")
     public ResponseEntity<byte[]> buscarImagemDaPessoa(@PathVariable Integer id) {
         byte[] imagem = pessoaService.buscarImagemPorId(id);

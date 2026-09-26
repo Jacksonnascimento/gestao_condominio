@@ -1,6 +1,6 @@
 package br.com.gestaocondominio.api.controller.v1;
 
-import br.com.gestaocondominio.api.cliente.ClienteAtual;
+import br.com.gestaocondominio.api.cliente.EnderecoDoSistemaWeb;
 import br.com.gestaocondominio.api.controller.dto.UsuarioCondominioDTO;
 import br.com.gestaocondominio.api.controller.v1.dto.AutenticacaoDTOs.Mensagem;
 import br.com.gestaocondominio.api.controller.v1.dto.Opcao;
@@ -19,9 +19,7 @@ import br.com.gestaocondominio.api.domain.service.PessoaService;
 import br.com.gestaocondominio.api.domain.service.UsuarioCondominioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -60,15 +58,14 @@ public class UsuarioApiController {
     private final UsuarioCondominioService usuarioCondominioService;
     private final OcupanteService ocupanteService;
     private final PessoaService pessoaService;
-    private final String webUrlPublica;
+    private final EnderecoDoSistemaWeb enderecoDoSistemaWeb;
 
     public UsuarioApiController(UsuarioCondominioService usuarioCondominioService, OcupanteService ocupanteService,
-                                PessoaService pessoaService,
-                                @Value("${condigtal.web.url-publica:}") String webUrlPublica) {
+                                PessoaService pessoaService, EnderecoDoSistemaWeb enderecoDoSistemaWeb) {
         this.usuarioCondominioService = usuarioCondominioService;
         this.ocupanteService = ocupanteService;
         this.pessoaService = pessoaService;
-        this.webUrlPublica = webUrlPublica;
+        this.enderecoDoSistemaWeb = enderecoDoSistemaWeb;
     }
 
     @GetMapping
@@ -126,9 +123,9 @@ public class UsuarioApiController {
     @Operation(summary = "Dá acesso a alguém num condomínio, cadastrando a pessoa se preciso",
             description = "Com ENVIAR_LINK (o padrão), a pessoa recebe por e-mail o link para definir a senha no "
                     + "sistema web, válido por 24 horas.")
-    public UsuarioCondominioDTO cadastrar(@Valid @RequestBody NovoUsuarioRequest pedido, HttpServletRequest request) {
+    public UsuarioCondominioDTO cadastrar(@Valid @RequestBody NovoUsuarioRequest pedido) {
         return usuarioCondominioService.cadastrarUsuario(usuarioLogado(), pedido.paraDTO(),
-                enderecoDoSistemaWeb(request));
+                enderecoDoSistemaWeb.atual());
     }
 
     @PutMapping("/{pessoaId}/vinculos/{condominioId}/{papel}")
@@ -143,9 +140,9 @@ public class UsuarioApiController {
 
     @PostMapping("/{pessoaId}/link-de-senha")
     @Operation(summary = "Envia por e-mail o link para a pessoa definir uma nova senha no sistema web")
-    public Mensagem enviarLinkDeSenha(@PathVariable Integer pessoaId, HttpServletRequest request) {
+    public Mensagem enviarLinkDeSenha(@PathVariable Integer pessoaId) {
         String email = usuarioCondominioService.enviarLinkDeSenha(usuarioLogado(), pessoaId,
-                enderecoDoSistemaWeb(request));
+                enderecoDoSistemaWeb.atual());
         return new Mensagem("Link de redefinição enviado para " + email + ".");
     }
 
@@ -155,23 +152,6 @@ public class UsuarioApiController {
     public void excluir(@PathVariable Integer pessoaId, @PathVariable Integer condominioId,
                         @PathVariable UserRole papel) {
         usuarioCondominioService.excluirVinculo(usuarioLogado(), pessoaId, condominioId, papel);
-    }
-
-    /**
-     * Endereço do sistema web do cliente, onde o link do e-mail precisa abrir, como no
-     * {@link AutenticacaoController}: vem de {@code WEB_URL_PUBLICA} (com {@code {cliente}} trocado pelo cliente
-     * atual); sem ela, vale a origem de quem chamou.
-     */
-    private String enderecoDoSistemaWeb(HttpServletRequest request) {
-        String configurado = ClienteAtual.noEndereco(webUrlPublica);
-        if (configurado != null && !configurado.isBlank()) {
-            return configurado.replaceAll("/+$", "");
-        }
-        String origem = request.getHeader("Origin");
-        if (origem != null && !origem.isBlank()) {
-            return origem;
-        }
-        return request.getScheme() + "://" + request.getHeader("Host");
     }
 
     private Pessoa usuarioLogado() {

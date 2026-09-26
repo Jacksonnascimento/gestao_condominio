@@ -1,5 +1,6 @@
 package br.com.gestaocondominio.api.controller;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import br.com.gestaocondominio.api.domain.entity.UsuarioCondominio;
 import br.com.gestaocondominio.api.domain.entity.UsuarioCondominioId;
 import br.com.gestaocondominio.api.domain.enums.UserRole;
@@ -11,7 +12,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Rota antiga, que nenhuma tela usa e não conferia permissão: fica restrita ao administrador geral. A API do sistema novo está em /api/v1/usuarios.
+ */
 @RestController
+@PreAuthorize("hasAuthority('ROLE_GLOBAL_ADMIN')")
 @RequestMapping("/api/usuarios/condominios")
 public class UsuarioCondominioController {
 

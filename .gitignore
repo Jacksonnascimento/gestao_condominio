@@ -2,3 +2,6 @@ api/target/classes/application.properties
 
 # Configuração local de cada ambiente (senhas); o modelo é o .env.example
 .env
+
+# Cópias de trabalho criadas pelo Claude Code
+.claude/worktrees/
